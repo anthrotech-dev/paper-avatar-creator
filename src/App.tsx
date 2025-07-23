@@ -15,6 +15,9 @@ import { BsFillPaletteFill } from "react-icons/bs";
 import { IoIosUndo } from "react-icons/io";
 import { MdDelete } from "react-icons/md";
 
+import JSZip from 'jszip';
+import { textureToPng, useKonvaTexture } from './util';
+
 type TextureKind = 'Head-Front' | 'Head-Back' | 'Body-Front' | 'Body-Back' | 'Hand-Front' | 'Hand-Back' | 'Legs-Front' | 'Legs-Back' | 'Tail-Front' | 'Tail-Back';
 
 const textureKeyMap: Record<string, TextureKind> = {
@@ -32,36 +35,6 @@ const textureKeyMap: Record<string, TextureKind> = {
     "RightFoot_Back": "Legs-Back",
     "Tail_Front": "Tail-Front",
     "Tail_Back": "Tail-Back",
-}
-
-function useKonvaTexture(stageRef: React.RefObject<Konva.Stage | null>, event: any): CanvasTexture {
-
-    const [tex] = useState(() => new CanvasTexture(document.createElement('canvas')));
-
-    useEffect(() => {
-        const stage = stageRef.current;
-        if (!stage) return;
-
-        const layer = stage.getLayers()[0];
-
-        // scene 用キャンバスを直接参照
-        const canvas: HTMLCanvasElement = layer.getNativeCanvasElement();
-        tex.flipY = false;
-        tex.image = canvas;
-        tex.needsUpdate = true;
-        tex.colorSpace = SRGBColorSpace;
-
-        // Konva が何か描いたら GPU 転送を更新
-        const update = () => {
-            console.log('Konva texture update');
-            tex.needsUpdate = true
-        };
-        layer.on('draw', update);
-
-        return () => {stage.off('draw', update)}
-    }, [stageRef, tex, event]);
-
-    return tex;
 }
 
 function Avatar({textures}: {textures: Record<string, Texture>}) {
@@ -171,6 +144,27 @@ function App() {
             [editing]: editingTex,
         }))
     }, [editing]);
+
+    const handleExport = async () => {
+        const zip = new JSZip();
+        for (const key in textures) {
+            const texture = textures[key];
+            if (!texture) continue;
+
+            const { blob } = await textureToPng(texture)
+            zip.file(`${key}.png`, blob);
+        }
+
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'avatar-textures.zip';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
 
     const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
         isDrawing.current = true;
@@ -666,16 +660,29 @@ function App() {
                         />
                     </div>
                 </div>
-                <Button
-                    variant="contained"
-                    onClick={() => {
-                        if (fileInputRef.current) {
-                            fileInputRef.current.click();
-                        }
-                    }}
+                <Box
+                    display="flex"
+                    gap="10px"
                 >
-                    Load Images
-                </Button>
+                    <Button
+                        variant="contained"
+                        onClick={() => {
+                            if (fileInputRef.current) {
+                                fileInputRef.current.click();
+                            }
+                        }}
+                    >
+                        Load Images
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={() => {
+                            handleExport();
+                        }}
+                    >
+                        Export
+                    </Button>
+                </Box>
             </>}
         </div>
     </div>
