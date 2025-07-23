@@ -53,6 +53,7 @@ function useKonvaTexture(stageRef: React.RefObject<Konva.Stage | null>, event: a
 
         // Konva が何か描いたら GPU 転送を更新
         const update = () => {
+            console.log('Konva texture update');
             tex.needsUpdate = true
         };
         layer.on('draw', update);
@@ -67,7 +68,6 @@ function Avatar({textures}: {textures: Record<string, Texture>}) {
     const group = useRef<Group>(null);
     const { nodes, scene, animations } = useGLTF('/RESO_Pera.glb');
     const mixer = useRef<AnimationMixer>(null);
-
 
     useEffect(() => {
         for (const key in nodes) {
@@ -211,22 +211,39 @@ function App() {
             accept="image/*"
             ref={fileInputRef}
             style={{ display: 'none' }}
+            multiple={!editing}
             onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
+                if (editing) {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
 
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        console.log('Image loaded:', img);
-                        const newTexture = new Texture(img);
-                        newTexture.flipY = false;
-                        setOldTexture(newTexture);
-                    };
-                    img.src = event.target?.result as string;
-                };
-                reader.readAsDataURL(file);
+                    const url = URL.createObjectURL(file);
+                    const loader = new TextureLoader();
+
+                    loader.load(url, (texture) => {
+                        texture.flipY = false;
+                        setOldTexture(texture);
+                    });
+                } else {
+                    for (const file of e.target.files || []) {
+                        const url = URL.createObjectURL(file);
+                        const name = file.name.split('.')[0];
+                        console.log(name, url);
+
+                        if (!(name in textures)) {
+                            continue
+                        }
+
+                        const loader = new TextureLoader();
+                        loader.load(url, (texture) => {
+                            texture.flipY = false;
+                            setTextures((prev) => ({
+                                ...prev,
+                                [name]: texture,
+                            }));
+                        });
+                    }
+                }
             }}
         />
 
@@ -642,6 +659,16 @@ function App() {
                         />
                     </div>
                 </div>
+                <Button
+                    variant="contained"
+                    onClick={() => {
+                        if (fileInputRef.current) {
+                            fileInputRef.current.click();
+                        }
+                    }}
+                >
+                    Load Images
+                </Button>
             </>}
         </div>
     </div>
