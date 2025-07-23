@@ -154,6 +154,7 @@ function App() {
 
             for (const key in textures) {
                 textures[key as TextureKind].flipY = false;
+                textures[key as TextureKind].colorSpace = SRGBColorSpace;
             }
 
             setTextures(textures);
@@ -225,6 +226,7 @@ function App() {
 
                     loader.load(url, (texture) => {
                         texture.flipY = false;
+                        texture.colorSpace = SRGBColorSpace;
                         setOldTexture(texture);
                     });
                 } else {
@@ -240,6 +242,7 @@ function App() {
                         const loader = new TextureLoader();
                         loader.load(url, (texture) => {
                             texture.flipY = false;
+                            texture.colorSpace = SRGBColorSpace;
                             setTextures((prev) => ({
                                 ...prev,
                                 [name]: texture,
@@ -521,6 +524,7 @@ function App() {
 
                         const editedTexture = new CanvasTexture(tmp);
                         editedTexture.flipY = false;
+                        editedTexture.colorSpace = SRGBColorSpace;
 
                         setTextures((prev) => ({
                             ...prev,
