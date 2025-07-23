@@ -66,7 +66,7 @@ function useKonvaTexture(stageRef: React.RefObject<Konva.Stage | null>, event: a
 
 function Avatar({textures}: {textures: Record<string, Texture>}) {
     const group = useRef<Group>(null);
-    const { nodes, scene, animations } = useGLTF('/RESO_Pera.glb');
+    const { nodes, scene, animations } = useGLTF('/anim@RESO_Pera_idle.glb');
     const mixer = useRef<AnimationMixer>(null);
 
     useEffect(() => {
@@ -80,6 +80,9 @@ function Avatar({textures}: {textures: Record<string, Texture>}) {
                     alphaTest: 0.5,
                 });
                 mesh.material.needsUpdate = true;
+                console.log(`Set texture for ${key} to ${textureKeyMap[key]}`);
+            } else {
+                console.warn(`No texture for ${key}`);
             }
         }
     }, [nodes, textures]);
