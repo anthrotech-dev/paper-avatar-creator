@@ -226,6 +226,8 @@ function App() {
                 zIndex: 1,
                 color: 'white',
                 padding: '10px',
+                overflowX: 'hidden',
+                overflowY: 'auto',
             }}
         >
 
