@@ -131,6 +131,7 @@ function App() {
     const [oldTexture, setOldTexture] = useState<Texture | null>(null);
 
     const colorInputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         (async () => {
@@ -204,6 +205,31 @@ function App() {
             position: 'relative',
         }}
     >
+
+        <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        console.log('Image loaded:', img);
+                        const newTexture = new Texture(img);
+                        newTexture.flipY = false;
+                        setOldTexture(newTexture);
+                    };
+                    img.src = event.target?.result as string;
+                };
+                reader.readAsDataURL(file);
+            }}
+        />
+
         <Canvas 
             style={{
                 width: '100vw',
@@ -452,6 +478,11 @@ function App() {
             >
                 <Button
                     variant="contained"
+                    onClick={() => {
+                        if (fileInputRef.current) {
+                            fileInputRef.current.click();
+                        }
+                    }}
                 >
                     Load
                 </Button>
