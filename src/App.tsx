@@ -1,5 +1,4 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
-import './App.css'
 import { Texture, Group, AnimationMixer, CanvasTexture, TextureLoader, MeshPhongMaterial, Mesh, SRGBColorSpace } from 'three';
 
 import { Canvas, useFrame } from '@react-three/fiber';
@@ -8,24 +7,31 @@ import { OrbitControls, useGLTF } from '@react-three/drei';
 import Konva from 'konva';
 import { Stage, Layer, Line, Rect } from 'react-konva';
 import { TexturePreview } from './TexturePreview';
+import { Box, Button, IconButton, Popover, Slider, Typography } from '@mui/material';
+
+import { BsFillEraserFill } from "react-icons/bs";
+import { BsBrushFill } from "react-icons/bs";
+import { BsFillPaletteFill } from "react-icons/bs";
+import { IoIosUndo } from "react-icons/io";
+import { MdDelete } from "react-icons/md";
 
 type TextureKind = 'Head-Front' | 'Head-Back' | 'Body-Front' | 'Body-Back' | 'Hand-Front' | 'Hand-Back' | 'Legs-Front' | 'Legs-Back' | 'Tail-Front' | 'Tail-Back';
 
 const textureKeyMap: Record<string, TextureKind> = {
-    "Head-Front": "Head-Front",
-    "Head-Back": "Head-Back",
-    "Body-Front": "Body-Front",
-    "Body-Back": "Body-Back",
-    "LeftHand-Front": "Hand-Front",
-    "LeftHand-Back": "Hand-Back",
-    "RightHand-Front": "Hand-Front",
-    "RightHand-Back": "Hand-Back",
-    "LeftFoot-Front": "Legs-Front",
-    "LeftFoot-Back": "Legs-Back",
-    "RightFoot-Front": "Legs-Front",
-    "RightFoot-Back": "Legs-Back",
-    "Tail-Front": "Tail-Front",
-    "Tail-Back": "Tail-Back",
+    "Head_Front": "Head-Front",
+    "Head_Back": "Head-Back",
+    "Body_Front": "Body-Front",
+    "Body_Back": "Body-Back",
+    "LeftHand_Front": "Hand-Front",
+    "LeftHand_Back": "Hand-Back",
+    "RightHand_Front": "Hand-Front",
+    "RightHand_Back": "Hand-Back",
+    "LeftFoot_Front": "Legs-Front",
+    "LeftFoot_Back": "Legs-Back",
+    "RightFoot_Front": "Legs-Front",
+    "RightFoot_Back": "Legs-Back",
+    "Tail_Front": "Tail-Front",
+    "Tail_Back": "Tail-Back",
 }
 
 function useKonvaTexture(stageRef: React.RefObject<Konva.Stage | null>, event: any): CanvasTexture {
@@ -59,7 +65,7 @@ function useKonvaTexture(stageRef: React.RefObject<Konva.Stage | null>, event: a
 
 function Avatar({textures}: {textures: Record<string, Texture>}) {
     const group = useRef<Group>(null);
-    const { nodes, scene, animations } = useGLTF('/avatar.glb');
+    const { nodes, scene, animations } = useGLTF('/RESO_Pera.glb');
     const mixer = useRef<AnimationMixer>(null);
 
 
@@ -93,7 +99,8 @@ function Avatar({textures}: {textures: Record<string, Texture>}) {
     });
 
     return <primitive 
-        position={[1, 0, 0]}
+        position={[-1, 0, 0]}
+        scale={[0.01, 0.01, 0.01]}
     ref={group} object={scene} />;
 }
 
@@ -112,8 +119,9 @@ function App() {
     const [strokes, setStrokes] = useState<stroke[]>([]);
     const isDrawing = useRef(false);
 
-    const [color, setColor] = useState('#FFFFFF');
+    const [color, setColor] = useState('#2e7eff');
     const [width, setWidth] = useState(5);
+    const [widthAnchor, setWidthAnchor] = useState<HTMLButtonElement | null>(null);
 
     const [textures, setTextures] = useState<Record<string, Texture>>({});
     const [editing, setEditing] = useState<TextureKind | null>(null);
@@ -121,6 +129,8 @@ function App() {
     const editingTex = useKonvaTexture(stageRef, editing);
 
     const [oldTexture, setOldTexture] = useState<Texture | null>(null);
+
+    const colorInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         (async () => {
@@ -228,6 +238,7 @@ function App() {
                 padding: '10px',
                 overflowX: 'hidden',
                 overflowY: 'auto',
+                alignItems: 'stretch',
             }}
         >
 
@@ -235,108 +246,243 @@ function App() {
 
             <h2>Edit Texture: {editing}</h2>
 
-            <select
-                value={tool}
-                onChange={(e) => {
-                setTool(e.target.value);
-                }}
+            <Box
+                display="flex"
+                alignItems="center"
+                marginBottom="10px"
             >
-                <option value="brush">Brush</option>
-                <option value="eraser">Eraser</option>
-            </select>
-
-            <input
-                type="color"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                style={{ marginLeft: '10px' }}
-            />
-
-            <input
-                type="number"
-                value={width}
-                onChange={(e) => setWidth(Number(e.target.value))}
-                style={{ marginLeft: '10px', width: '60px' }}
-            />
-
-            <Stage
-                ref={stageRef}
-                width={400}
-                height={400}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onTouchStart={handleMouseDown}
-                onTouchMove={handleMouseMove}
-                onTouchEnd={handleMouseUp}
-            >
-                <Layer>
-
-                    {oldTexture && (
-                        <Rect
-                            x={0}
-                            y={0}
-                            width={400}
-                            height={400}
-                            fillPatternImage={oldTexture.image as HTMLImageElement}
-                            fillPatternRepeat="no-repeat"
-                            fillPatternScaleX={400 / oldTexture.image.width}
-                            fillPatternScaleY={400 / oldTexture.image.height}
-                            fillPatternOffsetX={0}
-                            fillPatternOffsetY={0}
+                <Box
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="center"
+                    justifyContent="flex-end"
+                    height="400px"
+                    gap={1}
+                >
+                    <IconButton
+                        size="large"
+                        sx={{
+                            width: '50px',
+                            height: '50px',
+                            backgroundColor: tool === 'brush' ? 'primary.main' : 'text.disabled',
+                        }}
+                        onClick={() => setTool('brush')}
+                    >
+                        <BsBrushFill
+                            color="white"
                         />
-                    )}
+                    </IconButton>
+                    <IconButton
+                        size="large"
+                        sx={{
+                            width: '50px',
+                            height: '50px',
+                            backgroundColor: tool === 'eraser' ? 'primary.main' : 'text.disabled',
+                        }}
+                        onClick={() => setTool('eraser')}
+                    >
+                        <BsFillEraserFill
+                            color="white"
+                        />
+                    </IconButton>
 
-                    {strokes.map((line, i) => (
-                        <Line
-                            key={i}
-                            points={line.points}
-                            stroke={line.color}
-                            strokeWidth={line.width}
-                            tension={0.5}
-                            lineCap="round"
-                            lineJoin="round"
-                            globalCompositeOperation={
-                                line.tool === 'eraser' ? 'destination-out' : 'source-over'
+                    <IconButton
+                        size="large"
+                        sx={{
+                            width: '50px',
+                            height: '50px',
+                            backgroundColor: color
+                        }}
+                        onClick={() => {
+                            if (colorInputRef.current) {
+                                colorInputRef.current.click();
                             }
+                        }}
+                    >
+                        <BsFillPaletteFill
+                            color="white"
                         />
-                    ))}
-                </Layer>
-            </Stage>
+                        <input
+                            type="color"
+                            ref={colorInputRef}
+                            value={color}
+                            onChange={(e) => setColor(e.target.value)}
+                            style={{
+                                visibility: 'hidden',
+                                width: '0',
+                                height: '0',
+                            }}
+                        />
+                    </IconButton>
 
-            <button
-                onClick={() => {
-                    setStrokes([])
-                    setOldTexture(null)
-                }}
+                    <IconButton
+                        size="large"
+                        sx={{
+                            width: '50px',
+                            height: '50px',
+                            backgroundColor: 'primary.main',
+                        }}
+                        onClick={(e) => setWidthAnchor(e.currentTarget)}
+                    >
+                        <Typography
+                            variant="body1"
+                            sx={{ color: 'white' }}
+                        >
+                            {width}
+                        </Typography>
+                    </IconButton>
+
+                    <Popover
+                        open={Boolean(widthAnchor)}
+                        anchorEl={widthAnchor}
+                        onClose={() => setWidthAnchor(null)}
+                        anchorOrigin={{
+                            vertical: 'bottom',
+                            horizontal: 'center',
+                        }}
+                        transformOrigin={{
+                            vertical: 'top',
+                            horizontal: 'center',
+                        }}
+                        slotProps={{
+                            paper: {
+                                sx: {
+                                    padding: '10px',
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    color: 'white',
+                                    borderRadius: '10px',
+                                },
+                            },
+                        }}
+
+                    >
+                        <Slider
+                            value={width}
+                            min={1}
+                            max={50}
+                            onChange={(_e, newValue) => setWidth(newValue as number)}
+                            sx={{ width: '200px', padding: '20px' }}
+                            onChangeCommitted={() => setWidthAnchor(null)}
+                        />
+                    </Popover>
+
+                    <IconButton
+                        size="large"
+                        onClick={() => {
+                            if (strokes.length === 0) return;
+                            setStrokes(strokes.slice(0, -1));
+                        }}
+                        sx={{
+                            width: '50px',
+                            height: '50px',
+                            backgroundColor: 'primary.main',
+                        }}
+                    >
+                        <IoIosUndo
+                            color="white"
+                        />
+                    </IconButton>
+
+
+                    <IconButton
+                        size="large"
+                        onClick={() => {
+                            setStrokes([]);
+                            setOldTexture(null);
+                        }}
+                        sx={{
+                            backgroundColor: 'error.main',
+                        }}
+                    >
+                        <MdDelete
+                            color="white"
+                        />
+                    </IconButton>
+
+                </Box>
+
+                <Stage
+                    ref={stageRef}
+                    width={400}
+                    height={400}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onTouchStart={handleMouseDown}
+                    onTouchMove={handleMouseMove}
+                    onTouchEnd={handleMouseUp}
+                >
+                    <Layer>
+                        {oldTexture && (
+                            <Rect
+                                x={0}
+                                y={0}
+                                width={400}
+                                height={400}
+                                fillPatternImage={oldTexture.image as HTMLImageElement}
+                                fillPatternRepeat="no-repeat"
+                                fillPatternScaleX={400 / oldTexture.image.width}
+                                fillPatternScaleY={400 / oldTexture.image.height}
+                                fillPatternOffsetX={0}
+                                fillPatternOffsetY={0}
+                            />
+                        )}
+
+                        {strokes.map((line, i) => (
+                            <Line
+                                key={i}
+                                points={line.points}
+                                stroke={line.color}
+                                strokeWidth={line.width}
+                                tension={0.5}
+                                lineCap="round"
+                                lineJoin="round"
+                                globalCompositeOperation={
+                                    line.tool === 'eraser' ? 'destination-out' : 'source-over'
+                                }
+                            />
+                        ))}
+                    </Layer>
+                </Stage>
+            </Box>
+
+            <Box
+                display="flex"
+                gap="10px"
             >
-                全消し
-            </button>
+                <Button
+                    variant="contained"
+                >
+                    Load
+                </Button>
 
-            <button
-                onClick={() => {
-                    if (!editing) return
-                    const canvas = editingTex.image as HTMLCanvasElement;
-                    const tmp = document.createElement('canvas');
-                    tmp.width = canvas.width;
-                    tmp.height = canvas.height;
-                    const ctx = tmp.getContext('2d');
-                    if (!ctx) return;
-                    ctx.drawImage(canvas, 0, 0);
+                <Button
+                    variant="contained"
+                    onClick={() => {
+                        if (!editing) return
+                        const canvas = editingTex.image as HTMLCanvasElement;
+                        const tmp = document.createElement('canvas');
+                        tmp.width = canvas.width;
+                        tmp.height = canvas.height;
+                        const ctx = tmp.getContext('2d');
+                        if (!ctx) return;
+                        ctx.drawImage(canvas, 0, 0);
 
-                    const editedTexture = new CanvasTexture(tmp);
-                    editedTexture.flipY = false;
+                        const editedTexture = new CanvasTexture(tmp);
+                        editedTexture.flipY = false;
 
-                    setTextures((prev) => ({
-                        ...prev,
-                        [editing]: editedTexture,
-                    }));
-                    setStrokes([]);
-                    setEditing(null)
-                }}
-            >
-                Done
-            </button>
+                        setTextures((prev) => ({
+                            ...prev,
+                            [editing]: editedTexture,
+                        }));
+
+                        setStrokes([]);
+                        setEditing(null)
+                    }}
+                >
+                    Done
+                </Button>
+            </Box>
 
             </> : <>
                 <h2>Avatar Editor</h2>
