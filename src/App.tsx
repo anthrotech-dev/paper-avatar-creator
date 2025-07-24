@@ -37,7 +37,7 @@ const textureKeyMap: Record<string, TextureKind> = {
     "Tail_Back": "Tail-Back",
 }
 
-function Avatar({textures}: {textures: Record<string, Texture>}) {
+function Avatar({textures, editing}: {textures: Record<string, Texture>, editing: TextureKind | null}) {
     const group = useRef<Group>(null);
     const { nodes, scene, animations } = useGLTF('/anim@RESO_Pera_idle.glb');
     const mixer = useRef<AnimationMixer>(null);
@@ -70,8 +70,53 @@ function Avatar({textures}: {textures: Record<string, Texture>}) {
         return () => {mixer.current?.stopAllAction()};
     }, [animations]);
 
+    useEffect(() => {
+        switch (editing) {
+            case 'Head-Front':
+                // @ts-ignore
+                nodes['Head_Front'].material.map = textures['Head-Front'];
+                break;
+            case 'Eyes-Closed':
+                // @ts-ignore
+                nodes['Head_Front'].material.map = textures['Eyes-Closed'];
+                break;
+            case 'Mouth-Open':
+                // @ts-ignore
+                nodes['Head_Front'].material.map = textures['Mouth-Open'];
+                break;
+        }
+    }, [editing]);
+
+    let facial: 'Head-Front' | 'Eyes-Closed' | 'Mouth-Open' = 'Head-Front';
+    const chanceToCloseEyes = 0.004;
+    const chanceToOpenMouth = 0.002;
+    const chanceToReturnToNormal = 0.05;
     useFrame((_state, delta) => {
         mixer.current?.update(delta);
+        if (editing) return
+        if (facial === 'Head-Front') {
+            if (Math.random() < chanceToCloseEyes) {
+                facial = 'Eyes-Closed';
+                // @ts-ignore
+                nodes['Head_Front'].material.map = textures['Eyes-Closed'];
+            } else if (Math.random() < chanceToOpenMouth) {
+                facial = 'Mouth-Open';
+                // @ts-ignore
+                nodes['Head_Front'].material.map = textures['Mouth-Open'];
+            }
+        } else if (facial === 'Eyes-Closed') {
+            if (Math.random() < chanceToReturnToNormal) {
+                facial = 'Head-Front';
+                // @ts-ignore
+                nodes['Head_Front'].material.map = textures['Head-Front'];
+            }
+        } else if (facial === 'Mouth-Open') {
+            if (Math.random() < chanceToReturnToNormal) {
+                facial = 'Head-Front';
+                // @ts-ignore
+                nodes['Head_Front'].material.map = textures['Head-Front'];
+            }
+        }
     });
 
     return <primitive 
@@ -325,7 +370,6 @@ function App() {
                     for (const file of e.target.files || []) {
                         const url = URL.createObjectURL(file);
                         const name = file.name.split('.')[0];
-                        console.log(name, url);
 
                         if (!(name in textures)) {
                             continue
@@ -359,6 +403,7 @@ function App() {
             <directionalLight position={[2, 2, 2]} intensity={1} />
             <Suspense fallback={null}>
                 <Avatar
+                    editing={editing}
                     textures={textures}
                 />
             </Suspense>
@@ -655,6 +700,22 @@ function App() {
                             texture={textures['Head-Back']}
                             style={{ width: '100px', height: '100px'}}
                             onClick={() => setEditing('Head-Back')}
+                        />
+                    </div>
+                    <div>
+                        <h4>Eyes Closed</h4>
+                        <TexturePreview 
+                            texture={textures['Eyes-Closed']}
+                            style={{ width: '100px', height: '100px'}}
+                            onClick={() => setEditing('Eyes-Closed')}
+                        />
+                    </div>
+                    <div>
+                        <h4>Mouth Open</h4>
+                        <TexturePreview 
+                            texture={textures['Mouth-Open']}
+                            style={{ width: '100px', height: '100px'}}
+                            onClick={() => setEditing('Mouth-Open')}
                         />
                     </div>
                 </div>
