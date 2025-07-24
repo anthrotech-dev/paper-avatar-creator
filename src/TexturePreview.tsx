@@ -1,10 +1,11 @@
+import { Box, type SxProps } from "@mui/material"
 import { useEffect, useRef, useState } from "react"
 import { Texture } from "three"
 
 type TexturePreviewProps = {
     texture?: Texture
-    style?: React.CSSProperties
     onClick?: (e: React.MouseEvent<HTMLDivElement | HTMLImageElement>) => void
+    sx?: SxProps
 }
 
 export function TexturePreview(props: TexturePreviewProps) {
@@ -18,53 +19,50 @@ export function TexturePreview(props: TexturePreviewProps) {
 
         const img = (props.texture.image ?? props.texture.source?.data) as unknown;
 
-        // ---- HTMLImageElement → <img>
         if (img instanceof HTMLImageElement) {
             setSrc(img.currentSrc || img.src);
             return;
         }
 
-        // ---- HTMLCanvasElement → 既存 Canvas を流用
         if (img instanceof HTMLCanvasElement) {
             setSrc(undefined);
-            if (canvasRef.current && canvasRef.current !== img) {
-                img.style.width = '100%';
-                img.style.height = '100%';
-                img.style.display = 'block';
-                canvasRef.current.replaceWith(img);
-                canvasRef.current = img;
+            if (canvasRef.current) {
+                const ctx = canvasRef.current.getContext('2d');
+                if (ctx) {
+                    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+                    ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
+                }
             }
             return;
         }
 
     }, [props.texture]);
 
-    return <div
+    return <Box
         ref={wrapper}
-        style={{
-            ...props.style,
+        sx={{
+            ...props.sx,
             overflow: 'hidden',
             cursor: props.onClick ? 'pointer' : 'default',
         }}
         onClick={props.onClick}
     >
-        {src ? (
-            <img 
-                src={src}
-                alt="Texture Preview"
-                style={{ width: '100%', height: '100%' }} 
-            />
-        ) : (
-            <canvas
-                ref={canvasRef} 
-                width={wrapper.current?.clientWidth || 256}
-                height={wrapper.current?.clientHeight || 256}
-                style={{ width: '100%', height: '100%' }}
-            />
-        )}
-    </div>
-
+        {props.texture && <>
+            {src ? (
+                <img 
+                    src={src}
+                    alt="Texture Preview"
+                    style={{ width: '100%', height: '100%' }} 
+                />
+            ) : (
+                <canvas
+                    ref={canvasRef} 
+                    width={wrapper.current?.clientWidth || 256}
+                    height={wrapper.current?.clientHeight || 256}
+                    style={{ width: '100%', height: '100%' }}
+                />
+            )}
+        </>}
+    </Box>
 }
-
-
 

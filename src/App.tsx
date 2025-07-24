@@ -7,7 +7,7 @@ import { OrbitControls, useGLTF } from '@react-three/drei';
 import Konva from 'konva';
 import { Stage, Layer, Line, Rect, Circle } from 'react-konva';
 import { TexturePreview } from './TexturePreview';
-import { Box, Button, IconButton, MenuItem, Popover, Slider, Typography, Select } from '@mui/material';
+import { Box, Button, IconButton, MenuItem, Popover, Slider, Typography, Menu } from '@mui/material';
 
 import { BsFillEraserFill } from "react-icons/bs";
 import { BsBrushFill } from "react-icons/bs";
@@ -146,6 +146,7 @@ function App() {
     const [color, setColor] = useState('#2e7eff');
     const [width, setWidth] = useState(20);
     const [widthAnchor, setWidthAnchor] = useState<HTMLButtonElement | null>(null);
+    const [traceAnchor, setTraceAnchor] = useState<HTMLDivElement | null>(null);
 
     const [textures, setTextures] = useState<Record<string, Texture>>({});
     const [editing, setEditing] = useState<TextureKind | null>(null);
@@ -154,7 +155,7 @@ function App() {
 
     const [oldTexture, setOldTexture] = useState<Texture | null>(null);
 
-    const [traceTexture, setTraceTexture] = useState<Texture | null>(null);
+    const [traceTexture, setTraceTexture] = useState<Texture | undefined>(undefined);
 
     const colorInputRef = useRef<HTMLInputElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -207,7 +208,7 @@ function App() {
     }, []);
 
     useEffect(() => {
-        setTraceTexture(null);
+        setTraceTexture(undefined);
         if (!editing) return;
         if (textures[editing]) {
             setOldTexture(textures[editing].clone());
@@ -360,6 +361,31 @@ function App() {
         strokes.splice(strokes.length - 1, 1, lastLine);
         setStrokes(strokes.concat());
     };
+
+    const setTemplateToTrace = (name: string) => {
+        const loader = new TextureLoader();
+        loader.load(`/tex/${name}.png`, (texture) => {
+            texture.flipY = false;
+            texture.colorSpace = SRGBColorSpace;
+            setTraceTexture(texture);
+        });
+
+    }
+
+    const setEditingToTrace = (name: string) => {
+        const canvas = textures[name]?.image as HTMLCanvasElement;
+        const tmp = document.createElement('canvas');
+        tmp.width = canvas.width;
+        tmp.height = canvas.height;
+        const ctx = tmp.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(canvas, 0, 0);
+        const editedTexture = new CanvasTexture(tmp);
+        editedTexture.flipY = false;
+        editedTexture.colorSpace = SRGBColorSpace;
+        setTraceTexture(editedTexture);
+
+    }
 
     useEffect(() => {
         const circle = circleRef.current;
@@ -741,60 +767,68 @@ function App() {
                     </Layer>
                 </Stage>
 
-                <Select
-                    style={{ color: 'white' }}
-                    onChange={(e) => {
-                        let value: string = e.target?.value as string;
-                        if (value === 'none') {
-                            setTraceTexture(null);
-                        } else {
-                            if (value.startsWith('Template-')) {
-                                value = value.replace('Template-', '');
-                                const loader = new TextureLoader();
-                                loader.load(`/tex/${value}.png`, (texture) => {
-                                    texture.flipY = false;
-                                    texture.colorSpace = SRGBColorSpace;
-                                    setTraceTexture(texture);
-                                });
-                            } else {
-                                const tex = textures[value as TextureKind];
-                                if (!tex) {
-                                    console.warn(`No texture found for ${value}`);
-                                    return;
-                                }
-                                setTraceTexture(tex.clone());
-                            }
-                        }
-                    }}
+                <Box
+                    display="flex"
+                    flexDirection="column"
+                    height="400px"
+                    justifyContent="flex-end"
                 >
-                    <MenuItem value="none">none</MenuItem>
-                    <MenuItem value="Head-Front">Head Front</MenuItem>
-                    <MenuItem value="Head-Back">Head Back</MenuItem>
-                    <MenuItem value="Eyes-Closed">Eyes Closed</MenuItem>
-                    <MenuItem value="Mouth-Open">Mouth Open</MenuItem>
-                    <MenuItem value="Body-Front">Body Front</MenuItem>
-                    <MenuItem value="Body-Back">Body Back</MenuItem>
-                    <MenuItem value="Hand-Front">Hand Front</MenuItem>
-                    <MenuItem value="Hand-Back">Hand Back</MenuItem>
-                    <MenuItem value="Legs-Front">Legs Front</MenuItem>
-                    <MenuItem value="Legs-Back">Legs Back</MenuItem>
-                    <MenuItem value="Tail-Front">Tail Front</MenuItem>
-                    <MenuItem value="Tail-Back">Tail Back</MenuItem>
+                    <TexturePreview
+                        texture={traceTexture}
+                        sx={{
+                            width: '80px',
+                            height: '80px',
+                            cursor: 'pointer',
+                            border: '1px dashed white',
+                            borderRadius: '5px',
+                        }}
+                        onClick={(e) => {
+                            setTraceAnchor(e.currentTarget);
+                        }}
+                    />
 
-                    <MenuItem value="Template-Head-Front">Head Front (Template)</MenuItem>
-                    <MenuItem value="Template-Head-Back">Head Back (Template)</MenuItem>
-                    <MenuItem value="Template-Eyes-Closed">Eyes Closed (Template)</MenuItem>
-                    <MenuItem value="Template-Mouth-Open">Mouth Open (Template)</MenuItem>
-                    <MenuItem value="Template-Body-Front">Body Front (Template)</MenuItem>
-                    <MenuItem value="Template-Body-Back">Body Back (Template)</MenuItem>
-                    <MenuItem value="Template-Hand-Front">Hand Front (Template)</MenuItem>
-                    <MenuItem value="Template-Hand-Back">Hand Back (Template)</MenuItem>
-                    <MenuItem value="Template-Legs-Front">Legs Front (Template)</MenuItem>
-                    <MenuItem value="Template-Legs-Back">Legs Back (Template)</MenuItem>
-                    <MenuItem value="Template-Tail-Front">Tail Front (Template)</MenuItem>
-                    <MenuItem value="Template-Tail-Back">Tail Back (Template)</MenuItem>
+                    <Menu
+                        anchorEl={traceAnchor}
+                        open={Boolean(traceAnchor)}
+                        onClose={() => setTraceAnchor(null)}
+                        style={{ color: 'white' }}
+                        slotProps={{
+                            paper: {
+                                style: {
+                                    maxHeight: '400px',
+                                }
+                            }
+                        }}
+                    >
+                        <MenuItem onClick={() => setTraceTexture(undefined)}>None</MenuItem>
 
-                </Select>
+                        <MenuItem onClick={() => setEditingToTrace('Head-Front')}>Head Front</MenuItem>
+                        <MenuItem onClick={() => setEditingToTrace('Head-Back')}>Head Back</MenuItem>
+                        <MenuItem onClick={() => setEditingToTrace('Eyes-Closed')}>Eyes Closed</MenuItem>
+                        <MenuItem onClick={() => setEditingToTrace('Mouth-Open')}>Mouth Open</MenuItem>
+                        <MenuItem onClick={() => setEditingToTrace('Body-Front')}>Body Front</MenuItem>
+                        <MenuItem onClick={() => setEditingToTrace('Body-Back')}>Body Back</MenuItem>
+                        <MenuItem onClick={() => setEditingToTrace('Hand-Front')}>Hand Front</MenuItem>
+                        <MenuItem onClick={() => setEditingToTrace('Hand-Back')}>Hand Back</MenuItem>
+                        <MenuItem onClick={() => setEditingToTrace('Legs-Front')}>Legs Front</MenuItem>
+                        <MenuItem onClick={() => setEditingToTrace('Legs-Back')}>Legs Back</MenuItem>
+                        <MenuItem onClick={() => setEditingToTrace('Tail-Front')}>Tail Front</MenuItem>
+                        <MenuItem onClick={() => setEditingToTrace('Tail-Back')}>Tail Back</MenuItem>
+
+                        <MenuItem onClick={() => setTemplateToTrace('Head-Front')}>Head Front (Template)</MenuItem>
+                        <MenuItem onClick={() => setTemplateToTrace('Head-Back')}>Head Back (Template)</MenuItem>
+                        <MenuItem onClick={() => setTemplateToTrace('Eyes-Closed')}>Eyes Closed (Template)</MenuItem>
+                        <MenuItem onClick={() => setTemplateToTrace('Mouth-Open')}>Mouth Open (Template)</MenuItem>
+                        <MenuItem onClick={() => setTemplateToTrace('Body-Front')}>Body Front (Template)</MenuItem>
+                        <MenuItem onClick={() => setTemplateToTrace('Body-Back')}>Body Back (Template)</MenuItem>
+                        <MenuItem onClick={() => setTemplateToTrace('Hand-Front')}>Hand Front (Template)</MenuItem>
+                        <MenuItem onClick={() => setTemplateToTrace('Hand-Back')}>Hand Back (Template)</MenuItem>
+                        <MenuItem onClick={() => setTemplateToTrace('Legs-Front')}>Legs Front (Template)</MenuItem>
+                        <MenuItem onClick={() => setTemplateToTrace('Legs-Back')}>Legs Back (Template)</MenuItem>
+                        <MenuItem onClick={() => setTemplateToTrace('Tail-Front')}>Tail Front (Template)</MenuItem>
+                        <MenuItem onClick={() => setTemplateToTrace('Tail-Back')}>Tail Back (Template)</MenuItem>
+                    </Menu>
+                </Box>
 
             </Box>
 
@@ -856,7 +890,7 @@ function App() {
                         <h4>Front</h4>
                         <TexturePreview 
                             texture={textures['Head-Front']}
-                            style={{ width: '100px', height: '100px'}}
+                            sx={{ width: '100px', height: '100px'}}
                             onClick={() => setEditing('Head-Front')}
                         />
                     </div>
@@ -864,7 +898,7 @@ function App() {
                         <h4>Back</h4>
                         <TexturePreview 
                             texture={textures['Head-Back']}
-                            style={{ width: '100px', height: '100px'}}
+                            sx={{ width: '100px', height: '100px'}}
                             onClick={() => setEditing('Head-Back')}
                         />
                     </div>
@@ -872,7 +906,7 @@ function App() {
                         <h4>Eyes Closed</h4>
                         <TexturePreview 
                             texture={textures['Eyes-Closed']}
-                            style={{ width: '100px', height: '100px'}}
+                            sx={{ width: '100px', height: '100px'}}
                             onClick={() => setEditing('Eyes-Closed')}
                         />
                     </div>
@@ -880,7 +914,7 @@ function App() {
                         <h4>Mouth Open</h4>
                         <TexturePreview 
                             texture={textures['Mouth-Open']}
-                            style={{ width: '100px', height: '100px'}}
+                            sx={{ width: '100px', height: '100px'}}
                             onClick={() => setEditing('Mouth-Open')}
                         />
                     </div>
@@ -897,7 +931,7 @@ function App() {
                         <h4>Front</h4>
                         <TexturePreview 
                             texture={textures['Body-Front']}
-                            style={{ width: '100px', height: '100px'}}
+                            sx={{ width: '100px', height: '100px'}}
                             onClick={() => setEditing('Body-Front')}
                         />
                     </div>
@@ -905,7 +939,7 @@ function App() {
                         <h4>Back</h4>
                         <TexturePreview 
                             texture={textures['Body-Back']}
-                            style={{ width: '100px', height: '100px'}}
+                            sx={{ width: '100px', height: '100px'}}
                             onClick={() => setEditing('Body-Back')}
                         />
                     </div>
@@ -922,7 +956,7 @@ function App() {
                         <h4>Front</h4>
                         <TexturePreview 
                             texture={textures['Hand-Front']}
-                            style={{ width: '100px', height: '100px'}}
+                            sx={{ width: '100px', height: '100px'}}
                             onClick={() => setEditing('Hand-Front')}
                         />
                     </div>
@@ -930,7 +964,7 @@ function App() {
                         <h4>Back</h4>
                         <TexturePreview 
                             texture={textures['Hand-Back']}
-                            style={{ width: '100px', height: '100px'}}
+                            sx={{ width: '100px', height: '100px'}}
                             onClick={() => setEditing('Hand-Back')}
                         />
                     </div>
@@ -947,7 +981,7 @@ function App() {
                         <h4>Front</h4>
                         <TexturePreview 
                             texture={textures['Legs-Front']}
-                            style={{ width: '100px', height: '100px'}}
+                            sx={{ width: '100px', height: '100px'}}
                             onClick={() => setEditing('Legs-Front')}
                         />
                     </div>
@@ -955,7 +989,7 @@ function App() {
                         <h4>Back</h4>
                         <TexturePreview 
                             texture={textures['Legs-Back']}
-                            style={{ width: '100px', height: '100px'}}
+                            sx={{ width: '100px', height: '100px'}}
                             onClick={() => setEditing('Legs-Back')}
                         />
                     </div>
@@ -972,7 +1006,7 @@ function App() {
                         <h4>Front</h4>
                         <TexturePreview 
                             texture={textures['Tail-Front']}
-                            style={{ width: '100px', height: '100px'}}
+                            sx={{ width: '100px', height: '100px'}}
                             onClick={() => setEditing('Tail-Front')}
                         />
                     </div>
@@ -980,7 +1014,7 @@ function App() {
                         <h4>Back</h4>
                         <TexturePreview 
                             texture={textures['Tail-Back']}
-                            style={{ width: '100px', height: '100px'}}
+                            sx={{ width: '100px', height: '100px'}}
                             onClick={() => setEditing('Tail-Back')}
                         />
                     </div>
