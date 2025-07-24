@@ -1,7 +1,9 @@
 
+import { BSON } from 'bson';
 import Konva from 'konva';
 import { useEffect, useState } from 'react';
 import { CanvasTexture, Texture, SRGBColorSpace } from 'three';
+import brotliPromise from 'brotli-wasm'
 
 export async function textureToPng(texture: Texture): Promise<{ blob: Blob; w: number; h: number }> {
   const img = (texture.image ?? texture.source?.data) as
@@ -79,5 +81,33 @@ export function useKonvaTexture(stageRef: React.RefObject<Konva.Stage | null>, e
     }, [stageRef, tex, event]);
 
     return tex;
+}
+
+export async function sha256SumBlob(blob: Blob): Promise<string> {
+  const buf = await blob.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buf);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export async function sha256SumBuffer(buf: ArrayBuffer): Promise<string> {
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buf);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+
+export async function Compress(json: string): Promise<ArrayBuffer> {
+    const bsonData = BSON.serialize(JSON.parse(json));
+
+    const brotli = await brotliPromise;
+    const compressedData = brotli.compress(bsonData);
+
+    const compressedDataWithHeader = new Uint8Array(compressedData.byteLength + 9);
+    // add 9 bytes header
+    const header = new Uint8Array([0x46, 0x72, 0x44, 0x54, 0x00, 0x00, 0x00, 0x00, 0x03]);
+    compressedDataWithHeader.set(header, 0);
+    compressedDataWithHeader.set(new Uint8Array(compressedData), 9);
+    return compressedDataWithHeader;
 }
 

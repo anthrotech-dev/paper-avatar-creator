@@ -16,9 +16,9 @@ import { IoIosUndo } from "react-icons/io";
 import { MdDelete } from "react-icons/md";
 
 import JSZip from 'jszip';
-import { textureToPng, useKonvaTexture } from './util';
+import { Compress, sha256SumBlob, sha256SumBuffer, textureToPng, useKonvaTexture } from './util';
 
-type TextureKind = 'Head-Front' | 'Head-Back' | 'Body-Front' | 'Body-Back' | 'Hand-Front' | 'Hand-Back' | 'Legs-Front' | 'Legs-Back' | 'Tail-Front' | 'Tail-Back';
+type TextureKind = 'Head-Front' | 'Head-Back' | 'Eyes-Closed' | 'Mouth-Open' | 'Body-Front' | 'Body-Back' | 'Hand-Front' | 'Hand-Back' | 'Legs-Front' | 'Legs-Back' | 'Tail-Front' | 'Tail-Back';
 
 const textureKeyMap: Record<string, TextureKind> = {
     "Head_Front": "Head-Front",
@@ -115,6 +115,8 @@ function App() {
             const textures: Record<TextureKind, Texture> = {
                 "Head-Front": await loader.loadAsync('/tex/Head-Front.png'),
                 "Head-Back":  await loader.loadAsync('/tex/Head-Back.png'),
+                "Eyes-Closed": await loader.loadAsync('/tex/Eyes-Closed.png'),
+                "Mouth-Open":  await loader.loadAsync('/tex/Mouth-Open.png'),
                 "Body-Front": await loader.loadAsync('/tex/Body-Front.png'),
                 "Body-Back":  await loader.loadAsync('/tex/Body-Back.png'),
                 "Hand-Front": await loader.loadAsync('/tex/Hand-Front.png'),
@@ -160,6 +162,105 @@ function App() {
         const a = document.createElement('a');
         a.href = url;
         a.download = 'avatar-textures.zip';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    const handleResoniteExport = async () => {
+
+        const assets: Array<any> = []
+
+        const zip = new JSZip();
+
+        for (const key in textures) {
+            const texture = textures[key];
+            if (!texture) continue;
+
+            const { blob } = await textureToPng(texture);
+            const hash = await sha256SumBlob(blob);
+
+            zip.file(`Assets/${hash}`, blob);
+            assets.push({
+                "part": key,
+                "hash": hash,
+                "bytes": blob.size,
+            })
+        }
+
+        let slots = await fetch('/package/slots.json').then(res => res.text());
+        for (const elem of assets) {
+            slots = slots.replace(`[::${elem.part}::]`, elem.hash);
+        }
+        const slotsBin = await Compress(slots)
+        const slotsHash = await sha256SumBuffer(slotsBin);
+
+        zip.file(`Assets/${slotsHash}`, slotsBin);
+
+        const catalog = {
+            "id": "R-Main",
+            "ownerId": "4cyqxejyao5zsogdkyq3oxz4b69yqph1shibhng76u1acyibhksy",
+            "assetUri": "packdb:///" + slotsHash,
+            "version": {
+                "globalVersion": 0,
+                "localVersion": 0,
+                "lastModifyingUserId": null,
+                "lastModifyingMachineId": null
+            },
+            "name": "Avatar",
+            "description": null,
+            "recordType": "object",
+            "ownerName": null,
+            "tags": null,
+            "path": null,
+            "thumbnailUri": null,
+            "lastModificationTime": "2025-07-23T06:29:57.8443856Z",
+            "creationTime": "2025-07-23T06:29:57.8443856Z",
+            "firstPublishTime": null,
+            "isDeleted": false,
+            "isPublic": false,
+            "isForPatrons": false,
+            "isListed": false,
+            "isReadOnly": false,
+            "visits": 0,
+            "rating": 0,
+            "randomOrder": 0,
+            "submissions": null,
+            "assetManifest": [
+                {
+                    "hash": "41ccec83c150c98d061ad6245e0aa866b08ba2237f0087f6e21a0d3deb2cec19",
+                    "bytes": 117
+                },
+                {
+                    "hash": "aedca4d3da09eaaa3ef2621025e3fd713019395ec4f0c0ea1d09af5146e8f787",
+                    "bytes": 126710
+                },
+                ...(assets.map((asset) => ({
+                    "hash": asset.hash,
+                    "bytes": asset.bytes
+                })))
+            ],
+            "migrationMetadata": null
+        }
+
+        const catalogStr = JSON.stringify(catalog);
+        zip.file('R-Main.record', catalogStr);
+
+        zip.file(
+            'Assets/41ccec83c150c98d061ad6245e0aa866b08ba2237f0087f6e21a0d3deb2cec19',
+            await fetch('/package/41ccec83c150c98d061ad6245e0aa866b08ba2237f0087f6e21a0d3deb2cec19').then(res => res.blob())
+        )
+        zip.file(
+            'Assets/aedca4d3da09eaaa3ef2621025e3fd713019395ec4f0c0ea1d09af5146e8f787',
+            await fetch('/package/aedca4d3da09eaaa3ef2621025e3fd713019395ec4f0c0ea1d09af5146e8f787').then(res => res.blob())
+        )
+
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'avatar.resonitepackage';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -681,6 +782,14 @@ function App() {
                         }}
                     >
                         Export
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={() => {
+                            handleResoniteExport();
+                        }}
+                    >
+                        Export Resonite
                     </Button>
                 </Box>
             </>}
