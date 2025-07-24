@@ -247,14 +247,11 @@ function App() {
         const catalogStr = JSON.stringify(catalog);
         zip.file('R-Main.record', catalogStr);
 
-        zip.file(
-            'Assets/41ccec83c150c98d061ad6245e0aa866b08ba2237f0087f6e21a0d3deb2cec19',
-            await fetch('/package/41ccec83c150c98d061ad6245e0aa866b08ba2237f0087f6e21a0d3deb2cec19').then(res => res.blob())
-        )
-        zip.file(
-            'Assets/aedca4d3da09eaaa3ef2621025e3fd713019395ec4f0c0ea1d09af5146e8f787',
-            await fetch('/package/aedca4d3da09eaaa3ef2621025e3fd713019395ec4f0c0ea1d09af5146e8f787').then(res => res.blob())
-        )
+        await fetch('/package/41ccec83c150c98d061ad6245e0aa866b08ba2237f0087f6e21a0d3deb2cec19').then(res => res.blob())
+        .then(blob => zip.file('Assets/41ccec83c150c98d061ad6245e0aa866b08ba2237f0087f6e21a0d3deb2cec19', blob));
+
+        await fetch('/package/aedca4d3da09eaaa3ef2621025e3fd713019395ec4f0c0ea1d09af5146e8f787').then(res => res.blob())
+        .then(blob => zip.file('Assets/aedca4d3da09eaaa3ef2621025e3fd713019395ec4f0c0ea1d09af5146e8f787', blob));
 
         const zipBlob = await zip.generateAsync({ type: 'blob' });
         const url = URL.createObjectURL(zipBlob);
