@@ -7,7 +7,7 @@ import { OrbitControls, useGLTF } from '@react-three/drei';
 import Konva from 'konva';
 import { Stage, Layer, Line, Rect, Circle } from 'react-konva';
 import { TexturePreview } from './TexturePreview';
-import { Box, Button, IconButton, Popover, Slider, Typography } from '@mui/material';
+import { Box, Button, IconButton, MenuItem, Popover, Slider, Typography, Select } from '@mui/material';
 
 import { BsFillEraserFill } from "react-icons/bs";
 import { BsBrushFill } from "react-icons/bs";
@@ -154,6 +154,8 @@ function App() {
 
     const [oldTexture, setOldTexture] = useState<Texture | null>(null);
 
+    const [traceTexture, setTraceTexture] = useState<Texture | null>(null);
+
     const colorInputRef = useRef<HTMLInputElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -205,6 +207,7 @@ function App() {
     }, []);
 
     useEffect(() => {
+        setTraceTexture(null);
         if (!editing) return;
         if (textures[editing]) {
             setOldTexture(textures[editing].clone());
@@ -378,7 +381,6 @@ function App() {
 
         const updateCircle = () => {
             const p = stage.getPointerPosition();
-            console.log(p)
             if (!p) {
                 // ステージ外なら隠す
                 circle.visible(false);
@@ -677,6 +679,23 @@ function App() {
                     onTouchEnd={handleMouseUp}
                     style={{ cursor: 'none', border: '1px solid #ccc' }}
                 >
+                    {traceTexture &&
+                    <Layer>
+                        <Rect
+                            x={0}
+                            y={0}
+                            width={400}
+                            height={400}
+                            fillPatternImage={traceTexture.image as HTMLImageElement}
+                            fillPatternRepeat="no-repeat"
+                            fillPatternScaleX={400 / traceTexture.image.width}
+                            fillPatternScaleY={400 / traceTexture.image.height}
+                            fillPatternOffsetX={0}
+                            fillPatternOffsetY={0}
+                            opacity={0.3}
+                        />
+                    </Layer>
+                    }
                     <Layer
                         ref={drawingLayerRef}
                     >
@@ -721,6 +740,62 @@ function App() {
                         />
                     </Layer>
                 </Stage>
+
+                <Select
+                    style={{ color: 'white' }}
+                    onChange={(e) => {
+                        let value: string = e.target?.value as string;
+                        if (value === 'none') {
+                            setTraceTexture(null);
+                        } else {
+                            if (value.startsWith('Template-')) {
+                                value = value.replace('Template-', '');
+                                const loader = new TextureLoader();
+                                loader.load(`/tex/${value}.png`, (texture) => {
+                                    texture.flipY = false;
+                                    texture.colorSpace = SRGBColorSpace;
+                                    setTraceTexture(texture);
+                                });
+                            } else {
+                                const tex = textures[value as TextureKind];
+                                if (!tex) {
+                                    console.warn(`No texture found for ${value}`);
+                                    return;
+                                }
+                                setTraceTexture(tex.clone());
+                            }
+                        }
+                    }}
+                >
+                    <MenuItem value="none">none</MenuItem>
+                    <MenuItem value="Head-Front">Head Front</MenuItem>
+                    <MenuItem value="Head-Back">Head Back</MenuItem>
+                    <MenuItem value="Eyes-Closed">Eyes Closed</MenuItem>
+                    <MenuItem value="Mouth-Open">Mouth Open</MenuItem>
+                    <MenuItem value="Body-Front">Body Front</MenuItem>
+                    <MenuItem value="Body-Back">Body Back</MenuItem>
+                    <MenuItem value="Hand-Front">Hand Front</MenuItem>
+                    <MenuItem value="Hand-Back">Hand Back</MenuItem>
+                    <MenuItem value="Legs-Front">Legs Front</MenuItem>
+                    <MenuItem value="Legs-Back">Legs Back</MenuItem>
+                    <MenuItem value="Tail-Front">Tail Front</MenuItem>
+                    <MenuItem value="Tail-Back">Tail Back</MenuItem>
+
+                    <MenuItem value="Template-Head-Front">Head Front (Template)</MenuItem>
+                    <MenuItem value="Template-Head-Back">Head Back (Template)</MenuItem>
+                    <MenuItem value="Template-Eyes-Closed">Eyes Closed (Template)</MenuItem>
+                    <MenuItem value="Template-Mouth-Open">Mouth Open (Template)</MenuItem>
+                    <MenuItem value="Template-Body-Front">Body Front (Template)</MenuItem>
+                    <MenuItem value="Template-Body-Back">Body Back (Template)</MenuItem>
+                    <MenuItem value="Template-Hand-Front">Hand Front (Template)</MenuItem>
+                    <MenuItem value="Template-Hand-Back">Hand Back (Template)</MenuItem>
+                    <MenuItem value="Template-Legs-Front">Legs Front (Template)</MenuItem>
+                    <MenuItem value="Template-Legs-Back">Legs Back (Template)</MenuItem>
+                    <MenuItem value="Template-Tail-Front">Tail Front (Template)</MenuItem>
+                    <MenuItem value="Template-Tail-Back">Tail Back (Template)</MenuItem>
+
+                </Select>
+
             </Box>
 
             <Box
