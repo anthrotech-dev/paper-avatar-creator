@@ -5,7 +5,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei';
 
 import Konva from 'konva';
-import { Stage, Layer, Line, Rect } from 'react-konva';
+import { Stage, Layer, Line, Rect, Circle } from 'react-konva';
 import { TexturePreview } from './TexturePreview';
 import { Box, Button, IconButton, Popover, Slider, Typography } from '@mui/material';
 
@@ -135,13 +135,15 @@ interface stroke {
 function App() {
 
     const stageRef = useRef<Konva.Stage>(null);
+    const previewLayerRef = useRef<Konva.Layer>(null);
+    const circleRef = useRef<Konva.Circle>(null);
 
     const [tool, setTool] = useState('brush');
     const [strokes, setStrokes] = useState<stroke[]>([]);
     const isDrawing = useRef(false);
 
     const [color, setColor] = useState('#2e7eff');
-    const [width, setWidth] = useState(5);
+    const [width, setWidth] = useState(20);
     const [widthAnchor, setWidthAnchor] = useState<HTMLButtonElement | null>(null);
 
     const [textures, setTextures] = useState<Record<string, Texture>>({});
@@ -354,6 +356,62 @@ function App() {
         strokes.splice(strokes.length - 1, 1, lastLine);
         setStrokes(strokes.concat());
     };
+
+    useEffect(() => {
+        const circle = circleRef.current;
+        if (!circle) return;
+        circle.radius(width / 2);
+        circle.getLayer()?.batchDraw();
+    }, [width]);
+
+    useEffect(() => {
+        const stage = stageRef.current;
+        const previewLayer = previewLayerRef.current;
+        const circle = circleRef.current;
+
+        if (!stage || !previewLayer || !circle) return;
+
+        // レイヤーはヒットテスト不要＆クリックイベントを受けない
+        previewLayer.listening(false);
+        previewLayer.hitGraphEnabled(false);
+
+        const updateCircle = () => {
+            const p = stage.getPointerPosition();
+            console.log(p)
+            if (!p) {
+                // ステージ外なら隠す
+                circle.visible(false);
+                previewLayer.batchDraw();
+                return;
+            }
+            // ステージがズーム・ドラッグしている場合も正しく表示
+            // getRelativePointerPosition(layer) を使うと簡単
+            const pos = stage.getRelativePointerPosition();
+                circle.position(pos);
+                circle.visible(true);
+                previewLayer.batchDraw();
+        };
+
+        // 描画負荷を減らすため requestAnimationFrame を挟む
+        let raf = 0;
+        const handleMove = () => {
+            if (raf) cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(updateCircle);
+        };
+
+        stage.on('mousemove touchmove', handleMove);
+        stage.on('mouseout', () => {
+            circle.visible(false);
+            previewLayer.batchDraw();
+        });
+
+        return () => {
+            stage.off('mousemove touchmove', handleMove);
+            stage.off('mouseout');
+            if (raf) cancelAnimationFrame(raf);
+        };
+    }, [editing]);
+
 
     const handleMouseUp = () => {
         isDrawing.current = false;
@@ -614,6 +672,7 @@ function App() {
                     onTouchStart={handleMouseDown}
                     onTouchMove={handleMouseMove}
                     onTouchEnd={handleMouseUp}
+                    style={{ cursor: 'none' }}
                 >
                     <Layer>
                         {oldTexture && (
@@ -645,6 +704,16 @@ function App() {
                                 }
                             />
                         ))}
+                    </Layer>
+                    <Layer ref={previewLayerRef}>
+                        <Circle
+                            ref={circleRef}
+                            radius={width / 2}
+                            dash={[2, 2]}
+                            strokeWidth={1}
+                            visible={false}
+                            stroke="gray"
+                        />
                     </Layer>
                 </Stage>
             </Box>
