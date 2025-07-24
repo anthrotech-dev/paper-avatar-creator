@@ -53,15 +53,13 @@ export async function textureToPng(texture: Texture): Promise<{ blob: Blob; w: n
 
 
 
-export function useKonvaTexture(stageRef: React.RefObject<Konva.Stage | null>, event: any): CanvasTexture {
+export function useKonvaTexture(layerRef: React.RefObject<Konva.Layer | null>, event: any): CanvasTexture {
 
     const [tex] = useState(() => new CanvasTexture(document.createElement('canvas')));
 
     useEffect(() => {
-        const stage = stageRef.current;
-        if (!stage) return;
-
-        const layer = stage.getLayers()[0];
+        const layer = layerRef.current;
+        if (!layer) return;
 
         // scene 用キャンバスを直接参照
         const canvas: HTMLCanvasElement = layer.getNativeCanvasElement();
@@ -77,8 +75,8 @@ export function useKonvaTexture(stageRef: React.RefObject<Konva.Stage | null>, e
         };
         layer.on('draw', update);
 
-        return () => {stage.off('draw', update)}
-    }, [stageRef, tex, event]);
+        return () => {layer.off('draw', update)}
+    }, [layerRef, tex, event]);
 
     return tex;
 }

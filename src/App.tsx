@@ -135,6 +135,7 @@ interface stroke {
 function App() {
 
     const stageRef = useRef<Konva.Stage>(null);
+    const drawingLayerRef = useRef<Konva.Layer>(null);
     const previewLayerRef = useRef<Konva.Layer>(null);
     const circleRef = useRef<Konva.Circle>(null);
 
@@ -149,7 +150,7 @@ function App() {
     const [textures, setTextures] = useState<Record<string, Texture>>({});
     const [editing, setEditing] = useState<TextureKind | null>(null);
 
-    const editingTex = useKonvaTexture(stageRef, editing);
+    const editingTex = useKonvaTexture(drawingLayerRef, editing);
 
     const [oldTexture, setOldTexture] = useState<Texture | null>(null);
 
@@ -417,8 +418,8 @@ function App() {
         isDrawing.current = false;
     };
 
-    return <div
-        style={{
+    return <Box
+        sx={{
             width: '100vw',
             height: '100dvh',
             position: 'relative',
@@ -488,8 +489,8 @@ function App() {
             <OrbitControls />
         </Canvas>
 
-        <div
-            style={{
+        <Box
+            sx={{
                 width: '40vw',
                 height: 'calc(100dvh - 20px)',
                 position: 'absolute',
@@ -502,7 +503,9 @@ function App() {
                 padding: '10px',
                 overflowX: 'hidden',
                 overflowY: 'auto',
-                alignItems: 'stretch',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1
             }}
         >
 
@@ -513,7 +516,7 @@ function App() {
             <Box
                 display="flex"
                 alignItems="center"
-                marginBottom="10px"
+                gap={1}
             >
                 <Box
                     display="flex"
@@ -672,9 +675,11 @@ function App() {
                     onTouchStart={handleMouseDown}
                     onTouchMove={handleMouseMove}
                     onTouchEnd={handleMouseUp}
-                    style={{ cursor: 'none' }}
+                    style={{ cursor: 'none', border: '1px solid #ccc' }}
                 >
-                    <Layer>
+                    <Layer
+                        ref={drawingLayerRef}
+                    >
                         {oldTexture && (
                             <Rect
                                 x={0}
@@ -937,8 +942,8 @@ function App() {
                     </Button>
                 </Box>
             </>}
-        </div>
-    </div>
+        </Box>
+    </Box>
 }
 
 export default App
