@@ -154,6 +154,26 @@ function App() {
     const colorInputRef = useRef<HTMLInputElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const handleUndo = () => {
+        if (strokes.length === 0) return;
+        setStrokes(strokes.slice(0, -1));
+    }
+
+    // register keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                handleUndo();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [handleUndo])
+
     useEffect(() => {
         (async () => {
             const loader = new TextureLoader();
@@ -554,10 +574,7 @@ function App() {
 
                     <IconButton
                         size="large"
-                        onClick={() => {
-                            if (strokes.length === 0) return;
-                            setStrokes(strokes.slice(0, -1));
-                        }}
+                        onClick={handleUndo}
                         sx={{
                             width: '50px',
                             height: '50px',
