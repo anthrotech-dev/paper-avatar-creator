@@ -1,183 +1,37 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
-import { Texture, Group, AnimationMixer, CanvasTexture, TextureLoader, MeshPhongMaterial, Mesh, SRGBColorSpace } from 'three';
+import { Texture, CanvasTexture, TextureLoader, SRGBColorSpace } from 'three';
 
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, useGLTF } from '@react-three/drei';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
+
+import { TexturePreview } from './TexturePreview';
+import { Box, Button } from '@mui/material';
+
+import { handleExport, handleResoniteExport } from './util';
+import { Painter } from './Painer';
 
 import Konva from 'konva';
-import { Stage, Layer, Line, Rect, Circle } from 'react-konva';
-import { TexturePreview } from './TexturePreview';
-import { Box, Button, IconButton, MenuItem, Popover, Slider, Typography, Menu } from '@mui/material';
-
-import { BsFillEraserFill } from "react-icons/bs";
-import { BsBrushFill } from "react-icons/bs";
-import { BsFillPaletteFill } from "react-icons/bs";
-import { IoIosUndo } from "react-icons/io";
-import { MdDelete } from "react-icons/md";
-
-import { handleExport, handleResoniteExport, useKonvaTexture } from './util';
-
-type TextureKind = 'Head-Front' | 'Head-Back' | 'Eyes-Closed' | 'Mouth-Open' | 'Body-Front' | 'Body-Back' | 'Hand-Front' | 'Hand-Back' | 'Legs-Front' | 'Legs-Back' | 'Tail-Front' | 'Tail-Back';
-
-const textureKeyMap: Record<string, TextureKind> = {
-    "Head_Front": "Head-Front",
-    "Head_Back": "Head-Back",
-    "Body_Front": "Body-Front",
-    "Body_Back": "Body-Back",
-    "LeftHand_Front": "Hand-Front",
-    "LeftHand_Back": "Hand-Back",
-    "RightHand_Front": "Hand-Front",
-    "RightHand_Back": "Hand-Back",
-    "LeftFoot_Front": "Legs-Front",
-    "LeftFoot_Back": "Legs-Back",
-    "RightFoot_Front": "Legs-Front",
-    "RightFoot_Back": "Legs-Back",
-    "Tail_Front": "Tail-Front",
-    "Tail_Back": "Tail-Back",
-}
-
-function Avatar({textures, editing}: {textures: Record<string, Texture>, editing: TextureKind | null}) {
-    const group = useRef<Group>(null);
-    const { nodes, scene, animations } = useGLTF('/anim@RESO_Pera_idle.glb');
-    const mixer = useRef<AnimationMixer>(null);
-
-    useEffect(() => {
-        for (const key in nodes) {
-            if (textureKeyMap[key] && nodes[key].type === 'Mesh') {
-                const mesh = nodes[key] as Mesh;
-                mesh.material = new MeshPhongMaterial({
-                    color: '#FFFFFF',
-                    map: textures[textureKeyMap[key]],
-                    flatShading: true,
-                    alphaTest: 0.5,
-                });
-                mesh.material.needsUpdate = true;
-                console.log(`Set texture for ${key} to ${textureKeyMap[key]}`);
-            } else {
-                console.warn(`No texture for ${key}`);
-            }
-        }
-    }, [nodes, textures]);
-
-    useEffect(() => {
-        if (animations.length && group.current) {
-            mixer.current = new AnimationMixer(group.current);
-            animations.forEach((clip) => {
-                mixer.current?.clipAction(clip)?.play();
-            });
-        }
-        return () => {mixer.current?.stopAllAction()};
-    }, [animations]);
-
-    useEffect(() => {
-        switch (editing) {
-            case 'Head-Front':
-                // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Head-Front'];
-                break;
-            case 'Eyes-Closed':
-                // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Eyes-Closed'];
-                break;
-            case 'Mouth-Open':
-                // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Mouth-Open'];
-                break;
-        }
-    }, [editing]);
-
-    let facial: 'Head-Front' | 'Eyes-Closed' | 'Mouth-Open' = 'Head-Front';
-    const chanceToCloseEyes = 0.004;
-    const chanceToOpenMouth = 0.002;
-    const chanceToReturnToNormal = 0.05;
-    useFrame((_state, delta) => {
-        mixer.current?.update(delta);
-        if (editing) return
-        if (facial === 'Head-Front') {
-            if (Math.random() < chanceToCloseEyes) {
-                facial = 'Eyes-Closed';
-                // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Eyes-Closed'];
-            } else if (Math.random() < chanceToOpenMouth) {
-                facial = 'Mouth-Open';
-                // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Mouth-Open'];
-            }
-        } else if (facial === 'Eyes-Closed') {
-            if (Math.random() < chanceToReturnToNormal) {
-                facial = 'Head-Front';
-                // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Head-Front'];
-            }
-        } else if (facial === 'Mouth-Open') {
-            if (Math.random() < chanceToReturnToNormal) {
-                facial = 'Head-Front';
-                // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Head-Front'];
-            }
-        }
-    });
-
-    return <primitive 
-        position={[-1, 0, 0]}
-        scale={[0.01, 0.01, 0.01]}
-    ref={group} object={scene} />;
-}
-
-interface stroke {
-    tool: string;
-    points: number[];
-    color: string;
-    width: number;
-}
+import { type TextureKind } from './types';
+import { useKonvaTexture } from './useKonvaTexture';
+import { Avatar } from './Avatar';
 
 function App() {
 
-    const stageRef = useRef<Konva.Stage>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const drawingLayerRef = useRef<Konva.Layer>(null);
-    const previewLayerRef = useRef<Konva.Layer>(null);
-    const circleRef = useRef<Konva.Circle>(null);
-
-    const [tool, setTool] = useState('brush');
-    const [strokes, setStrokes] = useState<stroke[]>([]);
-    const isDrawing = useRef(false);
-
-    const [color, setColor] = useState('#2e7eff');
-    const [width, setWidth] = useState(20);
-    const [widthAnchor, setWidthAnchor] = useState<HTMLButtonElement | null>(null);
-    const [traceAnchor, setTraceAnchor] = useState<HTMLDivElement | null>(null);
-
     const [textures, setTextures] = useState<Record<string, Texture>>({});
     const [editing, setEditing] = useState<TextureKind | null>(null);
-
+    const [oldTexture, setOldTexture] = useState<Texture | null>(null);
     const editingTex = useKonvaTexture(drawingLayerRef, editing);
 
-    const [oldTexture, setOldTexture] = useState<Texture | null>(null);
-
-    const [traceTexture, setTraceTexture] = useState<Texture | undefined>(undefined);
-
-    const colorInputRef = useRef<HTMLInputElement>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const handleUndo = () => {
-        if (strokes.length === 0) return;
-        setStrokes(strokes.slice(0, -1));
+    const handleEdit = (textureKind: TextureKind) => {
+        setEditing(textureKind);
+        setOldTexture(textures[textureKind] || null);
+        setTextures((prev) => ({
+            ...prev,
+            [textureKind]: editingTex,
+        }));
     }
-
-    // register keyboard shortcuts
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                handleUndo();
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [handleUndo])
 
     useEffect(() => {
         (async () => {
@@ -206,128 +60,6 @@ function App() {
         })()
     }, []);
 
-    useEffect(() => {
-        setTraceTexture(undefined);
-        if (!editing) return;
-        if (textures[editing]) {
-            setOldTexture(textures[editing].clone());
-        }
-        setTextures((prev) => ({
-            ...prev,
-            [editing]: editingTex,
-        }))
-    }, [editing]);
-
-    const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
-        isDrawing.current = true;
-        const pos = e.target.getStage()?.getPointerPosition();
-        if (!pos) return;
-        setStrokes([...strokes, { tool, points: [pos.x, pos.y], color, width }]);
-    };
-
-    const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
-        // no drawing - skipping
-        if (!isDrawing.current) {
-        return;
-        }
-        const stage = e.target.getStage();
-        const point = stage?.getPointerPosition();
-        if (!point) return;
-        
-        // To draw line
-        let lastLine = strokes[strokes.length - 1];
-        // add point
-        lastLine.points = lastLine.points.concat([point.x, point.y]);
-
-        // replace last
-        strokes.splice(strokes.length - 1, 1, lastLine);
-        setStrokes(strokes.concat());
-    };
-
-    const setTemplateToTrace = (name: string) => {
-        const loader = new TextureLoader();
-        loader.load(`/tex/${name}.png`, (texture) => {
-            texture.flipY = false;
-            texture.colorSpace = SRGBColorSpace;
-            setTraceTexture(texture);
-        });
-
-    }
-
-    const setEditingToTrace = (name: string) => {
-        const canvas = textures[name]?.image as HTMLCanvasElement;
-        const tmp = document.createElement('canvas');
-        tmp.width = canvas.width;
-        tmp.height = canvas.height;
-        const ctx = tmp.getContext('2d');
-        if (!ctx) return;
-        ctx.drawImage(canvas, 0, 0);
-        const editedTexture = new CanvasTexture(tmp);
-        editedTexture.flipY = false;
-        editedTexture.colorSpace = SRGBColorSpace;
-        setTraceTexture(editedTexture);
-
-    }
-
-    useEffect(() => {
-        const circle = circleRef.current;
-        if (!circle) return;
-        circle.radius(width / 2);
-        circle.getLayer()?.batchDraw();
-    }, [width]);
-
-    useEffect(() => {
-        const stage = stageRef.current;
-        const previewLayer = previewLayerRef.current;
-        const circle = circleRef.current;
-
-        if (!stage || !previewLayer || !circle) return;
-
-        // レイヤーはヒットテスト不要＆クリックイベントを受けない
-        previewLayer.listening(false);
-        previewLayer.hitGraphEnabled(false);
-
-        const updateCircle = () => {
-            const p = stage.getPointerPosition();
-            if (!p) {
-                // ステージ外なら隠す
-                circle.visible(false);
-                previewLayer.batchDraw();
-                return;
-            }
-            // ステージがズーム・ドラッグしている場合も正しく表示
-            // getRelativePointerPosition(layer) を使うと簡単
-            const pos = stage.getRelativePointerPosition();
-                circle.position(pos);
-                circle.visible(true);
-                previewLayer.batchDraw();
-        };
-
-        // 描画負荷を減らすため requestAnimationFrame を挟む
-        let raf = 0;
-        const handleMove = () => {
-            if (raf) cancelAnimationFrame(raf);
-            raf = requestAnimationFrame(updateCircle);
-        };
-
-        stage.on('mousemove touchmove', handleMove);
-        stage.on('mouseout', () => {
-            circle.visible(false);
-            previewLayer.batchDraw();
-        });
-
-        return () => {
-            stage.off('mousemove touchmove', handleMove);
-            stage.off('mouseout');
-            if (raf) cancelAnimationFrame(raf);
-        };
-    }, [editing]);
-
-
-    const handleMouseUp = () => {
-        isDrawing.current = false;
-    };
-
     return <Box
         sx={{
             width: '100vw',
@@ -335,45 +67,30 @@ function App() {
             position: 'relative',
         }}
     >
-
         <input
             type="file"
             accept="image/*"
             ref={fileInputRef}
             style={{ display: 'none' }}
-            multiple={!editing}
+            multiple={true}
             onChange={(e) => {
-                if (editing) {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-
+                for (const file of e.target.files || []) {
                     const url = URL.createObjectURL(file);
-                    const loader = new TextureLoader();
+                    const name = file.name.split('.')[0];
 
+                    if (!(name in textures)) {
+                        continue
+                    }
+
+                    const loader = new TextureLoader();
                     loader.load(url, (texture) => {
                         texture.flipY = false;
                         texture.colorSpace = SRGBColorSpace;
-                        setOldTexture(texture);
+                        setTextures((prev) => ({
+                            ...prev,
+                            [name]: texture,
+                        }));
                     });
-                } else {
-                    for (const file of e.target.files || []) {
-                        const url = URL.createObjectURL(file);
-                        const name = file.name.split('.')[0];
-
-                        if (!(name in textures)) {
-                            continue
-                        }
-
-                        const loader = new TextureLoader();
-                        loader.load(url, (texture) => {
-                            texture.flipY = false;
-                            texture.colorSpace = SRGBColorSpace;
-                            setTextures((prev) => ({
-                                ...prev,
-                                [name]: texture,
-                            }));
-                        });
-                    }
                 }
             }}
         />
@@ -423,296 +140,11 @@ function App() {
 
             <h2>Edit Texture: {editing}</h2>
 
-            <Box
-                display="flex"
-                alignItems="center"
-                gap={1}
-            >
-                <Box
-                    display="flex"
-                    flexDirection="column"
-                    alignItems="center"
-                    justifyContent="flex-end"
-                    height="400px"
-                    gap={1}
-                >
-                    <IconButton
-                        size="large"
-                        sx={{
-                            width: '50px',
-                            height: '50px',
-                            backgroundColor: tool === 'brush' ? 'primary.main' : 'text.disabled',
-                        }}
-                        onClick={() => setTool('brush')}
-                    >
-                        <BsBrushFill
-                            color="white"
-                        />
-                    </IconButton>
-                    <IconButton
-                        size="large"
-                        sx={{
-                            width: '50px',
-                            height: '50px',
-                            backgroundColor: tool === 'eraser' ? 'primary.main' : 'text.disabled',
-                        }}
-                        onClick={() => setTool('eraser')}
-                    >
-                        <BsFillEraserFill
-                            color="white"
-                        />
-                    </IconButton>
-
-                    <IconButton
-                        size="large"
-                        sx={{
-                            width: '50px',
-                            height: '50px',
-                            backgroundColor: color
-                        }}
-                        onClick={() => {
-                            if (colorInputRef.current) {
-                                colorInputRef.current.click();
-                            }
-                        }}
-                    >
-                        <BsFillPaletteFill
-                            color="white"
-                        />
-                        <input
-                            type="color"
-                            ref={colorInputRef}
-                            value={color}
-                            onChange={(e) => setColor(e.target.value)}
-                            style={{
-                                visibility: 'hidden',
-                                width: '0',
-                                height: '0',
-                            }}
-                        />
-                    </IconButton>
-
-                    <IconButton
-                        size="large"
-                        sx={{
-                            width: '50px',
-                            height: '50px',
-                            backgroundColor: 'primary.main',
-                        }}
-                        onClick={(e) => setWidthAnchor(e.currentTarget)}
-                    >
-                        <Typography
-                            variant="body1"
-                            sx={{ color: 'white' }}
-                        >
-                            {width}
-                        </Typography>
-                    </IconButton>
-
-                    <Popover
-                        open={Boolean(widthAnchor)}
-                        anchorEl={widthAnchor}
-                        onClose={() => setWidthAnchor(null)}
-                        anchorOrigin={{
-                            vertical: 'bottom',
-                            horizontal: 'center',
-                        }}
-                        transformOrigin={{
-                            vertical: 'top',
-                            horizontal: 'center',
-                        }}
-                        slotProps={{
-                            paper: {
-                                sx: {
-                                    padding: '10px',
-                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                    color: 'white',
-                                    borderRadius: '10px',
-                                },
-                            },
-                        }}
-
-                    >
-                        <Slider
-                            value={width}
-                            min={1}
-                            max={50}
-                            onChange={(_e, newValue) => setWidth(newValue as number)}
-                            sx={{ width: '200px', padding: '20px' }}
-                            onChangeCommitted={() => setWidthAnchor(null)}
-                        />
-                    </Popover>
-
-                    <IconButton
-                        size="large"
-                        onClick={handleUndo}
-                        sx={{
-                            width: '50px',
-                            height: '50px',
-                            backgroundColor: 'primary.main',
-                        }}
-                    >
-                        <IoIosUndo
-                            color="white"
-                        />
-                    </IconButton>
-
-
-                    <IconButton
-                        size="large"
-                        onClick={() => {
-                            setStrokes([]);
-                            setOldTexture(null);
-                        }}
-                        sx={{
-                            backgroundColor: 'error.main',
-                        }}
-                    >
-                        <MdDelete
-                            color="white"
-                        />
-                    </IconButton>
-
-                </Box>
-
-                <Stage
-                    ref={stageRef}
-                    width={400}
-                    height={400}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onTouchStart={handleMouseDown}
-                    onTouchMove={handleMouseMove}
-                    onTouchEnd={handleMouseUp}
-                    style={{ cursor: 'none', border: '1px solid #ccc' }}
-                >
-                    {traceTexture &&
-                    <Layer>
-                        <Rect
-                            x={0}
-                            y={0}
-                            width={400}
-                            height={400}
-                            fillPatternImage={traceTexture.image as HTMLImageElement}
-                            fillPatternRepeat="no-repeat"
-                            fillPatternScaleX={400 / traceTexture.image.width}
-                            fillPatternScaleY={400 / traceTexture.image.height}
-                            fillPatternOffsetX={0}
-                            fillPatternOffsetY={0}
-                            opacity={0.3}
-                        />
-                    </Layer>
-                    }
-                    <Layer
-                        ref={drawingLayerRef}
-                    >
-                        {oldTexture && (
-                            <Rect
-                                x={0}
-                                y={0}
-                                width={400}
-                                height={400}
-                                fillPatternImage={oldTexture.image as HTMLImageElement}
-                                fillPatternRepeat="no-repeat"
-                                fillPatternScaleX={400 / oldTexture.image.width}
-                                fillPatternScaleY={400 / oldTexture.image.height}
-                                fillPatternOffsetX={0}
-                                fillPatternOffsetY={0}
-                            />
-                        )}
-
-                        {strokes.map((line, i) => (
-                            <Line
-                                key={i}
-                                points={line.points}
-                                stroke={line.color}
-                                strokeWidth={line.width}
-                                tension={0.5}
-                                lineCap="round"
-                                lineJoin="round"
-                                globalCompositeOperation={
-                                    line.tool === 'eraser' ? 'destination-out' : 'source-over'
-                                }
-                            />
-                        ))}
-                    </Layer>
-                    <Layer ref={previewLayerRef}>
-                        <Circle
-                            ref={circleRef}
-                            radius={width / 2}
-                            dash={[2, 2]}
-                            strokeWidth={1}
-                            visible={false}
-                            stroke="gray"
-                        />
-                    </Layer>
-                </Stage>
-
-                <Box
-                    display="flex"
-                    flexDirection="column"
-                    height="400px"
-                    justifyContent="flex-end"
-                >
-                    <TexturePreview
-                        texture={traceTexture}
-                        sx={{
-                            width: '80px',
-                            height: '80px',
-                            cursor: 'pointer',
-                            border: '1px dashed white',
-                            borderRadius: '5px',
-                        }}
-                        onClick={(e) => {
-                            setTraceAnchor(e.currentTarget);
-                        }}
-                    />
-
-                    <Menu
-                        anchorEl={traceAnchor}
-                        open={Boolean(traceAnchor)}
-                        onClose={() => setTraceAnchor(null)}
-                        style={{ color: 'white' }}
-                        slotProps={{
-                            paper: {
-                                style: {
-                                    maxHeight: '400px',
-                                }
-                            }
-                        }}
-                    >
-                        <MenuItem onClick={() => setTraceTexture(undefined)}>None</MenuItem>
-
-                        <MenuItem onClick={() => setEditingToTrace('Head-Front')}>Head Front</MenuItem>
-                        <MenuItem onClick={() => setEditingToTrace('Head-Back')}>Head Back</MenuItem>
-                        <MenuItem onClick={() => setEditingToTrace('Eyes-Closed')}>Eyes Closed</MenuItem>
-                        <MenuItem onClick={() => setEditingToTrace('Mouth-Open')}>Mouth Open</MenuItem>
-                        <MenuItem onClick={() => setEditingToTrace('Body-Front')}>Body Front</MenuItem>
-                        <MenuItem onClick={() => setEditingToTrace('Body-Back')}>Body Back</MenuItem>
-                        <MenuItem onClick={() => setEditingToTrace('Hand-Front')}>Hand Front</MenuItem>
-                        <MenuItem onClick={() => setEditingToTrace('Hand-Back')}>Hand Back</MenuItem>
-                        <MenuItem onClick={() => setEditingToTrace('Legs-Front')}>Legs Front</MenuItem>
-                        <MenuItem onClick={() => setEditingToTrace('Legs-Back')}>Legs Back</MenuItem>
-                        <MenuItem onClick={() => setEditingToTrace('Tail-Front')}>Tail Front</MenuItem>
-                        <MenuItem onClick={() => setEditingToTrace('Tail-Back')}>Tail Back</MenuItem>
-
-                        <MenuItem onClick={() => setTemplateToTrace('Head-Front')}>Head Front (Template)</MenuItem>
-                        <MenuItem onClick={() => setTemplateToTrace('Head-Back')}>Head Back (Template)</MenuItem>
-                        <MenuItem onClick={() => setTemplateToTrace('Eyes-Closed')}>Eyes Closed (Template)</MenuItem>
-                        <MenuItem onClick={() => setTemplateToTrace('Mouth-Open')}>Mouth Open (Template)</MenuItem>
-                        <MenuItem onClick={() => setTemplateToTrace('Body-Front')}>Body Front (Template)</MenuItem>
-                        <MenuItem onClick={() => setTemplateToTrace('Body-Back')}>Body Back (Template)</MenuItem>
-                        <MenuItem onClick={() => setTemplateToTrace('Hand-Front')}>Hand Front (Template)</MenuItem>
-                        <MenuItem onClick={() => setTemplateToTrace('Hand-Back')}>Hand Back (Template)</MenuItem>
-                        <MenuItem onClick={() => setTemplateToTrace('Legs-Front')}>Legs Front (Template)</MenuItem>
-                        <MenuItem onClick={() => setTemplateToTrace('Legs-Back')}>Legs Back (Template)</MenuItem>
-                        <MenuItem onClick={() => setTemplateToTrace('Tail-Front')}>Tail Front (Template)</MenuItem>
-                        <MenuItem onClick={() => setTemplateToTrace('Tail-Back')}>Tail Back (Template)</MenuItem>
-                    </Menu>
-                </Box>
-
-            </Box>
+            <Painter
+                initialTexture={oldTexture}
+                drawingLayerRef={drawingLayerRef}
+                references={textures}
+            />
 
             <Box
                 display="flex"
@@ -750,7 +182,6 @@ function App() {
                             [editing]: editedTexture,
                         }));
 
-                        setStrokes([]);
                         setEditing(null)
                     }}
                 >
@@ -773,7 +204,7 @@ function App() {
                         <TexturePreview 
                             texture={textures['Head-Front']}
                             sx={{ width: '100px', height: '100px'}}
-                            onClick={() => setEditing('Head-Front')}
+                            onClick={() => handleEdit('Head-Front')}
                         />
                     </div>
                     <div>
@@ -781,7 +212,7 @@ function App() {
                         <TexturePreview 
                             texture={textures['Head-Back']}
                             sx={{ width: '100px', height: '100px'}}
-                            onClick={() => setEditing('Head-Back')}
+                            onClick={() => handleEdit('Head-Back')}
                         />
                     </div>
                     <div>
@@ -789,7 +220,7 @@ function App() {
                         <TexturePreview 
                             texture={textures['Eyes-Closed']}
                             sx={{ width: '100px', height: '100px'}}
-                            onClick={() => setEditing('Eyes-Closed')}
+                            onClick={() => handleEdit('Eyes-Closed')}
                         />
                     </div>
                     <div>
@@ -797,7 +228,7 @@ function App() {
                         <TexturePreview 
                             texture={textures['Mouth-Open']}
                             sx={{ width: '100px', height: '100px'}}
-                            onClick={() => setEditing('Mouth-Open')}
+                            onClick={() => handleEdit('Mouth-Open')}
                         />
                     </div>
                 </div>
@@ -814,7 +245,7 @@ function App() {
                         <TexturePreview 
                             texture={textures['Body-Front']}
                             sx={{ width: '100px', height: '100px'}}
-                            onClick={() => setEditing('Body-Front')}
+                            onClick={() => handleEdit('Body-Front')}
                         />
                     </div>
                     <div>
@@ -822,7 +253,7 @@ function App() {
                         <TexturePreview 
                             texture={textures['Body-Back']}
                             sx={{ width: '100px', height: '100px'}}
-                            onClick={() => setEditing('Body-Back')}
+                            onClick={() => handleEdit('Body-Back')}
                         />
                     </div>
                 </div>
@@ -839,7 +270,7 @@ function App() {
                         <TexturePreview 
                             texture={textures['Hand-Front']}
                             sx={{ width: '100px', height: '100px'}}
-                            onClick={() => setEditing('Hand-Front')}
+                            onClick={() => handleEdit('Hand-Front')}
                         />
                     </div>
                     <div>
@@ -847,7 +278,7 @@ function App() {
                         <TexturePreview 
                             texture={textures['Hand-Back']}
                             sx={{ width: '100px', height: '100px'}}
-                            onClick={() => setEditing('Hand-Back')}
+                            onClick={() => handleEdit('Hand-Back')}
                         />
                     </div>
                 </div>
@@ -864,7 +295,7 @@ function App() {
                         <TexturePreview 
                             texture={textures['Legs-Front']}
                             sx={{ width: '100px', height: '100px'}}
-                            onClick={() => setEditing('Legs-Front')}
+                            onClick={() => handleEdit('Legs-Front')}
                         />
                     </div>
                     <div>
@@ -872,7 +303,7 @@ function App() {
                         <TexturePreview 
                             texture={textures['Legs-Back']}
                             sx={{ width: '100px', height: '100px'}}
-                            onClick={() => setEditing('Legs-Back')}
+                            onClick={() => handleEdit('Legs-Back')}
                         />
                     </div>
                 </div>
@@ -889,7 +320,7 @@ function App() {
                         <TexturePreview 
                             texture={textures['Tail-Front']}
                             sx={{ width: '100px', height: '100px'}}
-                            onClick={() => setEditing('Tail-Front')}
+                            onClick={() => handleEdit('Tail-Front')}
                         />
                     </div>
                     <div>
@@ -897,7 +328,7 @@ function App() {
                         <TexturePreview 
                             texture={textures['Tail-Back']}
                             sx={{ width: '100px', height: '100px'}}
-                            onClick={() => setEditing('Tail-Back')}
+                            onClick={() => handleEdit('Tail-Back')}
                         />
                     </div>
                 </div>
@@ -921,7 +352,7 @@ function App() {
                             handleExport(textures);
                         }}
                     >
-                        Export
+                        Export Textures
                     </Button>
                     <Button
                         variant="contained"
