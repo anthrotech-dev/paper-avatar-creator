@@ -5,6 +5,8 @@ import { BsBrushFill } from 'react-icons/bs'
 import { BsFillPaletteFill } from 'react-icons/bs'
 import { IoIosUndo } from 'react-icons/io'
 import { MdDelete } from 'react-icons/md'
+import { MdLayers } from 'react-icons/md'
+import { MdLayersClear } from 'react-icons/md'
 
 import Konva from 'konva'
 import { Stage, Layer, Line, Rect, Circle } from 'react-konva'
@@ -32,7 +34,6 @@ export function Painter(props: PainterProps) {
     const previewLayerRef = useRef<Konva.Layer>(null)
     const circleRef = useRef<Konva.Circle>(null)
 
-    const [strokes, setStrokes] = useState<stroke[]>([])
     const isDrawing = useRef(false)
 
     const [color, setColor] = useState('#2e7eff')
@@ -47,6 +48,11 @@ export function Painter(props: PainterProps) {
     const colorInputRef = useRef<HTMLInputElement>(null)
 
     const [tool, setTool] = useState('brush')
+
+    const [layers, setLayers] = useState<Array<stroke>[]>([])
+    const [currentLayer, setCurrentLayer] = useState<0 | 1 | 2>(0)
+
+    const [hiddenLayers, setHiddenLayers] = useState<Array<boolean>>([false, false, false])
 
     useEffect(() => {
         const stage = stageRef.current
@@ -100,8 +106,10 @@ export function Painter(props: PainterProps) {
     }, [props.initialTexture])
 
     const handleUndo = () => {
-        if (strokes.length === 0) return
-        setStrokes(strokes.slice(0, -1))
+        if (layers[currentLayer].length === 0) return
+        const newLayers = [...layers]
+        newLayers[currentLayer] = newLayers[currentLayer].slice(0, -1)
+        setLayers(newLayers)
     }
 
     // register keyboard shortcuts
@@ -134,7 +142,19 @@ export function Painter(props: PainterProps) {
         isDrawing.current = true
         const pos = e.target.getStage()?.getPointerPosition()
         if (!pos) return
-        setStrokes([...strokes, { tool, points: [pos.x, pos.y], color, width }])
+        const newStroke: stroke = {
+            tool,
+            points: [pos.x, pos.y],
+            color,
+            width
+        }
+        const newLayers = [...layers]
+        if (newLayers[currentLayer]) {
+            newLayers[currentLayer].push(newStroke)
+        } else {
+            newLayers[currentLayer] = [newStroke]
+        }
+        setLayers(newLayers)
     }
 
     const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
@@ -146,14 +166,18 @@ export function Painter(props: PainterProps) {
         const point = stage?.getPointerPosition()
         if (!point) return
 
-        // To draw line
-        let lastLine = strokes[strokes.length - 1]
-        // add point
-        lastLine.points = lastLine.points.concat([point.x, point.y])
+        let strokes = layers[currentLayer]
+        const lastStroke = strokes[strokes.length - 1]
 
-        // replace last
-        strokes.splice(strokes.length - 1, 1, lastLine)
-        setStrokes(strokes.concat())
+        lastStroke.points = lastStroke.points.concat([point.x, point.y])
+
+        strokes.splice(strokes.length - 1, 1, lastStroke)
+
+        setLayers((prev) => {
+            const newLayers = [...prev]
+            newLayers[currentLayer] = strokes
+            return newLayers
+        })
     }
 
     const setReferenceByName = (name: string) => {
@@ -201,7 +225,14 @@ export function Painter(props: PainterProps) {
                     })
                 }}
             />
-            <Box display="flex" alignItems="center" gap={1}>
+            <Box
+                display="flex"
+                alignItems="center"
+                gap={1}
+                sx={{
+                    userSelect: 'none'
+                }}
+            >
                 <Box
                     display="flex"
                     flexDirection="column"
@@ -322,7 +353,7 @@ export function Painter(props: PainterProps) {
                     <IconButton
                         size="large"
                         onClick={() => {
-                            setStrokes([])
+                            setLayers([])
                             setOldTexture(null)
                         }}
                         sx={{
@@ -378,18 +409,24 @@ export function Painter(props: PainterProps) {
                             />
                         )}
 
-                        {strokes.map((line, i) => (
-                            <Line
-                                key={i}
-                                points={line.points}
-                                stroke={line.color}
-                                strokeWidth={line.width}
-                                tension={0.5}
-                                lineCap="round"
-                                lineJoin="round"
-                                globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
-                            />
-                        ))}
+                        {layers.map((_layer, i) => {
+                            const layer = layers[layers.length - i - 1]
+                            if (hiddenLayers[layers.length - i - 1]) return null
+                            return layer.map((line, i) => (
+                                <Line
+                                    key={i}
+                                    points={line.points}
+                                    stroke={line.color}
+                                    strokeWidth={line.width}
+                                    tension={0.5}
+                                    lineCap="round"
+                                    lineJoin="round"
+                                    globalCompositeOperation={
+                                        line.tool === 'eraser' ? 'destination-out' : 'source-over'
+                                    }
+                                />
+                            ))
+                        })}
                     </Layer>
                     <Layer ref={previewLayerRef}>
                         <Circle
@@ -403,7 +440,97 @@ export function Painter(props: PainterProps) {
                     </Layer>
                 </Stage>
 
-                <Box display="flex" flexDirection="column" height="400px" justifyContent="flex-end">
+                <Box display="flex" flexDirection="column" height="400px" justifyContent="flex-end" gap={1}>
+                    <Box
+                        onClick={() => {
+                            if (currentLayer === 0) {
+                                hiddenLayers[0] = !hiddenLayers[0]
+                                setHiddenLayers([...hiddenLayers])
+                            } else {
+                                setCurrentLayer(0)
+                            }
+                        }}
+                        sx={{
+                            cursor: 'pointer',
+                            backgroundColor: currentLayer === 0 ? 'primary.main' : 'transparent',
+                            color: 'white',
+                            padding: '5px',
+                            borderRadius: '5px',
+                            border: '1px solid white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '5px'
+                        }}
+                    >
+                        {hiddenLayers[0] ? (
+                            <MdLayersClear color="white" size={24} />
+                        ) : (
+                            <MdLayers color="white" size={24} />
+                        )}
+                        1
+                    </Box>
+
+                    <Box
+                        onClick={() => {
+                            if (currentLayer === 1) {
+                                hiddenLayers[1] = !hiddenLayers[1]
+                                setHiddenLayers([...hiddenLayers])
+                            } else {
+                                setCurrentLayer(1)
+                            }
+                        }}
+                        sx={{
+                            cursor: 'pointer',
+                            backgroundColor: currentLayer === 1 ? 'primary.main' : 'transparent',
+                            color: 'white',
+                            padding: '5px',
+                            borderRadius: '5px',
+                            border: '1px solid white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '5px'
+                        }}
+                    >
+                        {hiddenLayers[1] ? (
+                            <MdLayersClear color="white" size={24} />
+                        ) : (
+                            <MdLayers color="white" size={24} />
+                        )}
+                        2
+                    </Box>
+
+                    <Box
+                        onClick={() => {
+                            if (currentLayer === 2) {
+                                hiddenLayers[2] = !hiddenLayers[2]
+                                setHiddenLayers([...hiddenLayers])
+                            } else {
+                                setCurrentLayer(2)
+                            }
+                        }}
+                        sx={{
+                            cursor: 'pointer',
+                            backgroundColor: currentLayer === 2 ? 'primary.main' : 'transparent',
+                            color: 'white',
+                            padding: '5px',
+                            borderRadius: '5px',
+                            border: '1px solid white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '5px'
+                        }}
+                    >
+                        {hiddenLayers[2] ? (
+                            <MdLayersClear color="white" size={24} />
+                        ) : (
+                            <MdLayers color="white" size={24} />
+                        )}
+                        3
+                    </Box>
+
                     <TexturePreview
                         texture={traceTexture}
                         sx={{
