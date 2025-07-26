@@ -18,6 +18,7 @@ type PainterProps = {
     initialTexture?: Texture | null
     drawingLayerRef: RefObject<Konva.Layer | null>
     references?: Record<string, Texture>
+    size: number
 }
 
 interface stroke {
@@ -49,7 +50,7 @@ export function Painter(props: PainterProps) {
 
     const [tool, setTool] = useState('brush')
 
-    const [layers, setLayers] = useState<Array<stroke>[]>([])
+    const [layers, setLayers] = useState<Array<stroke>[]>([[], [], []])
     const [currentLayer, setCurrentLayer] = useState<0 | 1 | 2>(0)
 
     const [hiddenLayers, setHiddenLayers] = useState<Array<boolean>>([false, false, false])
@@ -238,7 +239,7 @@ export function Painter(props: PainterProps) {
                     flexDirection="column"
                     alignItems="center"
                     justifyContent="flex-end"
-                    height="400px"
+                    height={`${props.size}px`}
                     gap={1}
                 >
                     <IconButton
@@ -366,8 +367,8 @@ export function Painter(props: PainterProps) {
 
                 <Stage
                     ref={stageRef}
-                    width={400}
-                    height={400}
+                    width={props.size}
+                    height={props.size}
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
@@ -381,12 +382,12 @@ export function Painter(props: PainterProps) {
                             <Rect
                                 x={0}
                                 y={0}
-                                width={400}
-                                height={400}
+                                width={props.size}
+                                height={props.size}
                                 fillPatternImage={traceTexture.image as HTMLImageElement}
                                 fillPatternRepeat="no-repeat"
-                                fillPatternScaleX={400 / traceTexture.image.width}
-                                fillPatternScaleY={400 / traceTexture.image.height}
+                                fillPatternScaleX={props.size / traceTexture.image.width}
+                                fillPatternScaleY={props.size / traceTexture.image.height}
                                 fillPatternOffsetX={0}
                                 fillPatternOffsetY={0}
                                 opacity={0.3}
@@ -398,12 +399,12 @@ export function Painter(props: PainterProps) {
                             <Rect
                                 x={0}
                                 y={0}
-                                width={400}
-                                height={400}
+                                width={props.size}
+                                height={props.size}
                                 fillPatternImage={oldTexture.image as HTMLImageElement}
                                 fillPatternRepeat="no-repeat"
-                                fillPatternScaleX={400 / oldTexture.image.width}
-                                fillPatternScaleY={400 / oldTexture.image.height}
+                                fillPatternScaleX={props.size / oldTexture.image.width}
+                                fillPatternScaleY={props.size / oldTexture.image.height}
                                 fillPatternOffsetX={0}
                                 fillPatternOffsetY={0}
                             />
@@ -440,7 +441,7 @@ export function Painter(props: PainterProps) {
                     </Layer>
                 </Stage>
 
-                <Box display="flex" flexDirection="column" height="400px" justifyContent="flex-end" gap={1}>
+                <Box display="flex" flexDirection="column" height={`${props.size}px`} justifyContent="flex-end" gap={1}>
                     <Box
                         onClick={() => {
                             if (currentLayer === 0) {
@@ -553,7 +554,7 @@ export function Painter(props: PainterProps) {
                         slotProps={{
                             paper: {
                                 style: {
-                                    maxHeight: '400px'
+                                    maxHeight: `${props.size}px`
                                 }
                             }
                         }}

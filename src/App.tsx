@@ -116,6 +116,7 @@ function App() {
             <Box
                 sx={{
                     width: '40vw',
+                    minWidth: '700px',
                     height: 'calc(100dvh - 20px)',
                     position: 'absolute',
                     top: '10px',
@@ -124,7 +125,7 @@ function App() {
                     borderRadius: '10px',
                     zIndex: 1,
                     color: 'white',
-                    padding: '10px',
+                    padding: '20px',
                     overflowX: 'hidden',
                     overflowY: 'auto',
                     display: 'flex',
@@ -136,7 +137,12 @@ function App() {
                     <>
                         <h2>Edit Texture: {editing}</h2>
 
-                        <Painter initialTexture={oldTexture} drawingLayerRef={drawingLayerRef} references={textures} />
+                        <Painter
+                            size={512}
+                            initialTexture={oldTexture}
+                            drawingLayerRef={drawingLayerRef}
+                            references={textures}
+                        />
 
                         <Box display="flex" gap="10px">
                             <Button
