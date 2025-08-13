@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { Texture, CanvasTexture, TextureLoader, SRGBColorSpace } from 'three'
 
 import { Canvas } from '@react-three/fiber'
@@ -23,26 +23,20 @@ function App() {
     const [oldTexture, setOldTexture] = useState<Texture | null>(null)
     const editingTex = useKonvaTexture(drawingLayerRef, editing)
 
-    const [headSize, setHeadSize] = useState(0)
-    const [neckLength, setNeckLength] = useState(0)
-
-    const avatarParams: AvatarParams = useMemo(
-        () => ({
-            headSize,
-            neckLength,
-            headInFront: true,
-            handSize: 0.5,
-            bodySize: 1,
-            tailSize: 0.5,
-            tailPosition: 0.5,
-            tailRotation: 0,
-            legsSize: 0.5,
-            legsDistance: 1,
-            legsDistanceFromBody: 0.5,
-            legsInFront: true
-        }),
-        [headSize, neckLength]
-    )
+    const [avatarParams, setAvatarParams] = useState<AvatarParams>({
+        headSize: 0,
+        neckLength: 0,
+        headInFront: true,
+        handSize: 0,
+        bodySize: 0,
+        tailSize: 0,
+        tailPosition: 0,
+        tailRotation: 0,
+        legsSize: 0,
+        legsDistance: 0,
+        legsDistanceFromBody: 0,
+        legsInFront: true
+    })
 
     const handleEdit = (textureKind: TextureKind) => {
         setEditing(textureKind)
@@ -252,20 +246,30 @@ function App() {
                         <Box>
                             <Typography variant="h6">Head Size</Typography>
                             <Slider
-                                value={headSize}
+                                value={avatarParams.headSize}
                                 min={-20}
                                 max={20}
                                 step={0.01}
-                                onChange={(_e, newValue) => setHeadSize(newValue as number)}
+                                onChange={(_e, newValue) =>
+                                    setAvatarParams((prev) => ({
+                                        ...prev,
+                                        headSize: newValue as number
+                                    }))
+                                }
                                 sx={{ width: '200px', padding: '20px' }}
                             />
                             <Typography variant="h6">Neck Length</Typography>
                             <Slider
-                                value={neckLength}
+                                value={avatarParams.neckLength}
                                 min={-10}
                                 max={10}
                                 step={0.01}
-                                onChange={(_e, newValue) => setNeckLength(newValue as number)}
+                                onChange={(_e, newValue) =>
+                                    setAvatarParams((prev) => ({
+                                        ...prev,
+                                        neckLength: newValue as number
+                                    }))
+                                }
                                 sx={{ width: '200px', padding: '20px' }}
                             />
                         </Box>
@@ -294,6 +298,22 @@ function App() {
                                 />
                             </div>
                         </div>
+                        <Box>
+                            <Typography variant="h6">Body Size</Typography>
+                            <Slider
+                                value={avatarParams.bodySize}
+                                min={-20}
+                                max={20}
+                                step={0.01}
+                                onChange={(_e, newValue) =>
+                                    setAvatarParams((prev) => ({
+                                        ...prev,
+                                        bodySize: newValue as number
+                                    }))
+                                }
+                                sx={{ width: '200px', padding: '20px' }}
+                            />
+                        </Box>
                         <h3>Hands</h3>
                         <div
                             style={{
@@ -319,6 +339,22 @@ function App() {
                                 />
                             </div>
                         </div>
+                        <Box>
+                            <Typography variant="h6">Hand Size</Typography>
+                            <Slider
+                                value={avatarParams.handSize}
+                                min={-1}
+                                max={1}
+                                step={0.01}
+                                onChange={(_e, newValue) =>
+                                    setAvatarParams((prev) => ({
+                                        ...prev,
+                                        handSize: newValue as number
+                                    }))
+                                }
+                                sx={{ width: '200px', padding: '20px' }}
+                            />
+                        </Box>
                         <h3>Legs</h3>
                         <div
                             style={{
@@ -344,6 +380,50 @@ function App() {
                                 />
                             </div>
                         </div>
+                        <Box>
+                            <Typography variant="h6">Legs Size</Typography>
+                            <Slider
+                                value={avatarParams.legsSize}
+                                min={0.1}
+                                max={2}
+                                step={0.01}
+                                onChange={(_e, newValue) =>
+                                    setAvatarParams((prev) => ({
+                                        ...prev,
+                                        legsSize: newValue as number
+                                    }))
+                                }
+                                sx={{ width: '200px', padding: '20px' }}
+                            />
+                            <Typography variant="h6">Legs Distance</Typography>
+                            <Slider
+                                value={avatarParams.legsDistance}
+                                min={-5}
+                                max={5}
+                                step={0.01}
+                                onChange={(_e, newValue) =>
+                                    setAvatarParams((prev) => ({
+                                        ...prev,
+                                        legsDistance: newValue as number
+                                    }))
+                                }
+                                sx={{ width: '200px', padding: '20px' }}
+                            />
+                            <Typography variant="h6">Legs Distance from Body</Typography>
+                            <Slider
+                                value={avatarParams.legsDistanceFromBody}
+                                min={-10}
+                                max={10}
+                                step={0.01}
+                                onChange={(_e, newValue) =>
+                                    setAvatarParams((prev) => ({
+                                        ...prev,
+                                        legsDistanceFromBody: newValue as number
+                                    }))
+                                }
+                                sx={{ width: '200px', padding: '20px' }}
+                            />
+                        </Box>
                         <h3>Tail</h3>
                         <div
                             style={{
@@ -369,6 +449,50 @@ function App() {
                                 />
                             </div>
                         </div>
+                        <Box>
+                            <Typography variant="h6">Tail Size</Typography>
+                            <Slider
+                                value={avatarParams.tailSize}
+                                min={-20}
+                                max={20}
+                                step={0.01}
+                                onChange={(_e, newValue) =>
+                                    setAvatarParams((prev) => ({
+                                        ...prev,
+                                        tailSize: newValue as number
+                                    }))
+                                }
+                                sx={{ width: '200px', padding: '20px' }}
+                            />
+                            <Typography variant="h6">Tail Position</Typography>
+                            <Slider
+                                value={avatarParams.tailPosition}
+                                min={-10}
+                                max={10}
+                                step={0.01}
+                                onChange={(_e, newValue) =>
+                                    setAvatarParams((prev) => ({
+                                        ...prev,
+                                        tailPosition: newValue as number
+                                    }))
+                                }
+                                sx={{ width: '200px', padding: '20px' }}
+                            />
+                            <Typography variant="h6">Tail Rotation</Typography>
+                            <Slider
+                                value={avatarParams.tailRotation}
+                                min={0}
+                                max={2 * Math.PI}
+                                step={0.001}
+                                onChange={(_e, newValue) =>
+                                    setAvatarParams((prev) => ({
+                                        ...prev,
+                                        tailRotation: newValue as number
+                                    }))
+                                }
+                                sx={{ width: '200px', padding: '20px' }}
+                            />
+                        </Box>
                         <Box display="flex" gap="10px">
                             <Button
                                 variant="contained"
