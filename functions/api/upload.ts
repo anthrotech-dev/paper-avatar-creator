@@ -23,9 +23,13 @@ export const onRequest: PagesFunction<{ BUCKET: R2Bucket }> = async (context) =>
         customMetadata: { uploaderIp: ip }
     })
 
-    const response = new Response('hello', {
+    const res = {
+        id
+    }
+
+    const response = new Response(JSON.stringify(res), {
         headers: {
-            'Content-Type': 'text/html'
+            'Content-Type': 'application/json'
         }
     })
 
