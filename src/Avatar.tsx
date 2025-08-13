@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
     Texture,
     Group,
@@ -28,18 +28,7 @@ export function Avatar({
     const { nodes, scene, animations } = useGLTF('/anim@RESO_Pera_idle.glb')
     const mixer = useRef<AnimationMixer>(null)
 
-    /*
-    useEffect(() => {
-        //console.log('Scene loaded:', scene)
-        scene.traverse((child) => {
-            console.log(child.name, child.type)
-        })
-    }, [scene])
-    */
-
-    const [baseAnim, setBaseAnim] = useState<AnimationClip | null>(null)
-
-    useEffect(() => {
+    const baseAnim = useMemo(() => {
         const track_bodyPosition = new VectorKeyframeTrack('Body.position', [0], [0, -params.neckLength, 0])
 
         const track_headFrontScale = new VectorKeyframeTrack(
@@ -60,27 +49,7 @@ export function Avatar({
             track_bodyPosition
         ])
         clip.blendMode = AdditiveAnimationBlendMode
-        setBaseAnim(clip)
-
-        /*
-        //console.log(Object.keys(nodes))
-        const headback = nodes['Head_Back']
-        if (headback) {
-            headback.scale.set(params.headSize, params.headSize, params.headSize)
-        }
-        const headfront = nodes['Head_Front']
-        if (headfront) {
-            headfront.scale.set(params.headSize, params.headSize, params.headSize)
-        }
-        const body = nodes['Body']
-        if (body) {
-            body.traverse((child) => {
-                console.log('body child:', child.name, child.type)
-            })
-            //body.position.set(0, params.neckLength, 0)
-            body.position.setY(-params.neckLength)
-        }
-        */
+        return clip
     }, [params])
 
     useEffect(() => {
@@ -129,7 +98,6 @@ export function Avatar({
 
     useEffect(() => {
         if (!mixer.current || !baseAnim) return
-        console.log('Setting up base animation:', baseAnim.name)
         const action = mixer.current.clipAction(baseAnim)
         action.blendMode = AdditiveAnimationBlendMode
         action.play()

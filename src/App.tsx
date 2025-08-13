@@ -23,7 +23,7 @@ function App() {
     const [oldTexture, setOldTexture] = useState<Texture | null>(null)
     const editingTex = useKonvaTexture(drawingLayerRef, editing)
 
-    const [headSize, setHeadSize] = useState(50)
+    const [headSize, setHeadSize] = useState(0)
     const [neckLength, setNeckLength] = useState(0)
 
     const avatarParams: AvatarParams = useMemo(
