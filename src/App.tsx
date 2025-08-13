@@ -1,17 +1,17 @@
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Texture, CanvasTexture, TextureLoader, SRGBColorSpace } from 'three'
 
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 
 import { TexturePreview } from './TexturePreview'
-import { Box, Button } from '@mui/material'
+import { Box, Button, Slider, Typography } from '@mui/material'
 
 import { handleExport, handleResoniteExport } from './util'
 import { Painter } from './Painer'
 
 import Konva from 'konva'
-import { type TextureKind } from './types'
+import { type AvatarParams, type TextureKind } from './types'
 import { useKonvaTexture } from './useKonvaTexture'
 import { Avatar } from './Avatar'
 
@@ -22,6 +22,27 @@ function App() {
     const [editing, setEditing] = useState<TextureKind | null>(null)
     const [oldTexture, setOldTexture] = useState<Texture | null>(null)
     const editingTex = useKonvaTexture(drawingLayerRef, editing)
+
+    const [headSize, setHeadSize] = useState(50)
+    const [neckLength, setNeckLength] = useState(0)
+
+    const avatarParams: AvatarParams = useMemo(
+        () => ({
+            headSize,
+            neckLength,
+            headInFront: true,
+            handSize: 0.5,
+            bodySize: 1,
+            tailSize: 0.5,
+            tailPosition: 0.5,
+            tailRotation: 0,
+            legsSize: 0.5,
+            legsDistance: 1,
+            legsDistanceFromBody: 0.5,
+            legsInFront: true
+        }),
+        [headSize, neckLength]
+    )
 
     const handleEdit = (textureKind: TextureKind) => {
         setEditing(textureKind)
@@ -108,7 +129,7 @@ function App() {
                 <ambientLight intensity={1} />
                 <directionalLight position={[2, 2, 2]} intensity={1} />
                 <Suspense fallback={null}>
-                    <Avatar editing={editing} textures={textures} />
+                    <Avatar params={avatarParams} editing={editing} textures={textures} />
                 </Suspense>
                 <OrbitControls />
             </Canvas>
@@ -228,6 +249,26 @@ function App() {
                                 />
                             </div>
                         </div>
+                        <Box>
+                            <Typography variant="h6">Head Size</Typography>
+                            <Slider
+                                value={headSize}
+                                min={-20}
+                                max={20}
+                                step={0.01}
+                                onChange={(_e, newValue) => setHeadSize(newValue as number)}
+                                sx={{ width: '200px', padding: '20px' }}
+                            />
+                            <Typography variant="h6">Neck Length</Typography>
+                            <Slider
+                                value={neckLength}
+                                min={-10}
+                                max={10}
+                                step={0.01}
+                                onChange={(_e, newValue) => setNeckLength(newValue as number)}
+                                sx={{ width: '200px', padding: '20px' }}
+                            />
+                        </Box>
                         <h3>Body</h3>
                         <div
                             style={{

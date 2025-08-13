@@ -28,3 +28,18 @@ export const textureKeyMap: Record<string, TextureKind> = {
     Tail_Front: 'Tail-Front',
     Tail_Back: 'Tail-Back'
 }
+
+export type AvatarParams = {
+    headSize: number
+    neckLength: number
+    headInFront: boolean
+    handSize: number
+    bodySize: number
+    tailSize: number
+    tailPosition: number
+    tailRotation: number
+    legsSize: number
+    legsDistance: number
+    legsDistanceFromBody: number
+    legsInFront: boolean
+}
