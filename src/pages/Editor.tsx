@@ -615,7 +615,13 @@ Editor.Overlay = (props: {
                             <Button
                                 variant="contained"
                                 onClick={() => {
-                                    handlePublish(manifest, textures).then((data) => {
+                                    handlePublish(
+                                        {
+                                            ...manifest,
+                                            params: avatarParams
+                                        },
+                                        textures
+                                    ).then((data) => {
                                         console.log('Published successfully:', data)
                                     })
                                 }}
