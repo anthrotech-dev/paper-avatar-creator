@@ -19,7 +19,7 @@ import { Painter } from '../ui/Painer'
 import Konva from 'konva'
 import { type AvatarManifest, type AvatarParams, type TextureKind } from '../types'
 import { useKonvaTexture } from '../useKonvaTexture'
-import { Avatar } from '../components/Avatar'
+import { EditableAvatar } from '../components/EditableAvatar'
 
 type EditorState = {
     textures: Record<TextureKind, Texture>
@@ -111,7 +111,7 @@ Editor.Scene = () => {
                 <meshBasicMaterial color="black" transparent opacity={0.65} depthWrite={false} toneMapped={false} />
             </mesh>
             <Suspense fallback={null}>
-                <Avatar params={avatarParams} editing={editing} textures={textures} />
+                <EditableAvatar params={avatarParams} editing={editing} textures={textures} />
             </Suspense>
         </group>
     )

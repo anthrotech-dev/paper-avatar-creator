@@ -1,5 +1,6 @@
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
 import {
+    Texture,
     Group,
     AnimationMixer,
     MeshPhongMaterial,
@@ -10,76 +11,35 @@ import {
     QuaternionKeyframeTrack,
     Euler,
     Quaternion,
-    Object3D,
-    TextureLoader,
-    SRGBColorSpace,
-    Texture
+    Object3D
 } from 'three'
 
-import { textureKeyMap, type AvatarManifest } from '../types'
+import { textureKeyMap, type AvatarParams, type TextureKind } from '../types'
 import { useGLTF } from '@react-three/drei'
 
 import { useFrame, useGraph } from '@react-three/fiber'
 import { FakeShadow } from './FakeShadow'
 
 type AvatarProps = {
-    id: string
+    params: AvatarParams
+    textures: Record<string, Texture>
+    editing: TextureKind | null
     setSelected?: (selected: Object3D | null) => void
 }
 
-export const Avatar = forwardRef<Object3D, AvatarProps>(function Avatar({ id, setSelected }, ref) {
+export const EditableAvatar = forwardRef<Object3D, AvatarProps>(function Avatar(
+    { params, textures, editing, setSelected },
+    ref
+) {
     const group = useRef<Group>(null)
     const { scene, animations } = useGLTF('/anim@RESO_Pera_idle.glb')
     const clone = useMemo(() => scene.clone(), [scene])
     const { nodes } = useGraph(clone)
     const mixer = useRef<AnimationMixer>(null)
 
-    const [manifest, setManifest] = useState<AvatarManifest>()
-    const params = manifest?.params
-
-    const [textures, setTextures] = useState<Record<string, Texture> | null>()
-
     useImperativeHandle(ref, () => group.current as Object3D, [group.current])
 
-    useEffect(() => {
-        const endpoint = `https://pub-01b22329d1ae4699af72f1db7103a0ab.r2.dev/uploads/${id}/manifest.json`
-        fetch(endpoint)
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`)
-                }
-                return response.json()
-            })
-            .then((data: AvatarManifest) => {
-                setManifest(data)
-
-                const textureLoader = new TextureLoader()
-                const texturePromises = Object.entries(data.textures).map(async ([key, url]) => {
-                    const texture = await textureLoader.loadAsync(url)
-                    texture.flipY = false
-                    texture.colorSpace = SRGBColorSpace
-                    return [key, texture] as const
-                })
-
-                Promise.all(texturePromises)
-                    .then((loadedTextures) => {
-                        const textureMap: Record<string, Texture> = {}
-                        loadedTextures.forEach(([key, texture]) => {
-                            textureMap[key] = texture
-                        })
-                        setTextures(textureMap)
-                    })
-                    .catch((error) => {
-                        console.error('Error loading textures:', error)
-                    })
-            })
-            .catch((error) => {
-                console.error('Error fetching avatar manifest:', error)
-            })
-    }, [id])
-
     const baseAnim = useMemo(() => {
-        if (!params) return null
         // headSize
         const track_headFrontScale = new VectorKeyframeTrack(
             'Head_Front.scale',
@@ -165,7 +125,6 @@ export const Avatar = forwardRef<Object3D, AvatarProps>(function Avatar({ id, se
     }, [params])
 
     useEffect(() => {
-        if (!nodes || !manifest || !textures) return
         for (const key in nodes) {
             if (textureKeyMap[key] && nodes[key].type === 'Mesh') {
                 const mesh = nodes[key] as Mesh
@@ -181,7 +140,7 @@ export const Avatar = forwardRef<Object3D, AvatarProps>(function Avatar({ id, se
                 // console.warn(`No texture for ${key}`)
             }
         }
-    }, [nodes, manifest, textures])
+    }, [nodes, textures])
 
     useEffect(() => {
         if (group.current) {
@@ -220,12 +179,30 @@ export const Avatar = forwardRef<Object3D, AvatarProps>(function Avatar({ id, se
         }
     }, [baseAnim, mixer])
 
+    useEffect(() => {
+        switch (editing) {
+            case 'Head-Front':
+                // @ts-ignore
+                nodes['Head_Front'].material.map = textures['Head-Front']
+                break
+            case 'Eyes-Closed':
+                // @ts-ignore
+                nodes['Head_Front'].material.map = textures['Eyes-Closed']
+                break
+            case 'Mouth-Open':
+                // @ts-ignore
+                nodes['Head_Front'].material.map = textures['Mouth-Open']
+                break
+        }
+    }, [editing])
+
     let facial: 'Head-Front' | 'Eyes-Closed' | 'Mouth-Open' = 'Head-Front'
     const chanceToCloseEyes = 0.004
     const chanceToOpenMouth = 0.002
     const chanceToReturnToNormal = 0.05
     useFrame((_state, delta) => {
         mixer.current?.update(delta)
+        if (editing) return
         if (facial === 'Head-Front') {
             if (Math.random() < chanceToCloseEyes) {
                 facial = 'Eyes-Closed'
