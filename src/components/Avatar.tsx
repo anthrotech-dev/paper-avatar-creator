@@ -14,10 +14,10 @@ import {
     Object3D
 } from 'three'
 
-import { textureKeyMap, type AvatarParams, type TextureKind } from './types'
+import { textureKeyMap, type AvatarParams, type TextureKind } from '../types'
 import { useGLTF } from '@react-three/drei'
 
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useGraph } from '@react-three/fiber'
 import { FakeShadow } from './FakeShadow'
 
 export function Avatar({
@@ -29,10 +29,12 @@ export function Avatar({
     params: AvatarParams
     textures: Record<string, Texture>
     editing: TextureKind | null
-    setSelected: (selected: Object3D | null) => void
+    setSelected?: (selected: Object3D | null) => void
 }) {
     const group = useRef<Group>(null)
-    const { nodes, scene, animations } = useGLTF('/anim@RESO_Pera_idle.glb')
+    const { scene, animations } = useGLTF('/anim@RESO_Pera_idle.glb')
+    const clone = useMemo(() => scene.clone(), [scene])
+    const { nodes } = useGraph(clone)
     const mixer = useRef<AnimationMixer>(null)
 
     const baseAnim = useMemo(() => {
@@ -229,10 +231,10 @@ export function Avatar({
             onPointerDown={(e) => {
                 e.stopPropagation()
                 console.log('Avatar clicked', e)
-                setSelected(group.current)
+                setSelected?.(group.current)
             }}
         >
-            <primitive scale={[0.01, 0.01, 0.01]} ref={group} object={scene} />
+            <primitive scale={[0.01, 0.01, 0.01]} ref={group} object={clone} />
             <FakeShadow />
         </group>
     )
