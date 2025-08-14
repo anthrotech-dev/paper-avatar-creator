@@ -15,12 +15,12 @@ export function Wanderer({ children, initial, bounds = 20, baseSpeed = 1.2 }: Wa
 
     // 個体ごとの乱数シード
     /*
-  const seed = useMemo(() => Math.random() * 10000, []);
-  const rand = (min: number, max: number) => min + (max - min) * fract(Math.sin(seed + performance.now() * 0.00001) * 43758.5453123);
-  function fract(x: number) {
-    return x - Math.floor(x);
-  }
-  */
+        const seed = useMemo(() => Math.random() * 10000, []);
+        const rand = (min: number, max: number) => min + (max - min) * fract(Math.sin(seed + performance.now() * 0.00001) * 43758.5453123);
+        function fract(x: number) {
+            return x - Math.floor(x);
+        }
+    */
 
     // 現在の目標地点・速度などの内部状態
     const state = useRef({

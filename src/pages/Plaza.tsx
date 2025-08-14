@@ -1,4 +1,4 @@
-import { createContext, Suspense, useContext, useState } from 'react'
+import { createContext, memo, Suspense, useContext, useState } from 'react'
 import { Object3D, Vector3 } from 'three'
 
 import { Avatar } from '../components/Avatar'
@@ -9,7 +9,12 @@ import { MdAdd } from 'react-icons/md'
 import { type AvatarManifest } from '../types'
 import { Drawer } from '../ui/Drawer'
 
-const avatars = ['40k4v47xgajk495506caht1p5r', 'k6c06jrgz3bx77g206cajerj6c', 'antwew8bg3n517b906cajfqkcc']
+const avatars = [
+    '40k4v47xgajk495506caht1p5r',
+    'k6c06jrgz3bx77g206cajerj6c',
+    'antwew8bg3n517b906cajfqkcc',
+    '5sn4vqpg9yame7n806cajt10nc'
+]
 
 type PlazaState = {
     selectedManifest: AvatarManifest | null
@@ -50,27 +55,46 @@ Plaza.Scene = () => {
                     <planeGeometry args={[200, 200]} />
                     <meshStandardMaterial color="#3a3a3a" roughness={1} metalness={0} />
                 </mesh>
-
+                <AvatarsRenderer setSelectedManifest={setSelectedManifest} setSelected={setSelected} />
                 <gridHelper args={[200, 200, 0x888888, 0x444444]} position={[0, 0.001, 0]} />
             </group>
-
-            {avatars.map((id) => (
-                <Wanderer key={id} initial={[0, 0, 0]} bounds={5} baseSpeed={0.5}>
-                    <Suspense fallback={null}>
-                        <Avatar
-                            id={id}
-                            onClick={(e) => {
-                                setSelected(e.target)
-                                setSelectedManifest(e.manifest)
-                            }}
-                        />
-                    </Suspense>
-                </Wanderer>
-            ))}
             <FollowCamera target={selected} />
         </>
     )
 }
+
+const AvatarsRenderer = memo(
+    ({
+        setSelectedManifest,
+        setSelected
+    }: {
+        setSelectedManifest: (_: AvatarManifest | null) => void
+        setSelected: (_: Object3D | null) => void
+    }) => {
+        return (
+            <>
+                {avatars.map((id) => (
+                    <Wanderer
+                        key={id}
+                        initial={[Math.random() * 10 - 5, 0, Math.random() * 10 - 5]}
+                        bounds={5}
+                        baseSpeed={0.5}
+                    >
+                        <Suspense fallback={null}>
+                            <Avatar
+                                id={id}
+                                onClick={(e) => {
+                                    setSelected(e.target)
+                                    setSelectedManifest(e.manifest)
+                                }}
+                            />
+                        </Suspense>
+                    </Wanderer>
+                ))}
+            </>
+        )
+    }
+)
 
 Plaza.Overlay = (props: {
     setView: (position: Vector3, lookAt: Vector3, speed: number) => void
