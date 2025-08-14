@@ -67,7 +67,7 @@ function App() {
 
                 {mode === 'plaza' && <Plaza.Overlay setMode={setMode} setView={setView} />}
 
-                <Drawer hideBackdrop open={mode === 'edit'}>
+                <Drawer open={mode === 'edit'}>
                     <Editor.Overlay setMode={setMode} setView={setView} />
                 </Drawer>
             </Editor>
