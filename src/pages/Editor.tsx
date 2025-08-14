@@ -11,7 +11,23 @@ import {
 import { Texture, CanvasTexture, TextureLoader, SRGBColorSpace, Vector3 } from 'three'
 
 import { TexturePreview } from '../ui/TexturePreview'
-import { Box, Button, Divider, Slider, Tab, Tabs, TextField, Typography } from '@mui/material'
+import {
+    Box,
+    Button,
+    Checkbox,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Divider,
+    FormControlLabel,
+    FormGroup,
+    Slider,
+    Tab,
+    Tabs,
+    TextField,
+    Typography
+} from '@mui/material'
 
 import { handleExport, handlePublish, handleResoniteExport } from '../util'
 import { Painter } from '../ui/Painer'
@@ -140,6 +156,10 @@ Editor.Overlay = (props: {
 
     const [manifest, setManifest] = useState<Partial<AvatarManifest>>({})
     const [tab, setTab] = useState<'info' | 'head' | 'body' | 'hand' | 'legs' | 'tail'>('head')
+
+    const [open, setOpen] = useState(false)
+    const [uploading, setUploading] = useState(false)
+    const [uploaded, setUploaded] = useState<AvatarManifest | null>(null)
 
     return (
         <>
@@ -615,15 +635,7 @@ Editor.Overlay = (props: {
                             <Button
                                 variant="contained"
                                 onClick={() => {
-                                    handlePublish(
-                                        {
-                                            ...manifest,
-                                            params: avatarParams
-                                        },
-                                        textures
-                                    ).then((data) => {
-                                        console.log('Published successfully:', data)
-                                    })
+                                    setOpen(true)
                                 }}
                             >
                                 公開
@@ -632,6 +644,87 @@ Editor.Overlay = (props: {
                     </>
                 )}
             </Box>
+
+            <Dialog open={open} onClose={() => setOpen(false)}>
+                {uploaded ? (
+                    <>
+                        <DialogTitle>公開完了</DialogTitle>
+                        <DialogContent>
+                            アバターの公開が完了しました！
+                            <Button>シェア</Button>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={() => setOpen(false)}>閉じる</Button>
+                        </DialogActions>
+                    </>
+                ) : (
+                    <>
+                        <DialogTitle>投稿: {manifest.name}</DialogTitle>
+                        <DialogContent>
+                            あなたのアバターを公開します。
+                            <TextField
+                                label="クリエイター名"
+                                variant="outlined"
+                                required
+                                value={manifest.creator || ''}
+                                onChange={(e) => setManifest((prev) => ({ ...prev, creator: e.target.value }))}
+                                fullWidth
+                                sx={{ marginBottom: '20px' }}
+                            />
+                            <FormGroup>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={manifest.editable || false}
+                                            onChange={(e) =>
+                                                setManifest((prev) => ({ ...prev, editable: e.target.checked }))
+                                            }
+                                        />
+                                    }
+                                    label="アバター出力を許可"
+                                />
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={manifest.exportable || false}
+                                            onChange={(e) =>
+                                                setManifest((prev) => ({ ...prev, exportable: e.target.checked }))
+                                            }
+                                        />
+                                    }
+                                    label="改変を許可"
+                                />
+                            </FormGroup>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={() => setOpen(false)}>キャンセル</Button>
+                            <Button
+                                variant="contained"
+                                disabled={uploading || !manifest.creator}
+                                onClick={() => {
+                                    setUploading(true)
+                                    handlePublish(
+                                        {
+                                            ...manifest,
+                                            params: avatarParams
+                                        },
+                                        textures
+                                    )
+                                        .then((data) => {
+                                            console.log('Published successfully:', data)
+                                            setUploaded(data)
+                                        })
+                                        .finally(() => {
+                                            setUploading(false)
+                                        })
+                                }}
+                            >
+                                {uploading ? '送信中...' : '公開'}
+                            </Button>
+                        </DialogActions>
+                    </>
+                )}
+            </Dialog>
         </>
     )
 }
