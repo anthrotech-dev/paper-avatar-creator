@@ -32,13 +32,17 @@ export const onRequest: PagesFunction<{ BUCKET: R2Bucket }> = async (context) =>
     if (!manifestFile || !(manifestFile instanceof File)) {
         return new Response('Manifest file is required', { status: 400 })
     }
-    let manifest: any = {}
+    let manifest = {
+        textures: {}
+    }
     try {
         const manifestText = await manifestFile.text()
         manifest = JSON.parse(manifestText)
     } catch (e) {
         return new Response('Invalid JSON in manifest', { status: 400 })
     }
+
+    manifest.textures = manifest.textures ?? {}
 
     for (const key of keys) {
         if (!form.has(key)) {
