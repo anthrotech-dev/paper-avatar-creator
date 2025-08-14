@@ -50,7 +50,9 @@ Plaza.Scene = (props: { setView: (position: Vector3, lookAt: Vector3, speed: num
                         e.stopPropagation()
                         setSelected(null)
                         setSelectedManifest(null)
-                        props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
+                        if (selected) {
+                            props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
+                        }
                     }}
                 >
                     <planeGeometry args={[200, 200]} />
