@@ -6,36 +6,28 @@ import {
     useRef,
     useState,
     type Dispatch,
-    type RefObject,
     type SetStateAction
 } from 'react'
 import { Texture, CanvasTexture, TextureLoader, SRGBColorSpace, Vector3 } from 'three'
 
 import { TexturePreview } from '../ui/TexturePreview'
-import { Box, Button, Fab, Slider, Typography } from '@mui/material'
-import { MdArrowBack } from 'react-icons/md'
+import { Box, Button, Divider, Slider, Tab, Tabs, TextField, Typography } from '@mui/material'
 
 import { handleExport, handleResoniteExport } from '../util'
 import { Painter } from '../ui/Painer'
 
 import Konva from 'konva'
-import { type AvatarParams, type TextureKind } from '../types'
+import { type AvatarManifest, type AvatarParams, type TextureKind } from '../types'
 import { useKonvaTexture } from '../useKonvaTexture'
 import { Avatar } from '../components/Avatar'
 
 type EditorState = {
     textures: Record<TextureKind, Texture>
     editing: TextureKind | null
-    oldTexture: Texture | null
     avatarParams: AvatarParams
     setTextures: Dispatch<SetStateAction<Record<TextureKind, Texture>>>
     setEditing: Dispatch<SetStateAction<TextureKind | null>>
-    setOldTexture: Dispatch<SetStateAction<Texture | null>>
     setAvatarParams: Dispatch<SetStateAction<AvatarParams>>
-    fileInputRef: RefObject<HTMLInputElement | null>
-    drawingLayerRef: RefObject<Konva.Layer | null>
-    handleEdit: (textureKind: TextureKind) => void
-    editingTex: CanvasTexture
 }
 
 const EditorContext = createContext<EditorState | null>(null)
@@ -49,12 +41,8 @@ const useEditor = () => {
 }
 
 export function Editor({ children }: { children?: React.ReactNode }) {
-    const fileInputRef = useRef<HTMLInputElement>(null)
-    const drawingLayerRef = useRef<Konva.Layer>(null)
     const [textures, setTextures] = useState<Record<string, Texture>>({})
     const [editing, setEditing] = useState<TextureKind | null>(null)
-    const [oldTexture, setOldTexture] = useState<Texture | null>(null)
-    const editingTex = useKonvaTexture(drawingLayerRef, editing)
 
     const [avatarParams, setAvatarParams] = useState<AvatarParams>({
         headSize: 0,
@@ -70,15 +58,6 @@ export function Editor({ children }: { children?: React.ReactNode }) {
         legsDistanceFromBody: 0,
         legsInFront: true
     })
-
-    const handleEdit = (textureKind: TextureKind) => {
-        setEditing(textureKind)
-        setOldTexture(textures[textureKind] || null)
-        setTextures((prev) => ({
-            ...prev,
-            [textureKind]: editingTex
-        }))
-    }
 
     useEffect(() => {
         ;(async () => {
@@ -112,16 +91,10 @@ export function Editor({ children }: { children?: React.ReactNode }) {
             value={{
                 textures,
                 editing,
-                oldTexture,
-                fileInputRef,
-                drawingLayerRef,
                 avatarParams,
-                editingTex,
                 setTextures,
                 setEditing,
-                setOldTexture,
-                setAvatarParams,
-                handleEdit
+                setAvatarParams
             }}
         >
             {children}
@@ -148,37 +121,28 @@ Editor.Overlay = (props: {
     setView: (position: Vector3, lookAt: Vector3, speed: number) => void
     setMode: (mode: 'edit' | 'plaza') => void
 }) => {
-    const {
-        textures,
-        editing,
-        setEditing,
-        oldTexture,
-        setTextures,
-        fileInputRef,
-        drawingLayerRef,
-        avatarParams,
-        setAvatarParams,
-        handleEdit,
-        editingTex
-    } = useEditor()
+    const { textures, editing, setEditing, setTextures, avatarParams, setAvatarParams } = useEditor()
+
+    const handleEdit = (textureKind: TextureKind) => {
+        setEditing(textureKind)
+        setOldTexture(textures[textureKind] || null)
+        setTextures((prev) => ({
+            ...prev,
+            [textureKind]: editingTex
+        }))
+    }
+
+    const drawingLayerRef = useRef<Konva.Layer>(null)
+    const editingTex = useKonvaTexture(drawingLayerRef, editing)
+
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const [oldTexture, setOldTexture] = useState<Texture | null>(null)
+
+    const [manifest, setManifest] = useState<Partial<AvatarManifest>>({})
+    const [tab, setTab] = useState<'info' | 'head' | 'body' | 'hand' | 'legs' | 'tail'>('head')
+
     return (
         <>
-            <Fab
-                color="primary"
-                sx={{
-                    position: 'absolute',
-                    top: '2rem',
-                    left: '2rem',
-                    zIndex: 1000
-                }}
-                onClick={() => {
-                    props.setMode('plaza')
-                    props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
-                }}
-            >
-                <MdArrowBack style={{ width: '2rem', height: '2rem', color: 'white' }} />
-            </Fab>
-
             <input
                 type="file"
                 accept="image/*"
@@ -206,25 +170,11 @@ Editor.Overlay = (props: {
                     }
                 }}
             />
-
             <Box
                 sx={{
-                    width: '40vw',
-                    minWidth: '700px',
-                    height: 'calc(100dvh - 20px)',
-                    position: 'absolute',
-                    top: '10px',
-                    right: '10px',
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    borderRadius: '10px',
-                    zIndex: 1,
-                    color: 'white',
-                    padding: '20px',
-                    overflowX: 'hidden',
-                    overflowY: 'auto',
+                    padding: 2,
                     display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1
+                    flexDirection: 'column'
                 }}
             >
                 {editing ? (
@@ -281,298 +231,361 @@ Editor.Overlay = (props: {
                 ) : (
                     <>
                         <h2>Avatar Editor</h2>
-                        <h3>Head</h3>
-                        <div
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'row',
-                                gap: '10px'
-                            }}
+                        <Tabs
+                            value={tab}
+                            onChange={(_e, newValue) =>
+                                setTab(newValue as 'info' | 'head' | 'body' | 'hand' | 'legs' | 'tail')
+                            }
+                            sx={{ marginBottom: '20px', color: 'white' }}
                         >
-                            <div>
-                                <h4>Front</h4>
-                                <TexturePreview
-                                    texture={textures['Head-Front']}
-                                    sx={{ width: '100px', height: '100px' }}
-                                    onClick={() => handleEdit('Head-Front')}
+                            <Tab label="プロフィール" value="info" />
+                            <Tab label="あたま" value="head" />
+                            <Tab label="からだ" value="body" />
+                            <Tab label="て" value="hand" />
+                            <Tab label="あし" value="legs" />
+                            <Tab label="しっぽ" value="tail" />
+                        </Tabs>
+
+                        {tab === 'info' && (
+                            <>
+                                <TextField
+                                    label="名前"
+                                    variant="outlined"
+                                    value={manifest.name || ''}
+                                    onChange={(e) => setManifest((prev) => ({ ...prev, name: e.target.value }))}
+                                    sx={{ marginBottom: '20px' }}
                                 />
-                            </div>
-                            <div>
-                                <h4>Back</h4>
-                                <TexturePreview
-                                    texture={textures['Head-Back']}
-                                    sx={{ width: '100px', height: '100px' }}
-                                    onClick={() => handleEdit('Head-Back')}
+                                <TextField
+                                    label="説明"
+                                    variant="outlined"
+                                    value={manifest.description || ''}
+                                    onChange={(e) => setManifest((prev) => ({ ...prev, description: e.target.value }))}
+                                    multiline
+                                    rows={4}
+                                    sx={{ marginBottom: '20px' }}
                                 />
-                            </div>
-                            <div>
-                                <h4>Eyes Closed</h4>
-                                <TexturePreview
-                                    texture={textures['Eyes-Closed']}
-                                    sx={{ width: '100px', height: '100px' }}
-                                    onClick={() => handleEdit('Eyes-Closed')}
-                                />
-                            </div>
-                            <div>
-                                <h4>Mouth Open</h4>
-                                <TexturePreview
-                                    texture={textures['Mouth-Open']}
-                                    sx={{ width: '100px', height: '100px' }}
-                                    onClick={() => handleEdit('Mouth-Open')}
-                                />
-                            </div>
-                        </div>
-                        <Box>
-                            <Typography variant="h6">Head Size</Typography>
-                            <Slider
-                                value={avatarParams.headSize}
-                                min={-20}
-                                max={20}
-                                step={0.01}
-                                onChange={(_e, newValue) =>
-                                    setAvatarParams((prev) => ({
-                                        ...prev,
-                                        headSize: newValue as number
-                                    }))
-                                }
-                                sx={{ width: '200px', padding: '20px' }}
-                            />
-                            <Typography variant="h6">Neck Length</Typography>
-                            <Slider
-                                value={avatarParams.neckLength}
-                                min={-10}
-                                max={10}
-                                step={0.01}
-                                onChange={(_e, newValue) =>
-                                    setAvatarParams((prev) => ({
-                                        ...prev,
-                                        neckLength: newValue as number
-                                    }))
-                                }
-                                sx={{ width: '200px', padding: '20px' }}
-                            />
-                        </Box>
-                        <h3>Body</h3>
-                        <div
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'row',
-                                gap: '10px'
-                            }}
-                        >
-                            <div>
-                                <h4>Front</h4>
-                                <TexturePreview
-                                    texture={textures['Body-Front']}
-                                    sx={{ width: '100px', height: '100px' }}
-                                    onClick={() => handleEdit('Body-Front')}
-                                />
-                            </div>
-                            <div>
-                                <h4>Back</h4>
-                                <TexturePreview
-                                    texture={textures['Body-Back']}
-                                    sx={{ width: '100px', height: '100px' }}
-                                    onClick={() => handleEdit('Body-Back')}
-                                />
-                            </div>
-                        </div>
-                        <Box>
-                            <Typography variant="h6">Body Size</Typography>
-                            <Slider
-                                value={avatarParams.bodySize}
-                                min={-20}
-                                max={20}
-                                step={0.01}
-                                onChange={(_e, newValue) =>
-                                    setAvatarParams((prev) => ({
-                                        ...prev,
-                                        bodySize: newValue as number
-                                    }))
-                                }
-                                sx={{ width: '200px', padding: '20px' }}
-                            />
-                        </Box>
-                        <h3>Hands</h3>
-                        <div
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'row',
-                                gap: '10px'
-                            }}
-                        >
-                            <div>
-                                <h4>Front</h4>
-                                <TexturePreview
-                                    texture={textures['Hand-Front']}
-                                    sx={{ width: '100px', height: '100px' }}
-                                    onClick={() => handleEdit('Hand-Front')}
-                                />
-                            </div>
-                            <div>
-                                <h4>Back</h4>
-                                <TexturePreview
-                                    texture={textures['Hand-Back']}
-                                    sx={{ width: '100px', height: '100px' }}
-                                    onClick={() => handleEdit('Hand-Back')}
-                                />
-                            </div>
-                        </div>
-                        <Box>
-                            <Typography variant="h6">Hand Size</Typography>
-                            <Slider
-                                value={avatarParams.handSize}
-                                min={-1}
-                                max={1}
-                                step={0.01}
-                                onChange={(_e, newValue) =>
-                                    setAvatarParams((prev) => ({
-                                        ...prev,
-                                        handSize: newValue as number
-                                    }))
-                                }
-                                sx={{ width: '200px', padding: '20px' }}
-                            />
-                        </Box>
-                        <h3>Legs</h3>
-                        <div
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'row',
-                                gap: '10px'
-                            }}
-                        >
-                            <div>
-                                <h4>Front</h4>
-                                <TexturePreview
-                                    texture={textures['Legs-Front']}
-                                    sx={{ width: '100px', height: '100px' }}
-                                    onClick={() => handleEdit('Legs-Front')}
-                                />
-                            </div>
-                            <div>
-                                <h4>Back</h4>
-                                <TexturePreview
-                                    texture={textures['Legs-Back']}
-                                    sx={{ width: '100px', height: '100px' }}
-                                    onClick={() => handleEdit('Legs-Back')}
-                                />
-                            </div>
-                        </div>
-                        <Box>
-                            <Typography variant="h6">Legs Size</Typography>
-                            <Slider
-                                value={avatarParams.legsSize}
-                                min={0.1}
-                                max={2}
-                                step={0.01}
-                                onChange={(_e, newValue) =>
-                                    setAvatarParams((prev) => ({
-                                        ...prev,
-                                        legsSize: newValue as number
-                                    }))
-                                }
-                                sx={{ width: '200px', padding: '20px' }}
-                            />
-                            <Typography variant="h6">Legs Distance</Typography>
-                            <Slider
-                                value={avatarParams.legsDistance}
-                                min={-5}
-                                max={5}
-                                step={0.01}
-                                onChange={(_e, newValue) =>
-                                    setAvatarParams((prev) => ({
-                                        ...prev,
-                                        legsDistance: newValue as number
-                                    }))
-                                }
-                                sx={{ width: '200px', padding: '20px' }}
-                            />
-                            <Typography variant="h6">Legs Distance from Body</Typography>
-                            <Slider
-                                value={avatarParams.legsDistanceFromBody}
-                                min={-10}
-                                max={10}
-                                step={0.01}
-                                onChange={(_e, newValue) =>
-                                    setAvatarParams((prev) => ({
-                                        ...prev,
-                                        legsDistanceFromBody: newValue as number
-                                    }))
-                                }
-                                sx={{ width: '200px', padding: '20px' }}
-                            />
-                        </Box>
-                        <h3>Tail</h3>
-                        <div
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'row',
-                                gap: '10px'
-                            }}
-                        >
-                            <div>
-                                <h4>Front</h4>
-                                <TexturePreview
-                                    texture={textures['Tail-Front']}
-                                    sx={{ width: '100px', height: '100px' }}
-                                    onClick={() => handleEdit('Tail-Front')}
-                                />
-                            </div>
-                            <div>
-                                <h4>Back</h4>
-                                <TexturePreview
-                                    texture={textures['Tail-Back']}
-                                    sx={{ width: '100px', height: '100px' }}
-                                    onClick={() => handleEdit('Tail-Back')}
-                                />
-                            </div>
-                        </div>
-                        <Box>
-                            <Typography variant="h6">Tail Size</Typography>
-                            <Slider
-                                value={avatarParams.tailSize}
-                                min={-20}
-                                max={20}
-                                step={0.01}
-                                onChange={(_e, newValue) =>
-                                    setAvatarParams((prev) => ({
-                                        ...prev,
-                                        tailSize: newValue as number
-                                    }))
-                                }
-                                sx={{ width: '200px', padding: '20px' }}
-                            />
-                            <Typography variant="h6">Tail Position</Typography>
-                            <Slider
-                                value={avatarParams.tailPosition}
-                                min={-10}
-                                max={10}
-                                step={0.01}
-                                onChange={(_e, newValue) =>
-                                    setAvatarParams((prev) => ({
-                                        ...prev,
-                                        tailPosition: newValue as number
-                                    }))
-                                }
-                                sx={{ width: '200px', padding: '20px' }}
-                            />
-                            <Typography variant="h6">Tail Rotation</Typography>
-                            <Slider
-                                value={avatarParams.tailRotation}
-                                min={0}
-                                max={2 * Math.PI}
-                                step={0.001}
-                                onChange={(_e, newValue) =>
-                                    setAvatarParams((prev) => ({
-                                        ...prev,
-                                        tailRotation: newValue as number
-                                    }))
-                                }
-                                sx={{ width: '200px', padding: '20px' }}
-                            />
-                        </Box>
+                            </>
+                        )}
+
+                        {tab === 'head' && (
+                            <>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'row',
+                                        gap: '10px'
+                                    }}
+                                >
+                                    <div>
+                                        <h4>Front</h4>
+                                        <TexturePreview
+                                            texture={textures['Head-Front']}
+                                            sx={{ width: '100px', height: '100px' }}
+                                            onClick={() => handleEdit('Head-Front')}
+                                        />
+                                    </div>
+                                    <div>
+                                        <h4>Back</h4>
+                                        <TexturePreview
+                                            texture={textures['Head-Back']}
+                                            sx={{ width: '100px', height: '100px' }}
+                                            onClick={() => handleEdit('Head-Back')}
+                                        />
+                                    </div>
+                                    <div>
+                                        <h4>Eyes Closed</h4>
+                                        <TexturePreview
+                                            texture={textures['Eyes-Closed']}
+                                            sx={{ width: '100px', height: '100px' }}
+                                            onClick={() => handleEdit('Eyes-Closed')}
+                                        />
+                                    </div>
+                                    <div>
+                                        <h4>Mouth Open</h4>
+                                        <TexturePreview
+                                            texture={textures['Mouth-Open']}
+                                            sx={{ width: '100px', height: '100px' }}
+                                            onClick={() => handleEdit('Mouth-Open')}
+                                        />
+                                    </div>
+                                </div>
+                                <Box>
+                                    <Typography variant="h6">Head Size</Typography>
+                                    <Slider
+                                        value={avatarParams.headSize}
+                                        min={-20}
+                                        max={20}
+                                        step={0.01}
+                                        onChange={(_e, newValue) =>
+                                            setAvatarParams((prev) => ({
+                                                ...prev,
+                                                headSize: newValue as number
+                                            }))
+                                        }
+                                        sx={{ width: '200px', padding: '20px' }}
+                                    />
+                                    <Typography variant="h6">Neck Length</Typography>
+                                    <Slider
+                                        value={avatarParams.neckLength}
+                                        min={-10}
+                                        max={10}
+                                        step={0.01}
+                                        onChange={(_e, newValue) =>
+                                            setAvatarParams((prev) => ({
+                                                ...prev,
+                                                neckLength: newValue as number
+                                            }))
+                                        }
+                                        sx={{ width: '200px', padding: '20px' }}
+                                    />
+                                </Box>
+                            </>
+                        )}
+                        {tab === 'body' && (
+                            <>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'row',
+                                        gap: '10px'
+                                    }}
+                                >
+                                    <div>
+                                        <h4>Front</h4>
+                                        <TexturePreview
+                                            texture={textures['Body-Front']}
+                                            sx={{ width: '100px', height: '100px' }}
+                                            onClick={() => handleEdit('Body-Front')}
+                                        />
+                                    </div>
+                                    <div>
+                                        <h4>Back</h4>
+                                        <TexturePreview
+                                            texture={textures['Body-Back']}
+                                            sx={{ width: '100px', height: '100px' }}
+                                            onClick={() => handleEdit('Body-Back')}
+                                        />
+                                    </div>
+                                </div>
+                                <Box>
+                                    <Typography variant="h6">Body Size</Typography>
+                                    <Slider
+                                        value={avatarParams.bodySize}
+                                        min={-20}
+                                        max={20}
+                                        step={0.01}
+                                        onChange={(_e, newValue) =>
+                                            setAvatarParams((prev) => ({
+                                                ...prev,
+                                                bodySize: newValue as number
+                                            }))
+                                        }
+                                        sx={{ width: '200px', padding: '20px' }}
+                                    />
+                                </Box>
+                            </>
+                        )}
+                        {tab === 'hand' && (
+                            <>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'row',
+                                        gap: '10px'
+                                    }}
+                                >
+                                    <div>
+                                        <h4>Front</h4>
+                                        <TexturePreview
+                                            texture={textures['Hand-Front']}
+                                            sx={{ width: '100px', height: '100px' }}
+                                            onClick={() => handleEdit('Hand-Front')}
+                                        />
+                                    </div>
+                                    <div>
+                                        <h4>Back</h4>
+                                        <TexturePreview
+                                            texture={textures['Hand-Back']}
+                                            sx={{ width: '100px', height: '100px' }}
+                                            onClick={() => handleEdit('Hand-Back')}
+                                        />
+                                    </div>
+                                </div>
+                                <Box>
+                                    <Typography variant="h6">Hand Size</Typography>
+                                    <Slider
+                                        value={avatarParams.handSize}
+                                        min={-1}
+                                        max={1}
+                                        step={0.01}
+                                        onChange={(_e, newValue) =>
+                                            setAvatarParams((prev) => ({
+                                                ...prev,
+                                                handSize: newValue as number
+                                            }))
+                                        }
+                                        sx={{ width: '200px', padding: '20px' }}
+                                    />
+                                </Box>
+                            </>
+                        )}
+                        {tab === 'legs' && (
+                            <>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'row',
+                                        gap: '10px'
+                                    }}
+                                >
+                                    <div>
+                                        <h4>Front</h4>
+                                        <TexturePreview
+                                            texture={textures['Legs-Front']}
+                                            sx={{ width: '100px', height: '100px' }}
+                                            onClick={() => handleEdit('Legs-Front')}
+                                        />
+                                    </div>
+                                    <div>
+                                        <h4>Back</h4>
+                                        <TexturePreview
+                                            texture={textures['Legs-Back']}
+                                            sx={{ width: '100px', height: '100px' }}
+                                            onClick={() => handleEdit('Legs-Back')}
+                                        />
+                                    </div>
+                                </div>
+                                <Box>
+                                    <Typography variant="h6">Legs Size</Typography>
+                                    <Slider
+                                        value={avatarParams.legsSize}
+                                        min={0.1}
+                                        max={2}
+                                        step={0.01}
+                                        onChange={(_e, newValue) =>
+                                            setAvatarParams((prev) => ({
+                                                ...prev,
+                                                legsSize: newValue as number
+                                            }))
+                                        }
+                                        sx={{ width: '200px', padding: '20px' }}
+                                    />
+                                    <Typography variant="h6">Legs Distance</Typography>
+                                    <Slider
+                                        value={avatarParams.legsDistance}
+                                        min={-5}
+                                        max={5}
+                                        step={0.01}
+                                        onChange={(_e, newValue) =>
+                                            setAvatarParams((prev) => ({
+                                                ...prev,
+                                                legsDistance: newValue as number
+                                            }))
+                                        }
+                                        sx={{ width: '200px', padding: '20px' }}
+                                    />
+                                    <Typography variant="h6">Legs Distance from Body</Typography>
+                                    <Slider
+                                        value={avatarParams.legsDistanceFromBody}
+                                        min={-10}
+                                        max={10}
+                                        step={0.01}
+                                        onChange={(_e, newValue) =>
+                                            setAvatarParams((prev) => ({
+                                                ...prev,
+                                                legsDistanceFromBody: newValue as number
+                                            }))
+                                        }
+                                        sx={{ width: '200px', padding: '20px' }}
+                                    />
+                                </Box>
+                            </>
+                        )}
+                        {tab === 'tail' && (
+                            <>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'row',
+                                        gap: '10px'
+                                    }}
+                                >
+                                    <div>
+                                        <h4>Front</h4>
+                                        <TexturePreview
+                                            texture={textures['Tail-Front']}
+                                            sx={{ width: '100px', height: '100px' }}
+                                            onClick={() => handleEdit('Tail-Front')}
+                                        />
+                                    </div>
+                                    <div>
+                                        <h4>Back</h4>
+                                        <TexturePreview
+                                            texture={textures['Tail-Back']}
+                                            sx={{ width: '100px', height: '100px' }}
+                                            onClick={() => handleEdit('Tail-Back')}
+                                        />
+                                    </div>
+                                </div>
+                                <Box>
+                                    <Typography variant="h6">Tail Size</Typography>
+                                    <Slider
+                                        value={avatarParams.tailSize}
+                                        min={-20}
+                                        max={20}
+                                        step={0.01}
+                                        onChange={(_e, newValue) =>
+                                            setAvatarParams((prev) => ({
+                                                ...prev,
+                                                tailSize: newValue as number
+                                            }))
+                                        }
+                                        sx={{ width: '200px', padding: '20px' }}
+                                    />
+                                    <Typography variant="h6">Tail Position</Typography>
+                                    <Slider
+                                        value={avatarParams.tailPosition}
+                                        min={-10}
+                                        max={10}
+                                        step={0.01}
+                                        onChange={(_e, newValue) =>
+                                            setAvatarParams((prev) => ({
+                                                ...prev,
+                                                tailPosition: newValue as number
+                                            }))
+                                        }
+                                        sx={{ width: '200px', padding: '20px' }}
+                                    />
+                                    <Typography variant="h6">Tail Rotation</Typography>
+                                    <Slider
+                                        value={avatarParams.tailRotation}
+                                        min={0}
+                                        max={2 * Math.PI}
+                                        step={0.001}
+                                        onChange={(_e, newValue) =>
+                                            setAvatarParams((prev) => ({
+                                                ...prev,
+                                                tailRotation: newValue as number
+                                            }))
+                                        }
+                                        sx={{ width: '200px', padding: '20px' }}
+                                    />
+                                </Box>
+                            </>
+                        )}
+                        <Divider />
                         <Box display="flex" gap="10px">
+                            <Button
+                                variant="contained"
+                                color="secondary"
+                                onClick={() => {
+                                    props.setMode('plaza')
+                                    props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
+                                }}
+                            >
+                                キャンセル
+                            </Button>
+
                             <Button
                                 variant="contained"
                                 onClick={() => {
@@ -581,7 +594,7 @@ Editor.Overlay = (props: {
                                     }
                                 }}
                             >
-                                Load Images
+                                ロード
                             </Button>
                             <Button
                                 variant="contained"
@@ -589,7 +602,7 @@ Editor.Overlay = (props: {
                                     handleExport(textures)
                                 }}
                             >
-                                Export Textures
+                                エクスポート
                             </Button>
                             <Button
                                 variant="contained"
@@ -597,7 +610,7 @@ Editor.Overlay = (props: {
                                     handleResoniteExport(textures)
                                 }}
                             >
-                                Export Resonite
+                                Resonite用に書き出し
                             </Button>
                         </Box>
                     </>

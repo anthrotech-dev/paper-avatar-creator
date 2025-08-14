@@ -6,6 +6,7 @@ import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { Canvas } from '@react-three/fiber'
 import { useRef, useState } from 'react'
 import { Camera, Vector3 } from 'three'
+import { Drawer } from './ui/Drawer'
 
 function App() {
     const [mode, setMode] = useState<'edit' | 'plaza'>('plaza')
@@ -63,11 +64,12 @@ function App() {
                     {mode === 'edit' && <Editor.Scene />}
                     <OrbitControls ref={orbitRef} />
                 </Canvas>
-                {mode === 'edit' ? (
+
+                {mode === 'plaza' && <Plaza.Overlay setMode={setMode} setView={setView} />}
+
+                <Drawer hideBackdrop open={mode === 'edit'}>
                     <Editor.Overlay setMode={setMode} setView={setView} />
-                ) : (
-                    <Plaza.Overlay setMode={setMode} setView={setView} />
-                )}
+                </Drawer>
             </Editor>
         </Box>
     )
