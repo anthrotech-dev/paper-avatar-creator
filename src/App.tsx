@@ -45,31 +45,33 @@ function App() {
             }}
         >
             <Editor>
-                <Canvas
-                    style={{
-                        width: '100vw',
-                        height: '100dvh',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0
-                    }}
-                    camera={{ position: [-2, 2, 10], fov: 30 }}
-                    onCreated={({ camera }) => {
-                        setCamera(camera)
-                    }}
-                >
-                    <ambientLight intensity={1} />
-                    <directionalLight position={[2, 2, 2]} intensity={1} />
-                    <Plaza.Scene />
-                    {mode === 'edit' && <Editor.Scene />}
-                    <OrbitControls ref={orbitRef} />
-                </Canvas>
+                <Plaza>
+                    <Canvas
+                        style={{
+                            width: '100vw',
+                            height: '100dvh',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0
+                        }}
+                        camera={{ position: [-2, 2, 10], fov: 30 }}
+                        onCreated={({ camera }) => {
+                            setCamera(camera)
+                        }}
+                    >
+                        <ambientLight intensity={1} />
+                        <directionalLight position={[2, 2, 2]} intensity={1} />
+                        <Plaza.Scene />
+                        {mode === 'edit' && <Editor.Scene />}
+                        <OrbitControls ref={orbitRef} />
+                    </Canvas>
 
-                {mode === 'plaza' && <Plaza.Overlay setMode={setMode} setView={setView} />}
+                    {mode === 'plaza' && <Plaza.Overlay setMode={setMode} setView={setView} />}
 
-                <Drawer open={mode === 'edit'}>
-                    <Editor.Overlay setMode={setMode} setView={setView} />
-                </Drawer>
+                    <Drawer open={mode === 'edit'}>
+                        <Editor.Overlay setMode={setMode} setView={setView} />
+                    </Drawer>
+                </Plaza>
             </Editor>
         </Box>
     )

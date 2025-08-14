@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import {
     Texture,
     Group,
@@ -27,17 +27,12 @@ type AvatarProps = {
     setSelected?: (selected: Object3D | null) => void
 }
 
-export const EditableAvatar = forwardRef<Object3D, AvatarProps>(function Avatar(
-    { params, textures, editing, setSelected },
-    ref
-) {
+export const EditableAvatar = ({ params, textures, editing, setSelected }: AvatarProps) => {
     const group = useRef<Group>(null)
     const { scene, animations } = useGLTF('/anim@RESO_Pera_idle.glb')
     const clone = useMemo(() => scene.clone(), [scene])
     const { nodes } = useGraph(clone)
     const mixer = useRef<AnimationMixer>(null)
-
-    useImperativeHandle(ref, () => group.current as Object3D, [group.current])
 
     const baseAnim = useMemo(() => {
         // headSize
@@ -240,4 +235,4 @@ export const EditableAvatar = forwardRef<Object3D, AvatarProps>(function Avatar(
             <FakeShadow />
         </group>
     )
-})
+}

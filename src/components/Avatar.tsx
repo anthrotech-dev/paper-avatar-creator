@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
     Group,
     AnimationMixer,
@@ -22,12 +22,17 @@ import { useGLTF } from '@react-three/drei'
 import { useFrame, useGraph } from '@react-three/fiber'
 import { FakeShadow } from './FakeShadow'
 
-type AvatarProps = {
-    id: string
-    setSelected?: (selected: Object3D | null) => void
+type AvatarEvent = {
+    manifest: AvatarManifest
+    target: Object3D
 }
 
-export const Avatar = forwardRef<Object3D, AvatarProps>(function Avatar({ id, setSelected }, ref) {
+type AvatarProps = {
+    id: string
+    onClick?: (_: AvatarEvent) => void
+}
+
+export const Avatar = (props: AvatarProps) => {
     const group = useRef<Group>(null)
     const { scene, animations } = useGLTF('/anim@RESO_Pera_idle.glb')
     const clone = useMemo(() => scene.clone(), [scene])
@@ -39,10 +44,8 @@ export const Avatar = forwardRef<Object3D, AvatarProps>(function Avatar({ id, se
 
     const [textures, setTextures] = useState<Record<string, Texture> | null>()
 
-    useImperativeHandle(ref, () => group.current as Object3D, [group.current])
-
     useEffect(() => {
-        const endpoint = `https://pub-01b22329d1ae4699af72f1db7103a0ab.r2.dev/uploads/${id}/manifest.json`
+        const endpoint = `https://pub-01b22329d1ae4699af72f1db7103a0ab.r2.dev/uploads/${props.id}/manifest.json`
         fetch(endpoint)
             .then((response) => {
                 if (!response.ok) {
@@ -76,7 +79,7 @@ export const Avatar = forwardRef<Object3D, AvatarProps>(function Avatar({ id, se
             .catch((error) => {
                 console.error('Error fetching avatar manifest:', error)
             })
-    }, [id])
+    }, [props.id])
 
     const baseAnim = useMemo(() => {
         if (!params) return null
@@ -256,11 +259,14 @@ export const Avatar = forwardRef<Object3D, AvatarProps>(function Avatar({ id, se
             onPointerDown={(e) => {
                 e.stopPropagation()
                 console.log('Avatar clicked', e)
-                setSelected?.(group.current)
+                props.onClick?.({
+                    manifest: manifest!,
+                    target: group.current!
+                })
             }}
         >
             <primitive scale={[0.01, 0.01, 0.01]} ref={group} object={clone} />
             <FakeShadow />
         </group>
     )
-})
+}
