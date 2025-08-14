@@ -50,6 +50,9 @@ importers:
       three:
         specifier: ^0.178.0
         version: 0.178.0
+      three-stdlib:
+        specifier: ^2.36.0
+        version: 2.36.0(three@0.178.0)
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.1

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
 import {
     Texture,
     Group,
@@ -20,22 +20,24 @@ import { useGLTF } from '@react-three/drei'
 import { useFrame, useGraph } from '@react-three/fiber'
 import { FakeShadow } from './FakeShadow'
 
-export function Avatar({
-    params,
-    textures,
-    editing,
-    setSelected
-}: {
+type AvatarProps = {
     params: AvatarParams
     textures: Record<string, Texture>
     editing: TextureKind | null
     setSelected?: (selected: Object3D | null) => void
-}) {
+}
+
+export const Avatar = forwardRef<Object3D, AvatarProps>(function Avatar(
+    { params, textures, editing, setSelected },
+    ref
+) {
     const group = useRef<Group>(null)
     const { scene, animations } = useGLTF('/anim@RESO_Pera_idle.glb')
     const clone = useMemo(() => scene.clone(), [scene])
     const { nodes } = useGraph(clone)
     const mixer = useRef<AnimationMixer>(null)
+
+    useImperativeHandle(ref, () => group.current as Object3D, [group.current])
 
     const baseAnim = useMemo(() => {
         // headSize
@@ -238,4 +240,4 @@ export function Avatar({
             <FakeShadow />
         </group>
     )
-}
+})

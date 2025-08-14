@@ -9,10 +9,11 @@ import {
     type RefObject,
     type SetStateAction
 } from 'react'
-import { Texture, CanvasTexture, TextureLoader, SRGBColorSpace } from 'three'
+import { Texture, CanvasTexture, TextureLoader, SRGBColorSpace, Vector3 } from 'three'
 
 import { TexturePreview } from '../ui/TexturePreview'
-import { Box, Button, Slider, Typography } from '@mui/material'
+import { Box, Button, Fab, Slider, Typography } from '@mui/material'
+import { MdArrowBack } from 'react-icons/md'
 
 import { handleExport, handleResoniteExport } from '../util'
 import { Painter } from '../ui/Painer'
@@ -131,15 +132,22 @@ export function Editor({ children }: { children?: React.ReactNode }) {
 Editor.Scene = () => {
     const { avatarParams, editing, textures } = useEditor()
     return (
-        <>
+        <group position={[0, 10, 0]}>
+            <mesh>
+                <cylinderGeometry args={[0.45, 0.45, 0.1, 32]} />
+                <meshBasicMaterial color="black" transparent opacity={0.65} depthWrite={false} toneMapped={false} />
+            </mesh>
             <Suspense fallback={null}>
                 <Avatar params={avatarParams} editing={editing} textures={textures} />
             </Suspense>
-        </>
+        </group>
     )
 }
 
-Editor.Overlay = () => {
+Editor.Overlay = (props: {
+    setView: (position: Vector3, lookAt: Vector3, speed: number) => void
+    setMode: (mode: 'edit' | 'plaza') => void
+}) => {
     const {
         textures,
         editing,
@@ -155,6 +163,22 @@ Editor.Overlay = () => {
     } = useEditor()
     return (
         <>
+            <Fab
+                color="primary"
+                sx={{
+                    position: 'absolute',
+                    top: '2rem',
+                    left: '2rem',
+                    zIndex: 1000
+                }}
+                onClick={() => {
+                    props.setMode('plaza')
+                    props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
+                }}
+            >
+                <MdArrowBack style={{ width: '2rem', height: '2rem', color: 'white' }} />
+            </Fab>
+
             <input
                 type="file"
                 accept="image/*"

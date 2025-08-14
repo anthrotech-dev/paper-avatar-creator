@@ -1,17 +1,14 @@
-import { type JSX, Suspense, useEffect, useState } from 'react'
-import { Texture, TextureLoader, SRGBColorSpace, Object3D } from 'three'
+import { Suspense, useEffect, useState } from 'react'
+import { Texture, TextureLoader, SRGBColorSpace, Object3D, Vector3 } from 'three'
 
 import { type AvatarParams, type TextureKind } from '../types'
 import { Avatar } from '../components/Avatar'
 import { Wanderer } from '../components/Wanderer'
 import { FollowCamera } from '../components/FollowCamera'
-
-import { MdAdd } from 'react-icons/md'
 import { Fab } from '@mui/material'
+import { MdAdd } from 'react-icons/md'
 
-export function Plaza({ children }: { children: JSX.Element[] | JSX.Element }) {
-    return <>{children}</>
-}
+export function Plaza() {}
 
 Plaza.Scene = () => {
     const [textures, setTextures] = useState<Record<string, Texture>>({})
@@ -86,20 +83,25 @@ Plaza.Scene = () => {
     )
 }
 
-Plaza.Overlay = () => {
+Plaza.Overlay = (props: {
+    setView: (position: Vector3, lookAt: Vector3, speed: number) => void
+    setMode: (mode: 'edit' | 'plaza') => void
+}) => {
     return (
-        <>
-            <Fab
-                color="primary"
-                sx={{
-                    position: 'absolute',
-                    bottom: '2rem',
-                    right: '2rem',
-                    zIndex: 1000
-                }}
-            >
-                <MdAdd style={{ width: '2rem', height: '2rem', color: 'white' }} />
-            </Fab>
-        </>
+        <Fab
+            color="primary"
+            sx={{
+                position: 'absolute',
+                bottom: '2rem',
+                right: '2rem',
+                zIndex: 1000
+            }}
+            onClick={() => {
+                props.setMode('edit')
+                props.setView(new Vector3(0, 10.5, 3), new Vector3(0, 10.5, 0), 1)
+            }}
+        >
+            <MdAdd style={{ width: '2rem', height: '2rem', color: 'white' }} />
+        </Fab>
     )
 }
