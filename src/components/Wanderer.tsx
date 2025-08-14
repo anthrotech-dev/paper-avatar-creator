@@ -2,77 +2,103 @@ import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import { Euler, Group, MathUtils, Vector3 } from 'three'
 
-// ====== XZ 平面ランダム徘徊コンポーネント ======
 interface WandererProps {
     children: React.ReactNode
     initial: [number, number, number]
     bounds?: number
     baseSpeed?: number
+    /** 到達後の休憩時間の範囲(秒) */
+    restRange?: [number, number]
 }
 
-export function Wanderer({ children, initial, bounds = 20, baseSpeed = 1.2 }: WandererProps) {
+type Mode = 'idle' | 'move'
+
+export function Wanderer({ children, initial, bounds = 20, baseSpeed = 1.2, restRange = [0.6, 2.0] }: WandererProps) {
     const group = useRef<Group>(null)
 
-    // 個体ごとの乱数シード
-    /*
-        const seed = useMemo(() => Math.random() * 10000, []);
-        const rand = (min: number, max: number) => min + (max - min) * fract(Math.sin(seed + performance.now() * 0.00001) * 43758.5453123);
-        function fract(x: number) {
-            return x - Math.floor(x);
-        }
-    */
+    const start = useMemo(() => new Vector3(...initial), [initial])
 
-    // 現在の目標地点・速度などの内部状態
     const state = useRef({
-        target: new Vector3(MathUtils.randFloatSpread(bounds * 2), 0, MathUtils.randFloatSpread(bounds * 2)),
-        vel: new Vector3(),
-        speed: baseSpeed * MathUtils.randFloat(0.8, 1.2)
+        mode: 'idle' as Mode,
+        target: new Vector3(), // 次に向かう座標
+        speed: baseSpeed, // セグメントごとの指示速度
+        rest: MathUtils.randFloat(...restRange), // idle の残り秒数
+        segStart: start.clone(), // セグメント開始位置
+        segLength: 1 // 開始時のターゲットまでの距離
     })
 
-    // 初期位置設定
-    const start = useMemo(() => new Vector3(...initial), [initial])
+    // 次のターゲットを決める & 速度をランダム化
+    const planNext = (from: Vector3) => {
+        state.current.target.set(MathUtils.randFloatSpread(bounds * 2), 0, MathUtils.randFloatSpread(bounds * 2))
+        state.current.speed = baseSpeed * MathUtils.randFloat(0.85, 1.4) // セグメントごとに速度を変える
+        state.current.segStart.copy(from)
+        state.current.segLength = Math.max(0.001, state.current.target.distanceTo(from))
+        state.current.mode = 'move'
+    }
 
     useFrame((_, dt) => {
         const g = group.current
         if (!g) return
 
-        // 位置ベクトル
         const pos = g.position as Vector3
-        if (pos.y !== 0) pos.y = 0 // 地面に固定
+        if (pos.y !== 0) pos.y = 0
 
-        // ゴールに近づいたら再設定
-        const toTarget = state.current.target.clone().sub(pos)
-        const dist = toTarget.length()
-        if (dist < 0.25) {
-            state.current.target.set(MathUtils.randFloatSpread(bounds * 2), 0, MathUtils.randFloatSpread(bounds * 2))
-            // 速度微調整: 人によって少し違う
-            state.current.speed = baseSpeed * MathUtils.randFloat(0.9, 1.3)
-            return // 次フレームから移動
+        // --- IDLE（休憩） ---
+        if (state.current.mode === 'idle') {
+            state.current.rest -= dt
+            if (state.current.rest <= 0) {
+                // 次の移動を計画
+                planNext(pos)
+            }
+            return
         }
 
-        // 方向と速度
-        const dir = toTarget.normalize()
-        const maxStep = state.current.speed * dt // 移動量(m)
+        // --- MOVE（移動） ---
+        const toTarget = state.current.target.clone().sub(pos)
+        const dist = toTarget.length()
 
-        // 平滑回頭: 現向き(Yaw) -> 目標方向 へ補間
-        const desiredYaw = Math.atan2(dir.x, dir.z) // +x 右, +z 前
+        // 目的地に十分近ければ休憩に入る
+        if (dist < 0.25) {
+            state.current.mode = 'idle'
+            state.current.rest = MathUtils.randFloat(...restRange)
+            return
+        }
+
+        // 進行方向
+        const dir = toTarget.normalize()
+
+        // ヨーだけスムーズに追従
+        const desiredYaw = Math.atan2(dir.x, dir.z)
         const euler = new Euler().setFromQuaternion(g.quaternion, 'YXZ')
         const currentYaw = euler.y
-        const turnRate = 3.0 // 大きいほどクイックに向きを変える
+        const turnRate = 3.0
         const newYaw = MathUtils.lerp(currentYaw, desiredYaw, MathUtils.clamp(turnRate * dt, 0, 1))
         g.quaternion.setFromEuler(new Euler(0, newYaw, 0))
 
-        // 前進
+        // セグメント内の進捗 0..1
+        const progress = 1 - dist / state.current.segLength
+
+        // 加減速のイージング（smoothstep）
+        const ease = progress * progress * (3 - 2 * progress) // smoothstep(0,1,p)
+        // ほんの少しのゆらぎ（足取りの不均一さ）
+        const wobble = 0.9 + 0.2 * Math.sin(progress * Math.PI * 2 + 7.0)
+
+        const actualSpeed = state.current.speed * (0.6 + 0.6 * ease) * wobble
+        const maxStep = actualSpeed * dt
+
+        // 前方方向に進める
         const forward = new Vector3(0, 0, 1).applyQuaternion(g.quaternion)
         pos.addScaledVector(forward, maxStep)
 
-        // 境界の外に出そうなら反転気味に次ターゲットを振る
+        // フィールド外に出そうなら引き返すようターゲットを更新（衝突回避）
         if (Math.abs(pos.x) > bounds || Math.abs(pos.z) > bounds) {
-            state.current.target.set(
-                MathUtils.clamp(pos.x, -bounds + 0.5, bounds - 0.5) * -0.8,
-                0,
-                MathUtils.clamp(pos.z, -bounds + 0.5, bounds - 0.5) * -0.8
-            )
+            const nx = MathUtils.clamp(pos.x, -bounds + 0.5, bounds - 0.5) * -0.8
+            const nz = MathUtils.clamp(pos.z, -bounds + 0.5, bounds - 0.5) * -0.8
+            state.current.target.set(nx, 0, nz)
+            state.current.segStart.copy(pos)
+            state.current.segLength = Math.max(0.001, state.current.target.distanceTo(pos))
+            // 方向転換したので速度も少し変える
+            state.current.speed = baseSpeed * MathUtils.randFloat(0.85, 1.3)
         }
     })
 
