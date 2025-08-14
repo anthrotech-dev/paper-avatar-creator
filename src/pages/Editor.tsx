@@ -13,7 +13,7 @@ import { Texture, CanvasTexture, TextureLoader, SRGBColorSpace, Vector3 } from '
 import { TexturePreview } from '../ui/TexturePreview'
 import { Box, Button, Divider, Slider, Tab, Tabs, TextField, Typography } from '@mui/material'
 
-import { handleExport, handleResoniteExport } from '../util'
+import { handleExport, handlePublish, handleResoniteExport } from '../util'
 import { Painter } from '../ui/Painer'
 
 import Konva from 'konva'
@@ -611,6 +611,16 @@ Editor.Overlay = (props: {
                                 }}
                             >
                                 Resonite用に書き出し
+                            </Button>
+                            <Button
+                                variant="contained"
+                                onClick={() => {
+                                    handlePublish(manifest, textures).then((data) => {
+                                        console.log('Published successfully:', data)
+                                    })
+                                }}
+                            >
+                                公開
                             </Button>
                         </Box>
                     </>

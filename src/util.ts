@@ -2,6 +2,45 @@ import JSZip from 'jszip'
 import { BSON } from 'bson'
 import { Texture } from 'three'
 import brotliPromise from 'brotli-wasm'
+import type { AvatarManifest } from './types'
+
+export const handlePublish = async (manifest: Partial<AvatarManifest>, textures: Record<string, Texture>) => {
+    const endpoint = 'https://paper-avatar-creator.pages.dev/api/upload'
+
+    const entries = await Promise.all(
+        Object.entries(textures).map(async ([key, tex]) => {
+            if (!tex) return null
+            const { blob } = await textureToPng(tex) // ← 既存ユーティリティ
+            return { key, blob }
+        })
+    )
+
+    const form = new FormData()
+
+    form.append('manifest', new Blob([JSON.stringify(manifest)], { type: 'application/json' }), 'manifest.json')
+
+    for (const e of entries) {
+        if (!e) continue
+        form.append('textures', e.blob, `${e.key}.png`)
+    }
+
+    const res = await fetch(endpoint, {
+        method: 'POST',
+        body: form
+    })
+
+    if (!res.ok) {
+        const text = await res.text().catch(() => '')
+        throw new Error(`Upload failed: ${res.status} ${res.statusText} ${text}`)
+    }
+
+    return res.json().then((data) => {
+        if (data.error) {
+            throw new Error(`Upload failed: ${data.error}`)
+        }
+        return data
+    })
+}
 
 export const handleExport = async (textures: Record<string, Texture>) => {
     const zip = new JSZip()
