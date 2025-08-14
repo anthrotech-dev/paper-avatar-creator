@@ -14,6 +14,7 @@ import Konva from 'konva'
 import { type AvatarParams, type TextureKind } from './types'
 import { useKonvaTexture } from './useKonvaTexture'
 import { Avatar } from './Avatar'
+import { Wanderer } from './Wanderer'
 
 function App() {
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -118,13 +119,25 @@ function App() {
                     top: 0,
                     left: 0
                 }}
-                camera={{ position: [0, 1, 3], fov: 50 }}
+                camera={{ position: [0, 5, -5], fov: 25 }}
             >
                 <ambientLight intensity={1} />
                 <directionalLight position={[2, 2, 2]} intensity={1} />
-                <Suspense fallback={null}>
-                    <Avatar params={avatarParams} editing={editing} textures={textures} />
-                </Suspense>
+
+                <group>
+                    <mesh rotation={[-Math.PI / 2, 0, 0]}>
+                        <planeGeometry args={[200, 200]} />
+                        <meshStandardMaterial color="#3a3a3a" roughness={1} metalness={0} />
+                    </mesh>
+
+                    <gridHelper args={[200, 200, 0x888888, 0x444444]} position={[0, 0.001, 0]} />
+                </group>
+
+                <Wanderer initial={[0, 0, 0]} bounds={5} baseSpeed={0.5}>
+                    <Suspense fallback={null}>
+                        <Avatar params={avatarParams} editing={editing} textures={textures} />
+                    </Suspense>
+                </Wanderer>
                 <OrbitControls />
             </Canvas>
 

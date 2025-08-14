@@ -17,6 +17,7 @@ import { textureKeyMap, type AvatarParams, type TextureKind } from './types'
 import { useGLTF } from '@react-three/drei'
 
 import { useFrame } from '@react-three/fiber'
+import { FakeShadow } from './FakeShadow'
 
 export function Avatar({
     params,
@@ -220,5 +221,10 @@ export function Avatar({
         }
     })
 
-    return <primitive position={[-1, 0, 0]} scale={[0.01, 0.01, 0.01]} ref={group} object={scene} />
+    return (
+        <group>
+            <primitive scale={[0.01, 0.01, 0.01]} ref={group} object={scene} />
+            <FakeShadow />
+        </group>
+    )
 }
