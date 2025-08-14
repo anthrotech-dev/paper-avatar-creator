@@ -21,7 +21,7 @@ export const handlePublish = async (manifest: Partial<AvatarManifest>, textures:
 
     for (const e of entries) {
         if (!e) continue
-        form.append('textures', e.blob, `${e.key}.png`)
+        form.append(e.key, e.blob, `${e.key}.png`)
     }
 
     const res = await fetch(endpoint, {

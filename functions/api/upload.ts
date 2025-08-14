@@ -28,7 +28,7 @@ export const onRequest: PagesFunction<{ BUCKET: R2Bucket }> = async (context) =>
     const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('x-forwarded-for') || 'unknown'
     const form = await request.formData()
 
-    const manifestFile = form.get('manifest.json')
+    const manifestFile = form.get('manifest')
     if (!manifestFile || !(manifestFile instanceof File)) {
         return new Response('Manifest file is required', { status: 400 })
     }
