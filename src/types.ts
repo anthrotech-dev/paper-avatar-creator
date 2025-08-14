@@ -43,3 +43,16 @@ export type AvatarParams = {
     legsDistanceFromBody: number
     legsInFront: boolean
 }
+
+export type AvatarManifest = {
+    id: string
+    extends?: string
+    params: AvatarParams
+    textures: Record<TextureKind, string>
+
+    name: string
+    creator: string
+    description?: string
+    editable: boolean
+    exportable: boolean
+}
