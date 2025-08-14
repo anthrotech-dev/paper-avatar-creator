@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
-import { Texture, CanvasTexture, TextureLoader, SRGBColorSpace } from 'three'
+import { Texture, CanvasTexture, TextureLoader, SRGBColorSpace, Object3D } from 'three'
 
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
@@ -15,6 +15,7 @@ import { type AvatarParams, type TextureKind } from './types'
 import { useKonvaTexture } from './useKonvaTexture'
 import { Avatar } from './Avatar'
 import { Wanderer } from './Wanderer'
+import { FollowCamera } from './FollowCamera'
 
 function App() {
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -23,6 +24,8 @@ function App() {
     const [editing, setEditing] = useState<TextureKind | null>(null)
     const [oldTexture, setOldTexture] = useState<Texture | null>(null)
     const editingTex = useKonvaTexture(drawingLayerRef, editing)
+
+    const [selected, setSelected] = useState<Object3D | null>(null)
 
     const [avatarParams, setAvatarParams] = useState<AvatarParams>({
         headSize: 0,
@@ -125,7 +128,13 @@ function App() {
                 <directionalLight position={[2, 2, 2]} intensity={1} />
 
                 <group>
-                    <mesh rotation={[-Math.PI / 2, 0, 0]}>
+                    <mesh
+                        rotation={[-Math.PI / 2, 0, 0]}
+                        onPointerDown={(e) => {
+                            e.stopPropagation()
+                            setSelected(null)
+                        }}
+                    >
                         <planeGeometry args={[200, 200]} />
                         <meshStandardMaterial color="#3a3a3a" roughness={1} metalness={0} />
                     </mesh>
@@ -135,10 +144,11 @@ function App() {
 
                 <Wanderer initial={[0, 0, 0]} bounds={5} baseSpeed={0.5}>
                     <Suspense fallback={null}>
-                        <Avatar params={avatarParams} editing={editing} textures={textures} />
+                        <Avatar params={avatarParams} editing={editing} textures={textures} setSelected={setSelected} />
                     </Suspense>
                 </Wanderer>
                 <OrbitControls />
+                <FollowCamera target={selected} />
             </Canvas>
 
             <Box

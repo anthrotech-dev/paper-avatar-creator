@@ -10,7 +10,8 @@ import {
     AdditiveAnimationBlendMode,
     QuaternionKeyframeTrack,
     Euler,
-    Quaternion
+    Quaternion,
+    Object3D
 } from 'three'
 
 import { textureKeyMap, type AvatarParams, type TextureKind } from './types'
@@ -22,11 +23,13 @@ import { FakeShadow } from './FakeShadow'
 export function Avatar({
     params,
     textures,
-    editing
+    editing,
+    setSelected
 }: {
     params: AvatarParams
     textures: Record<string, Texture>
     editing: TextureKind | null
+    setSelected: (selected: Object3D | null) => void
 }) {
     const group = useRef<Group>(null)
     const { nodes, scene, animations } = useGLTF('/anim@RESO_Pera_idle.glb')
@@ -222,7 +225,13 @@ export function Avatar({
     })
 
     return (
-        <group>
+        <group
+            onPointerDown={(e) => {
+                e.stopPropagation()
+                console.log('Avatar clicked', e)
+                setSelected(group.current)
+            }}
+        >
             <primitive scale={[0.01, 0.01, 0.01]} ref={group} object={scene} />
             <FakeShadow />
         </group>
