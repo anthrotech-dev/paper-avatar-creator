@@ -61,7 +61,7 @@ function App() {
                     >
                         <ambientLight intensity={1} />
                         <directionalLight position={[2, 2, 2]} intensity={1} />
-                        <Plaza.Scene />
+                        <Plaza.Scene setView={setView} />
                         {mode === 'edit' && <Editor.Scene />}
                         <OrbitControls ref={orbitRef} />
                     </Canvas>

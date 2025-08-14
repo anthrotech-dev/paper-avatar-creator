@@ -28,7 +28,6 @@ export function FollowCamera({ target, frontDistance = 3, height = 2.5 }: Follow
 
         const cameraLookAt = position.clone().add(new Vector3(0, 0.5, 0)) // Look at slightly above the target
 
-        //camera.position.lerp(cameraPos, smooth)
         camera.position.set(...cameraPos.toArray())
         camera.lookAt(cameraLookAt)
     })

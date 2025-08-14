@@ -37,7 +37,7 @@ export function Plaza({ children }: { children?: React.ReactNode }) {
     return <PlazaContext.Provider value={{ selectedManifest, setSelectedManifest }}>{children}</PlazaContext.Provider>
 }
 
-Plaza.Scene = () => {
+Plaza.Scene = (props: { setView: (position: Vector3, lookAt: Vector3, speed: number) => void }) => {
     const { setSelectedManifest } = usePlaza()
     const [selected, setSelected] = useState<Object3D | null>(null)
 
@@ -50,6 +50,7 @@ Plaza.Scene = () => {
                         e.stopPropagation()
                         setSelected(null)
                         setSelectedManifest(null)
+                        props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
                     }}
                 >
                     <planeGeometry args={[200, 200]} />
