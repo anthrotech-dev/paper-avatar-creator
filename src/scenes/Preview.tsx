@@ -1,5 +1,14 @@
 import { Box, Button, Divider, Typography } from '@mui/material'
-import { createContext, Suspense, useContext, useEffect, useState, type ReactNode } from 'react'
+import {
+    createContext,
+    Suspense,
+    useContext,
+    useEffect,
+    useState,
+    type Dispatch,
+    type ReactNode,
+    type SetStateAction
+} from 'react'
 import type { AvatarManifest } from '../types'
 import { Drawer } from '../ui/Drawer'
 import { Avatar } from '../components/Avatar'
@@ -79,7 +88,11 @@ Preview.Scene = () => {
     )
 }
 
-Preview.Overlay = (props: { setView: (position: Vector3, lookAt: Vector3, speed: number) => void }) => {
+Preview.Overlay = (props: {
+    collection: string[]
+    setCollection: Dispatch<SetStateAction<string[]>>
+    setView: (position: Vector3, lookAt: Vector3, speed: number) => void
+}) => {
     const { manifest } = usePreview()
     const navigate = useNavigate()
 
@@ -101,7 +114,6 @@ Preview.Overlay = (props: { setView: (position: Vector3, lookAt: Vector3, speed:
                         <Typography>{manifest.description}</Typography>
                     </Box>
                     <Button
-                        variant="contained"
                         color="primary"
                         sx={{ margin: '1rem' }}
                         onClick={() => {
@@ -110,6 +122,18 @@ Preview.Overlay = (props: { setView: (position: Vector3, lookAt: Vector3, speed:
                         }}
                     >
                         とじる
+                    </Button>
+                    <Button
+                        variant="contained"
+                        sx={{ margin: '1rem' }}
+                        disabled={props.collection.includes(manifest.id)}
+                        onClick={() => {
+                            props.setCollection([...props.collection, manifest.id])
+                            props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
+                            navigate('/')
+                        }}
+                    >
+                        コレクションに追加
                     </Button>
                 </>
             )}

@@ -1,20 +1,13 @@
-import { createContext, memo, Suspense, useContext, useState } from 'react'
+import { createContext, memo, Suspense, useContext, useState, type Dispatch, type SetStateAction } from 'react'
 import { Object3D, Vector3 } from 'three'
 
 import { Avatar } from '../components/Avatar'
 import { Wanderer } from '../components/Wanderer'
 import { FollowCamera } from '../components/FollowCamera'
-import { Box, Divider, Fab, Typography } from '@mui/material'
+import { Box, Button, Divider, Fab, Typography } from '@mui/material'
 import { MdAdd } from 'react-icons/md'
 import { type AvatarManifest } from '../types'
 import { Drawer } from '../ui/Drawer'
-
-const avatars = [
-    '40k4v47xgajk495506caht1p5r',
-    'k6c06jrgz3bx77g206cajerj6c',
-    'antwew8bg3n517b906cajfqkcc',
-    '5sn4vqpg9yame7n806cajt10nc'
-]
 
 type PlazaState = {
     selectedManifest: AvatarManifest | null
@@ -37,7 +30,7 @@ export function Plaza({ children }: { children?: React.ReactNode }) {
     return <PlazaContext.Provider value={{ selectedManifest, setSelectedManifest }}>{children}</PlazaContext.Provider>
 }
 
-Plaza.Scene = (props: { setView: (position: Vector3, lookAt: Vector3, speed: number) => void }) => {
+Plaza.Scene = (props: { avatars: string[]; setView: (position: Vector3, lookAt: Vector3, speed: number) => void }) => {
     const { setSelectedManifest } = usePlaza()
     const [selected, setSelected] = useState<Object3D | null>(null)
 
@@ -58,7 +51,11 @@ Plaza.Scene = (props: { setView: (position: Vector3, lookAt: Vector3, speed: num
                     <planeGeometry args={[200, 200]} />
                     <meshStandardMaterial color="#3a3a3a" roughness={1} metalness={0} />
                 </mesh>
-                <AvatarsRenderer setSelectedManifest={setSelectedManifest} setSelected={setSelected} />
+                <AvatarsRenderer
+                    avatars={props.avatars}
+                    setSelectedManifest={setSelectedManifest}
+                    setSelected={setSelected}
+                />
                 <gridHelper args={[200, 200, 0x888888, 0x444444]} position={[0, 0.001, 0]} />
             </group>
             <FollowCamera target={selected} />
@@ -68,9 +65,11 @@ Plaza.Scene = (props: { setView: (position: Vector3, lookAt: Vector3, speed: num
 
 const AvatarsRenderer = memo(
     ({
+        avatars,
         setSelectedManifest,
         setSelected
     }: {
+        avatars: string[]
         setSelectedManifest: (_: AvatarManifest | null) => void
         setSelected: (_: Object3D | null) => void
     }) => {
@@ -102,8 +101,9 @@ const AvatarsRenderer = memo(
 Plaza.Overlay = (props: {
     setView: (position: Vector3, lookAt: Vector3, speed: number) => void
     setMode: (mode: 'edit' | 'plaza') => void
+    setCollection: Dispatch<SetStateAction<string[]>>
 }) => {
-    const { selectedManifest } = usePlaza()
+    const { selectedManifest, setSelectedManifest } = usePlaza()
 
     return (
         <>
@@ -136,6 +136,28 @@ Plaza.Overlay = (props: {
                         <Typography>Creator: {selectedManifest.creator}</Typography>
                         <Divider />
                         <Typography>{selectedManifest.description}</Typography>
+                        <Box flex={1} />
+                        <Button
+                            color="primary"
+                            variant="contained"
+                            onClick={() => {
+                                navigator.clipboard.writeText(location.origin + '#' + selectedManifest.id)
+                            }}
+                        >
+                            URLをコピー
+                        </Button>
+                        <Button
+                            color="error"
+                            variant="contained"
+                            onClick={() => {
+                                props.setMode('plaza')
+                                props.setCollection((c) => c.filter((id) => id !== selectedManifest.id))
+                                setSelectedManifest(null)
+                                props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
+                            }}
+                        >
+                            コレクションから削除
+                        </Button>
                     </Box>
                 )}
             </Drawer>

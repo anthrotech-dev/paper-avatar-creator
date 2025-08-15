@@ -651,7 +651,26 @@ Editor.Overlay = (props: {
                         <DialogTitle>公開完了</DialogTitle>
                         <DialogContent>
                             アバターの公開が完了しました！
-                            <Button>シェア</Button>
+                            <Button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(location.origin + '#' + uploaded.id)
+                                }}
+                            >
+                                URLをコピー
+                            </Button>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={() => {
+                                    window.open(
+                                        `https://x.com/intent/tweet?text=${encodeURIComponent(
+                                            `${location.origin}#${uploaded.id}`
+                                        )}`
+                                    )
+                                }}
+                            >
+                                Xでシェア
+                            </Button>
                         </DialogContent>
                         <DialogActions>
                             <Button onClick={() => setOpen(false)}>閉じる</Button>

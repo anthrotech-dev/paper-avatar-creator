@@ -9,6 +9,7 @@ import { Camera, Vector3 } from 'three'
 import { Drawer } from './ui/Drawer'
 import { useLocation } from 'react-router-dom'
 import { Preview } from './scenes/Preview'
+import { usePersistent } from './usePersistent'
 
 function App() {
     const [mode, setMode] = useState<'edit' | 'plaza'>('plaza')
@@ -16,7 +17,11 @@ function App() {
     const orbitRef = useRef<OrbitControlsImpl>(null)
 
     const { hash } = useLocation()
-    const previewId = hash ? hash.replace('#', '') : ''
+    const avatarId = hash ? hash.replace('#', '') : ''
+    const [collection, setCollection] = usePersistent('collection', ['5sn4vqpg9yame7n806cajt10nc'])
+
+    // const focusId = collection.includes(avatarId) ? avatarId : ''
+    const previewId = collection.includes(avatarId) ? '' : avatarId
 
     const setView = (position: Vector3, lookAt: Vector3, duration: number) => {
         if (!orbitRef.current || !camera) return
@@ -67,14 +72,16 @@ function App() {
                         >
                             <ambientLight intensity={1} />
                             <directionalLight position={[2, 2, 2]} intensity={1} />
-                            <Plaza.Scene setView={setView} />
+                            <Plaza.Scene avatars={collection} setView={setView} />
                             {mode === 'edit' && <Editor.Scene />}
                             <OrbitControls ref={orbitRef} />
                             <Preview.Scene />
                         </Canvas>
 
-                        {mode === 'plaza' && <Plaza.Overlay setMode={setMode} setView={setView} />}
-                        <Preview.Overlay setView={setView} />
+                        {mode === 'plaza' && (
+                            <Plaza.Overlay setMode={setMode} setView={setView} setCollection={setCollection} />
+                        )}
+                        <Preview.Overlay setView={setView} collection={collection} setCollection={setCollection} />
 
                         <Drawer open={mode === 'edit'}>
                             <Editor.Overlay setMode={setMode} setView={setView} />
