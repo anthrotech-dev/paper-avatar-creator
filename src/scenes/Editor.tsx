@@ -103,6 +103,22 @@ export function Editor({ children }: { children?: React.ReactNode }) {
         }
 
         setTextures(textures)
+        setParent(null)
+        setEditing(null)
+        setAvatarParams({
+            headSize: 0,
+            neckLength: 0,
+            headInFront: true,
+            handSize: 0,
+            bodySize: 0,
+            tailSize: 0,
+            tailPosition: 0,
+            tailRotation: 0,
+            legsSize: 0,
+            legsDistance: 0,
+            legsDistanceFromBody: 0,
+            legsInFront: true
+        })
     }, [])
 
     useEffect(() => {
@@ -148,7 +164,7 @@ Editor.Overlay = (props: {
     setMode: (mode: 'edit' | 'plaza') => void
     setCollection: Dispatch<SetStateAction<string[]>>
 }) => {
-    const { init, textures, editing, setEditing, setTextures, avatarParams, setAvatarParams } = useEditor()
+    const { init, parent, textures, editing, setEditing, setTextures, avatarParams, setAvatarParams } = useEditor()
 
     const handleEdit = (textureKind: TextureKind) => {
         setEditing(textureKind)
@@ -269,7 +285,7 @@ Editor.Overlay = (props: {
                             }
                             sx={{ marginBottom: '20px', color: 'white' }}
                         >
-                            <Tab label="プロフィール" value="info" />
+                            <Tab label={'プロフィール' + (manifest.name ? '' : '*')} value="info" />
                             <Tab label="あたま" value="head" />
                             <Tab label="からだ" value="body" />
                             <Tab label="て" value="hand" />
@@ -280,6 +296,7 @@ Editor.Overlay = (props: {
                         {tab === 'info' && (
                             <>
                                 <TextField
+                                    required
                                     label="名前"
                                     variant="outlined"
                                     value={manifest.name || ''}
@@ -646,6 +663,7 @@ Editor.Overlay = (props: {
                             </Button>
                             <Button
                                 variant="contained"
+                                disabled={!manifest.name}
                                 onClick={() => {
                                     setOpen(true)
                                 }}
@@ -743,6 +761,7 @@ Editor.Overlay = (props: {
                                     handlePublish(
                                         {
                                             ...manifest,
+                                            extends: parent?.id,
                                             params: avatarParams
                                         },
                                         textures
