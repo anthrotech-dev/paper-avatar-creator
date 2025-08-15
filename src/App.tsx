@@ -82,7 +82,7 @@ function App() {
                         <Preview.Overlay setView={setView} collection={collection} setCollection={setCollection} />
 
                         <Drawer open={mode === 'edit'}>
-                            <Editor.Overlay setMode={setMode} setView={setView} />
+                            <Editor.Overlay setMode={setMode} setView={setView} setCollection={setCollection} />
                         </Drawer>
                     </Plaza>
                 </Editor>
