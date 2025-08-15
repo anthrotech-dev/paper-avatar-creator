@@ -9,8 +9,11 @@ import { MdAdd } from 'react-icons/md'
 import { type AvatarManifest } from '../types'
 import { Drawer } from '../ui/Drawer'
 import { handleResoniteExport } from '../util'
+import { useEditor } from './Editor'
 
 type PlazaState = {
+    selected: Object3D | null
+    setSelected: Dispatch<SetStateAction<Object3D | null>>
     textures: Record<string, Texture>
     setTextures: Dispatch<SetStateAction<Record<string, Texture>>>
     selectedManifest: AvatarManifest | null
@@ -28,19 +31,28 @@ const usePlaza = () => {
 }
 
 export function Plaza({ children }: { children?: React.ReactNode }) {
+    const [selected, setSelected] = useState<Object3D | null>(null)
     const [selectedManifest, setSelectedManifest] = useState<AvatarManifest | null>(null)
     const [textures, setTextures] = useState<Record<string, Texture>>({})
 
     return (
-        <PlazaContext.Provider value={{ textures, selectedManifest, setTextures, setSelectedManifest }}>
+        <PlazaContext.Provider
+            value={{
+                textures,
+                selectedManifest,
+                setTextures,
+                setSelectedManifest,
+                selected,
+                setSelected
+            }}
+        >
             {children}
         </PlazaContext.Provider>
     )
 }
 
 Plaza.Scene = (props: { avatars: string[]; setView: (position: Vector3, lookAt: Vector3, speed: number) => void }) => {
-    const { setSelectedManifest, setTextures } = usePlaza()
-    const [selected, setSelected] = useState<Object3D | null>(null)
+    const { selected, setSelected, setSelectedManifest, setTextures } = usePlaza()
 
     return (
         <>
@@ -115,7 +127,9 @@ Plaza.Overlay = (props: {
     setMode: (mode: 'edit' | 'plaza') => void
     setCollection: Dispatch<SetStateAction<string[]>>
 }) => {
-    const { selectedManifest, setSelectedManifest, textures } = usePlaza()
+    const { setSelected, selectedManifest, setSelectedManifest, textures } = usePlaza()
+
+    const { setTextures, setParent } = useEditor()
 
     return (
         <>
@@ -157,6 +171,20 @@ Plaza.Overlay = (props: {
                             }}
                         >
                             Resonite用に書き出し
+                        </Button>
+                        <Button
+                            variant="contained"
+                            disabled={!selectedManifest.editable}
+                            onClick={() => {
+                                setTextures(textures)
+                                setParent(selectedManifest)
+                                setSelected(null)
+                                setSelectedManifest(null)
+                                props.setView(new Vector3(0, 10.5, 3), new Vector3(0, 10.5, 0), 1)
+                                props.setMode('edit')
+                            }}
+                        >
+                            改変する
                         </Button>
                         <Button
                             color="primary"

@@ -1,6 +1,7 @@
 import {
     createContext,
     Suspense,
+    useCallback,
     useContext,
     useEffect,
     useRef,
@@ -38,6 +39,9 @@ import { useKonvaTexture } from '../useKonvaTexture'
 import { EditableAvatar } from '../components/EditableAvatar'
 
 type EditorState = {
+    init: () => Promise<void>
+    parent: AvatarManifest | null
+    setParent: Dispatch<SetStateAction<AvatarManifest | null>>
     textures: Record<TextureKind, Texture>
     editing: TextureKind | null
     avatarParams: AvatarParams
@@ -48,7 +52,7 @@ type EditorState = {
 
 const EditorContext = createContext<EditorState | null>(null)
 
-const useEditor = () => {
+export const useEditor = () => {
     const ctx = useContext(EditorContext)
     if (!ctx) {
         throw new Error('useEditor must be used within an EditorProvider')
@@ -57,6 +61,7 @@ const useEditor = () => {
 }
 
 export function Editor({ children }: { children?: React.ReactNode }) {
+    const [parent, setParent] = useState<AvatarManifest | null>(null)
     const [textures, setTextures] = useState<Record<string, Texture>>({})
     const [editing, setEditing] = useState<TextureKind | null>(null)
 
@@ -75,42 +80,47 @@ export function Editor({ children }: { children?: React.ReactNode }) {
         legsInFront: true
     })
 
+    const init = useCallback(async () => {
+        const loader = new TextureLoader()
+        const textures: Record<TextureKind, Texture> = {
+            'Head-Front': await loader.loadAsync('/tex/Head-Front.png'),
+            'Head-Back': await loader.loadAsync('/tex/Head-Back.png'),
+            'Eyes-Closed': await loader.loadAsync('/tex/Eyes-Closed.png'),
+            'Mouth-Open': await loader.loadAsync('/tex/Mouth-Open.png'),
+            'Body-Front': await loader.loadAsync('/tex/Body-Front.png'),
+            'Body-Back': await loader.loadAsync('/tex/Body-Back.png'),
+            'Hand-Front': await loader.loadAsync('/tex/Hand-Front.png'),
+            'Hand-Back': await loader.loadAsync('/tex/Hand-Back.png'),
+            'Legs-Front': await loader.loadAsync('/tex/Legs-Front.png'),
+            'Legs-Back': await loader.loadAsync('/tex/Legs-Back.png'),
+            'Tail-Front': await loader.loadAsync('/tex/Tail-Front.png'),
+            'Tail-Back': await loader.loadAsync('/tex/Tail-Back.png')
+        }
+
+        for (const key in textures) {
+            textures[key as TextureKind].flipY = false
+            textures[key as TextureKind].colorSpace = SRGBColorSpace
+        }
+
+        setTextures(textures)
+    }, [])
+
     useEffect(() => {
-        ;(async () => {
-            const loader = new TextureLoader()
-            const textures: Record<TextureKind, Texture> = {
-                'Head-Front': await loader.loadAsync('/tex/Head-Front.png'),
-                'Head-Back': await loader.loadAsync('/tex/Head-Back.png'),
-                'Eyes-Closed': await loader.loadAsync('/tex/Eyes-Closed.png'),
-                'Mouth-Open': await loader.loadAsync('/tex/Mouth-Open.png'),
-                'Body-Front': await loader.loadAsync('/tex/Body-Front.png'),
-                'Body-Back': await loader.loadAsync('/tex/Body-Back.png'),
-                'Hand-Front': await loader.loadAsync('/tex/Hand-Front.png'),
-                'Hand-Back': await loader.loadAsync('/tex/Hand-Back.png'),
-                'Legs-Front': await loader.loadAsync('/tex/Legs-Front.png'),
-                'Legs-Back': await loader.loadAsync('/tex/Legs-Back.png'),
-                'Tail-Front': await loader.loadAsync('/tex/Tail-Front.png'),
-                'Tail-Back': await loader.loadAsync('/tex/Tail-Back.png')
-            }
-
-            for (const key in textures) {
-                textures[key as TextureKind].flipY = false
-                textures[key as TextureKind].colorSpace = SRGBColorSpace
-            }
-
-            setTextures(textures)
-        })()
+        init()
     }, [])
 
     return (
         <EditorContext.Provider
             value={{
+                init,
                 textures,
                 editing,
                 avatarParams,
                 setTextures,
                 setEditing,
-                setAvatarParams
+                setAvatarParams,
+                parent,
+                setParent
             }}
         >
             {children}
@@ -138,7 +148,7 @@ Editor.Overlay = (props: {
     setMode: (mode: 'edit' | 'plaza') => void
     setCollection: Dispatch<SetStateAction<string[]>>
 }) => {
-    const { textures, editing, setEditing, setTextures, avatarParams, setAvatarParams } = useEditor()
+    const { init, textures, editing, setEditing, setTextures, avatarParams, setAvatarParams } = useEditor()
 
     const handleEdit = (textureKind: TextureKind) => {
         setEditing(textureKind)
@@ -600,6 +610,7 @@ Editor.Overlay = (props: {
                                 variant="contained"
                                 color="secondary"
                                 onClick={() => {
+                                    init()
                                     props.setMode('plaza')
                                     props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
                                 }}
