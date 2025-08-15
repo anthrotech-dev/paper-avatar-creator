@@ -29,6 +29,7 @@ type AvatarEvent = {
 
 type AvatarProps = {
     id: string
+    onLoad?: (manifest: AvatarManifest) => void
     onClick?: (_: AvatarEvent) => void
 }
 
@@ -71,6 +72,7 @@ export const Avatar = (props: AvatarProps) => {
                             textureMap[key] = texture
                         })
                         setTextures(textureMap)
+                        props.onLoad?.(data)
                     })
                     .catch((error) => {
                         console.error('Error loading textures:', error)

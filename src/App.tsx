@@ -1,5 +1,5 @@
-import { Editor } from './pages/Editor'
-import { Plaza } from './pages/Plaza'
+import { Editor } from './scenes/Editor'
+import { Plaza } from './scenes/Plaza'
 import { Box } from '@mui/material'
 import { OrbitControls } from '@react-three/drei'
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
@@ -7,11 +7,16 @@ import { Canvas } from '@react-three/fiber'
 import { useRef, useState } from 'react'
 import { Camera, Vector3 } from 'three'
 import { Drawer } from './ui/Drawer'
+import { useLocation } from 'react-router-dom'
+import { Preview } from './scenes/Preview'
 
 function App() {
     const [mode, setMode] = useState<'edit' | 'plaza'>('plaza')
     const [camera, setCamera] = useState<Camera>()
     const orbitRef = useRef<OrbitControlsImpl>(null)
+
+    const { hash } = useLocation()
+    const previewId = hash ? hash.replace('#', '') : ''
 
     const setView = (position: Vector3, lookAt: Vector3, duration: number) => {
         if (!orbitRef.current || !camera) return
@@ -44,35 +49,39 @@ function App() {
                 position: 'relative'
             }}
         >
-            <Editor>
-                <Plaza>
-                    <Canvas
-                        style={{
-                            width: '100vw',
-                            height: '100dvh',
-                            position: 'absolute',
-                            top: 0,
-                            left: 0
-                        }}
-                        camera={{ position: [-2, 2, 10], fov: 30 }}
-                        onCreated={({ camera }) => {
-                            setCamera(camera)
-                        }}
-                    >
-                        <ambientLight intensity={1} />
-                        <directionalLight position={[2, 2, 2]} intensity={1} />
-                        <Plaza.Scene setView={setView} />
-                        {mode === 'edit' && <Editor.Scene />}
-                        <OrbitControls ref={orbitRef} />
-                    </Canvas>
+            <Preview id={previewId} setView={setView}>
+                <Editor>
+                    <Plaza>
+                        <Canvas
+                            style={{
+                                width: '100vw',
+                                height: '100dvh',
+                                position: 'absolute',
+                                top: 0,
+                                left: 0
+                            }}
+                            camera={{ position: [-2, 2, 10], fov: 30 }}
+                            onCreated={({ camera }) => {
+                                setCamera(camera)
+                            }}
+                        >
+                            <ambientLight intensity={1} />
+                            <directionalLight position={[2, 2, 2]} intensity={1} />
+                            <Plaza.Scene setView={setView} />
+                            {mode === 'edit' && <Editor.Scene />}
+                            <OrbitControls ref={orbitRef} />
+                            <Preview.Scene />
+                        </Canvas>
 
-                    {mode === 'plaza' && <Plaza.Overlay setMode={setMode} setView={setView} />}
+                        {mode === 'plaza' && <Plaza.Overlay setMode={setMode} setView={setView} />}
+                        <Preview.Overlay setView={setView} />
 
-                    <Drawer open={mode === 'edit'}>
-                        <Editor.Overlay setMode={setMode} setView={setView} />
-                    </Drawer>
-                </Plaza>
-            </Editor>
+                        <Drawer open={mode === 'edit'}>
+                            <Editor.Overlay setMode={setMode} setView={setView} />
+                        </Drawer>
+                    </Plaza>
+                </Editor>
+            </Preview>
         </Box>
     )
 }
