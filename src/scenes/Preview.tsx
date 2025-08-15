@@ -1,4 +1,4 @@
-import { Box, Button, Divider, Typography } from '@mui/material'
+import { Alert, Box, Button, Divider, Typography } from '@mui/material'
 import {
     createContext,
     Suspense,
@@ -112,6 +112,30 @@ Preview.Overlay = (props: {
                         <Typography>Creator: {manifest.creator}</Typography>
                         <Divider />
                         <Typography>{manifest.description}</Typography>
+
+                        {manifest.exportable ? (
+                            <Alert severity="success">
+                                このアバターはエクスポート可能です。
+                                <br />
+                                エクスポートするには、コレクションに追加してください。
+                            </Alert>
+                        ) : (
+                            <Alert severity="info">
+                                このアバターはエクスポートできません。
+                                <br />
+                                コレクションに追加のみ可能です。
+                            </Alert>
+                        )}
+
+                        {manifest.editable ? (
+                            <Alert severity="warning">
+                                このアバターは改変可能です。
+                                <br />
+                                改変するには、コレクションに追加してください。
+                            </Alert>
+                        ) : (
+                            <Alert severity="info">このアバターは編集が許可されていません。</Alert>
+                        )}
                     </Box>
                     <Button
                         color="primary"
@@ -133,7 +157,7 @@ Preview.Overlay = (props: {
                             navigate('/')
                         }}
                     >
-                        コレクションに追加
+                        {props.collection.includes(manifest.id) ? 'コレクションに追加済み' : 'コレクションに追加'}
                     </Button>
                 </>
             )}

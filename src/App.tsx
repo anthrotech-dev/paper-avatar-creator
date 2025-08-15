@@ -20,8 +20,7 @@ function App() {
     const avatarId = hash ? hash.replace('#', '') : ''
     const [collection, setCollection] = usePersistent('collection', ['5sn4vqpg9yame7n806cajt10nc'])
 
-    // const focusId = collection.includes(avatarId) ? avatarId : ''
-    const previewId = collection.includes(avatarId) ? '' : avatarId
+    const previewId = avatarId
 
     const setView = (position: Vector3, lookAt: Vector3, duration: number) => {
         if (!orbitRef.current || !camera) return
