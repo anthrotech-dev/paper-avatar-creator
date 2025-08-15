@@ -1,5 +1,5 @@
 import { createContext, memo, Suspense, useContext, useState, type Dispatch, type SetStateAction } from 'react'
-import { Object3D, Vector3 } from 'three'
+import { Object3D, Texture, Vector3 } from 'three'
 
 import { Avatar } from '../components/Avatar'
 import { Wanderer } from '../components/Wanderer'
@@ -8,8 +8,11 @@ import { Box, Button, Divider, Fab, Typography } from '@mui/material'
 import { MdAdd } from 'react-icons/md'
 import { type AvatarManifest } from '../types'
 import { Drawer } from '../ui/Drawer'
+import { handleResoniteExport } from '../util'
 
 type PlazaState = {
+    textures: Record<string, Texture>
+    setTextures: Dispatch<SetStateAction<Record<string, Texture>>>
     selectedManifest: AvatarManifest | null
     setSelectedManifest: (manifest: AvatarManifest | null) => void
 }
@@ -26,12 +29,17 @@ const usePlaza = () => {
 
 export function Plaza({ children }: { children?: React.ReactNode }) {
     const [selectedManifest, setSelectedManifest] = useState<AvatarManifest | null>(null)
+    const [textures, setTextures] = useState<Record<string, Texture>>({})
 
-    return <PlazaContext.Provider value={{ selectedManifest, setSelectedManifest }}>{children}</PlazaContext.Provider>
+    return (
+        <PlazaContext.Provider value={{ textures, selectedManifest, setTextures, setSelectedManifest }}>
+            {children}
+        </PlazaContext.Provider>
+    )
 }
 
 Plaza.Scene = (props: { avatars: string[]; setView: (position: Vector3, lookAt: Vector3, speed: number) => void }) => {
-    const { setSelectedManifest } = usePlaza()
+    const { setSelectedManifest, setTextures } = usePlaza()
     const [selected, setSelected] = useState<Object3D | null>(null)
 
     return (
@@ -52,6 +60,7 @@ Plaza.Scene = (props: { avatars: string[]; setView: (position: Vector3, lookAt: 
                     <meshStandardMaterial color="#3a3a3a" roughness={1} metalness={0} />
                 </mesh>
                 <AvatarsRenderer
+                    setTextures={setTextures}
                     avatars={props.avatars}
                     setSelectedManifest={setSelectedManifest}
                     setSelected={setSelected}
@@ -67,11 +76,13 @@ const AvatarsRenderer = memo(
     ({
         avatars,
         setSelectedManifest,
-        setSelected
+        setSelected,
+        setTextures
     }: {
         avatars: string[]
         setSelectedManifest: (_: AvatarManifest | null) => void
         setSelected: (_: Object3D | null) => void
+        setTextures: Dispatch<SetStateAction<Record<string, Texture>>>
     }) => {
         return (
             <>
@@ -88,6 +99,7 @@ const AvatarsRenderer = memo(
                                 onClick={(e) => {
                                     setSelected(e.target)
                                     setSelectedManifest(e.manifest)
+                                    setTextures(e.textures)
                                 }}
                             />
                         </Suspense>
@@ -103,7 +115,7 @@ Plaza.Overlay = (props: {
     setMode: (mode: 'edit' | 'plaza') => void
     setCollection: Dispatch<SetStateAction<string[]>>
 }) => {
-    const { selectedManifest, setSelectedManifest } = usePlaza()
+    const { selectedManifest, setSelectedManifest, textures } = usePlaza()
 
     return (
         <>
@@ -137,6 +149,15 @@ Plaza.Overlay = (props: {
                         <Divider />
                         <Typography>{selectedManifest.description}</Typography>
                         <Box flex={1} />
+                        <Button
+                            variant="contained"
+                            disabled={!selectedManifest.exportable}
+                            onClick={() => {
+                                handleResoniteExport(textures)
+                            }}
+                        >
+                            Resonite用に書き出し
+                        </Button>
                         <Button
                             color="primary"
                             variant="contained"

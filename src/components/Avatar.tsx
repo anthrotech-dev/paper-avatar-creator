@@ -25,6 +25,7 @@ import { FakeShadow } from './FakeShadow'
 type AvatarEvent = {
     manifest: AvatarManifest
     target: Object3D
+    textures: Record<string, Texture>
 }
 
 type AvatarProps = {
@@ -263,7 +264,8 @@ export const Avatar = (props: AvatarProps) => {
                 console.log('Avatar clicked', e)
                 props.onClick?.({
                     manifest: manifest!,
-                    target: group.current!
+                    target: group.current!,
+                    textures: textures || {}
                 })
             }}
         >

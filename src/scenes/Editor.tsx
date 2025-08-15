@@ -136,6 +136,7 @@ Editor.Scene = () => {
 Editor.Overlay = (props: {
     setView: (position: Vector3, lookAt: Vector3, speed: number) => void
     setMode: (mode: 'edit' | 'plaza') => void
+    setCollection: Dispatch<SetStateAction<string[]>>
 }) => {
     const { textures, editing, setEditing, setTextures, avatarParams, setAvatarParams } = useEditor()
 
@@ -673,7 +674,13 @@ Editor.Overlay = (props: {
                             </Button>
                         </DialogContent>
                         <DialogActions>
-                            <Button onClick={() => setOpen(false)}>閉じる</Button>
+                            <Button
+                                onClick={() => {
+                                    setOpen(false)
+                                }}
+                            >
+                                閉じる
+                            </Button>
                         </DialogActions>
                     </>
                 ) : (
@@ -731,6 +738,7 @@ Editor.Overlay = (props: {
                                     )
                                         .then((data) => {
                                             console.log('Published successfully:', data)
+                                            props.setCollection((prev) => [...prev, data.id])
                                             setUploaded(data)
                                         })
                                         .finally(() => {
