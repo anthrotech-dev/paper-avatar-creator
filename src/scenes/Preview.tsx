@@ -128,7 +128,7 @@ Preview.Overlay = (props: {
                         )}
 
                         {manifest.editable ? (
-                            <Alert severity="warning">
+                            <Alert severity="success">
                                 このアバターは改変可能です。
                                 <br />
                                 改変するには、コレクションに追加してください。

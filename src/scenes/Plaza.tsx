@@ -141,7 +141,7 @@ Plaza.Overlay = (props: {
                             color="primary"
                             variant="contained"
                             onClick={() => {
-                                navigator.clipboard.writeText(location.origin + '#' + selectedManifest.id)
+                                navigator.clipboard.writeText(location.origin + '/' + selectedManifest.id)
                             }}
                         >
                             URLをコピー

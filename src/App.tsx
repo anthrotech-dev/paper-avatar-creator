@@ -7,7 +7,7 @@ import { Canvas } from '@react-three/fiber'
 import { useRef, useState } from 'react'
 import { Camera, Vector3 } from 'three'
 import { Drawer } from './ui/Drawer'
-import { useLocation } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { Preview } from './scenes/Preview'
 import { usePersistent } from './usePersistent'
 
@@ -16,11 +16,10 @@ function App() {
     const [camera, setCamera] = useState<Camera>()
     const orbitRef = useRef<OrbitControlsImpl>(null)
 
-    const { hash } = useLocation()
-    const avatarId = hash ? hash.replace('#', '') : ''
+    const { id } = useParams()
     const [collection, setCollection] = usePersistent('collection', ['5sn4vqpg9yame7n806cajt10nc'])
 
-    const previewId = avatarId
+    const previewId = id ?? ''
 
     const setView = (position: Vector3, lookAt: Vector3, duration: number) => {
         if (!orbitRef.current || !camera) return

@@ -664,7 +664,7 @@ Editor.Overlay = (props: {
                                 onClick={() => {
                                     window.open(
                                         `https://x.com/intent/tweet?text=${encodeURIComponent(
-                                            `${location.origin}#${uploaded.id}`
+                                            `${location.origin}/${uploaded.id}`
                                         )}`
                                     )
                                 }}
