@@ -89,9 +89,9 @@ const FadingFloorMaterial = shaderMaterial(
 
 
   void main() {
-    vec4 tex = texture2D(map, vUv * vec2(40.0, 80.0));
+    vec4 tex = texture2D(map, vUv * vec2(10.0, 20.0));
     
-    float dist = length(vPos.xy);
+    float dist = length(vPos.xz);
     float fade = clamp(dist / fadeRadius, 0.0, 1.0);
 
     vec3 hsv = vec3(dist*0.01+0.35, 0.1, 0.9);
@@ -123,7 +123,7 @@ Plaza.Scene = (props: { avatars: string[]; setView: (position: Vector3, lookAt: 
         <>
             <group>
                 <mesh
-                    rotation={[-Math.PI / 2, 0, 0]}
+                    //rotation={[-Math.PI / 2, 0, 0]}
                     onPointerDown={(e) => {
                         e.stopPropagation()
                         setSelected(null)
@@ -133,7 +133,7 @@ Plaza.Scene = (props: { avatars: string[]; setView: (position: Vector3, lookAt: 
                         }
                     }}
                 >
-                    <planeGeometry args={[200, 200]} />
+                    <cylinderGeometry args={[20.0, 20.0, 0.1, 32]} />
                     <fadingFloorMaterial fadeRadius={20} map={texture} />
                 </mesh>
                 <AvatarsRenderer
