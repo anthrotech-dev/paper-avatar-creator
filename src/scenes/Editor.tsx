@@ -386,6 +386,23 @@ Editor.Overlay = (props: {
                                         }
                                         sx={{ width: '200px', padding: '20px' }}
                                     />
+
+                                    <FormGroup>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={avatarParams.headInFront ?? true}
+                                                    onChange={(e) =>
+                                                        setAvatarParams((prev) => ({
+                                                            ...prev,
+                                                            headInFront: e.target.checked
+                                                        }))
+                                                    }
+                                                />
+                                            }
+                                            label="あたまを体の前に出す"
+                                        />
+                                    </FormGroup>
                                 </Box>
                             </>
                         )}
@@ -546,6 +563,22 @@ Editor.Overlay = (props: {
                                         }
                                         sx={{ width: '200px', padding: '20px' }}
                                     />
+                                    <FormGroup>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={avatarParams.legsInFront}
+                                                    onChange={(e) =>
+                                                        setAvatarParams((prev) => ({
+                                                            ...prev,
+                                                            legsInFront: e.target.checked
+                                                        }))
+                                                    }
+                                                />
+                                            }
+                                            label="足を体の前に出す"
+                                        />
+                                    </FormGroup>
                                 </Box>
                             </>
                         )}
@@ -648,7 +681,14 @@ Editor.Overlay = (props: {
                             <Button
                                 variant="contained"
                                 onClick={() => {
-                                    handleExport(textures)
+                                    handleExport(
+                                        {
+                                            ...manifest,
+                                            extends: parent?.id,
+                                            params: avatarParams
+                                        },
+                                        textures
+                                    )
                                 }}
                             >
                                 エクスポート

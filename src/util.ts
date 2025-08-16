@@ -42,7 +42,7 @@ export const handlePublish = async (manifest: Partial<AvatarManifest>, textures:
     })
 }
 
-export const handleExport = async (textures: Record<string, Texture>) => {
+export const handleExport = async (manifest: Partial<AvatarManifest>, textures: Record<string, Texture>) => {
     const zip = new JSZip()
     for (const key in textures) {
         const texture = textures[key]
@@ -51,6 +51,9 @@ export const handleExport = async (textures: Record<string, Texture>) => {
         const { blob } = await textureToPng(texture)
         zip.file(`${key}.png`, blob)
     }
+
+    const manifestStr = JSON.stringify(manifest, null, 2)
+    zip.file('manifest.json', manifestStr)
 
     const zipBlob = await zip.generateAsync({ type: 'blob' })
     const url = URL.createObjectURL(zipBlob)

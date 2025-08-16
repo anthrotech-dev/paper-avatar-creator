@@ -98,7 +98,11 @@ export const Avatar = (props: AvatarProps) => {
             [params.headSize, params.headSize, params.headSize]
         )
         // neckLength
-        const track_bodyPosition = new VectorKeyframeTrack('Body.position', [0], [0, -params.neckLength, 0])
+        const track_bodyPosition = new VectorKeyframeTrack(
+            'Body.position',
+            [0],
+            [0, -params.neckLength, params.headInFront ? -0.5 : 0.5]
+        )
         // handSize
         const track_leftHandScale = new VectorKeyframeTrack(
             'LeftHand.scale',
@@ -147,7 +151,11 @@ export const Avatar = (props: AvatarProps) => {
         const track_legsLeftDistance = new VectorKeyframeTrack('LeftFoot.position', [0], [params.legsDistance, 0, 0])
         const track_legsRightDistance = new VectorKeyframeTrack('RightFoot.position', [0], [-params.legsDistance, 0, 0])
         // legsDistanceFromBody
-        const track_legsPosition = new VectorKeyframeTrack('Feet.position', [0], [0, params.legsDistanceFromBody, 0])
+        const track_legsPosition = new VectorKeyframeTrack(
+            'Feet.position',
+            [0],
+            [0, params.legsDistanceFromBody, params.legsInFront ? 0.5 : -0.5]
+        )
 
         const clip = new AnimationClip('BaseAnimation', 1, [
             track_headFrontScale,
