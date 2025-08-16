@@ -4,12 +4,14 @@ import { Box } from '@mui/material'
 import { OrbitControls } from '@react-three/drei'
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { Canvas } from '@react-three/fiber'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Camera, Vector3 } from 'three'
 import { Drawer } from './ui/Drawer'
 import { useParams } from 'react-router-dom'
 import { Preview } from './scenes/Preview'
 import { usePersistent } from './usePersistent'
+
+const defaultCollection = ['5sn4vqpg9yame7n806cajt10nc']
 
 function App() {
     const [mode, setMode] = useState<'edit' | 'plaza'>('plaza')
@@ -17,7 +19,7 @@ function App() {
     const orbitRef = useRef<OrbitControlsImpl>(null)
 
     const { id } = useParams()
-    const [collection, setCollection] = usePersistent('collection', ['5sn4vqpg9yame7n806cajt10nc'])
+    const [collection, setCollection] = usePersistent('collection', defaultCollection)
 
     const previewId = id ?? ''
 
@@ -43,6 +45,17 @@ function App() {
 
         animate()
     }
+
+    useEffect(() => {
+        if (
+            id ||
+            collection.length !== defaultCollection.length ||
+            !collection.every((e) => defaultCollection.includes(e))
+        )
+            return
+        setMode('edit')
+        setView(new Vector3(0, 10.5, 3), new Vector3(0, 10.5, 0), 1)
+    }, [!orbitRef.current || !camera])
 
     return (
         <Box
