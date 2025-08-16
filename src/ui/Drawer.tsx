@@ -26,7 +26,6 @@ export const Drawer = (props: CCDrawerProps): ReactNode => {
                     sx: {
                         display: 'flex',
                         flexDirection: 'column',
-                        backgroundColor: '#ddd',
                         width: {
                             xs: '100%',
                             sm: '50%'
