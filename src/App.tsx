@@ -81,8 +81,7 @@ function App() {
                                 setCamera(camera)
                             }}
                         >
-                            <ambientLight intensity={1} />
-                            <directionalLight position={[2, 2, 2]} intensity={1} />
+                            <ambientLight intensity={2} />
                             <Plaza.Scene avatars={collection} setView={setView} />
                             {mode === 'edit' && <Editor.Scene />}
                             <OrbitControls ref={orbitRef} />

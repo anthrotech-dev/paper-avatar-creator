@@ -55,7 +55,30 @@ const EditorContext = createContext<EditorState | null>(null)
 export const useEditor = () => {
     const ctx = useContext(EditorContext)
     if (!ctx) {
-        throw new Error('useEditor must be used within an EditorProvider')
+        return {
+            init: async () => {},
+            parent: null,
+            setParent: () => {},
+            textures: {},
+            editing: null,
+            avatarParams: {
+                headSize: 0,
+                neckLength: 0,
+                headInFront: true,
+                handSize: 0,
+                bodySize: 0,
+                tailSize: 0,
+                tailPosition: 0,
+                tailRotation: 0,
+                legsSize: 0,
+                legsDistance: 0,
+                legsDistanceFromBody: 0,
+                legsInFront: true
+            },
+            setTextures: () => {},
+            setEditing: () => {},
+            setAvatarParams: () => {}
+        }
     }
     return ctx
 }

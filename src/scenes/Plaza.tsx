@@ -1,5 +1,5 @@
-import { createContext, memo, Suspense, useContext, useState, type Dispatch, type SetStateAction } from 'react'
-import { Object3D, Texture, Vector3 } from 'three'
+import { createContext, memo, Suspense, useContext, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
+import { Object3D, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader, Vector3 } from 'three'
 
 import { Avatar } from '../components/Avatar'
 import { Wanderer } from '../components/Wanderer'
@@ -10,6 +10,8 @@ import { type AvatarManifest } from '../types'
 import { Drawer } from '../ui/Drawer'
 import { handleResoniteExport } from '../util'
 import { useEditor } from './Editor'
+import { shaderMaterial } from '@react-three/drei'
+import { extend } from '@react-three/fiber'
 
 type PlazaState = {
     selected: Object3D | null
@@ -25,7 +27,14 @@ const PlazaContext = createContext<PlazaState | null>(null)
 const usePlaza = () => {
     const ctx = useContext(PlazaContext)
     if (!ctx) {
-        throw new Error('usePlaza must be used within a PlazaProvider')
+        return {
+            selected: null,
+            setSelected: () => {},
+            textures: {},
+            setTextures: () => {},
+            selectedManifest: null,
+            setSelectedManifest: () => {}
+        }
     }
     return ctx
 }
@@ -51,8 +60,64 @@ export function Plaza({ children }: { children?: React.ReactNode }) {
     )
 }
 
+const FadingFloorMaterial = shaderMaterial(
+    {
+        map: null,
+        fadeRadius: 100.0
+    },
+    // vertex shader
+    `
+  varying vec2 vUv;
+  varying vec3 vPos;
+  void main() {
+    vUv = uv;
+    vPos = position;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+  `,
+    // fragment shader
+    `
+  uniform sampler2D map;
+  uniform float fadeRadius;
+  varying vec2 vUv;
+  varying vec3 vPos;
+
+  vec3 hsv2rgb(vec3 c) {
+    vec3 p = abs(fract(c.xxx + vec3(0., 1./3., 2./3.)) * 6. - 3.);
+    return c.z * mix(vec3(1.), clamp(p - 1., 0., 1.), c.y);
+  }
+
+
+  void main() {
+    vec4 tex = texture2D(map, vUv * vec2(40.0, 80.0));
+    
+    float dist = length(vPos.xy);
+    float fade = clamp(dist / fadeRadius, 0.0, 1.0);
+
+    vec3 hsv = vec3(dist*0.01+0.35, 0.1, 0.9);
+    vec3 hue = hsv2rgb(hsv);
+
+    vec3 pattern = mix(vec3(1.0), hue, tex.w);
+    vec3 color = mix(pattern, vec3(1.0), fade);
+
+    gl_FragColor = vec4(color, 1.0);
+  }
+  `
+)
+
+extend({ FadingFloorMaterial })
+
 Plaza.Scene = (props: { avatars: string[]; setView: (position: Vector3, lookAt: Vector3, speed: number) => void }) => {
     const { selected, setSelected, setSelectedManifest, setTextures } = usePlaza()
+
+    const texture = useMemo(() => {
+        const textureLoader = new TextureLoader()
+        const texture = textureLoader.load('/tex/tile.png')
+        texture.colorSpace = SRGBColorSpace
+        texture.wrapS = RepeatWrapping
+        texture.wrapT = RepeatWrapping
+        return texture
+    }, [])
 
     return (
         <>
@@ -69,7 +134,7 @@ Plaza.Scene = (props: { avatars: string[]; setView: (position: Vector3, lookAt: 
                     }}
                 >
                     <planeGeometry args={[200, 200]} />
-                    <meshStandardMaterial color="#3a3a3a" roughness={1} metalness={0} />
+                    <fadingFloorMaterial fadeRadius={20} map={texture} />
                 </mesh>
                 <AvatarsRenderer
                     setTextures={setTextures}
@@ -77,7 +142,6 @@ Plaza.Scene = (props: { avatars: string[]; setView: (position: Vector3, lookAt: 
                     setSelectedManifest={setSelectedManifest}
                     setSelected={setSelected}
                 />
-                <gridHelper args={[200, 200, 0x888888, 0x444444]} position={[0, 0.001, 0]} />
             </group>
             <FollowCamera target={selected} />
         </>
