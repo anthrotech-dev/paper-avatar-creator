@@ -133,6 +133,7 @@ function App() {
                             <Preview.Scene />
                             <mesh>
                                 <sphereGeometry args={[100, 32, 32]} />
+                                {/* @ts-ignore */}
                                 <skybox side={2} />
                             </mesh>
                         </Canvas>

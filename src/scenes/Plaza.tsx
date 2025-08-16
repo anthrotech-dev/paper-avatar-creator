@@ -135,6 +135,7 @@ Plaza.Scene = (props: { avatars: string[]; setView: (position: Vector3, lookAt: 
                     position={[0, -0.005, 0]}
                 >
                     <cylinderGeometry args={[20.0, 20.0, 0.01, 32]} />
+                    {/* @ts-ignore */}
                     <fadingFloorMaterial fadeRadius={20} map={texture} />
                 </mesh>
                 <AvatarsRenderer
