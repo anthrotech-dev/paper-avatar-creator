@@ -1,3 +1,5 @@
+/// <reference path="./types/three-jsx.d.ts" />
+
 import { Editor } from './scenes/Editor'
 import { Plaza } from './scenes/Plaza'
 import { Box } from '@mui/material'
@@ -133,7 +135,6 @@ function App() {
                             <Preview.Scene />
                             <mesh>
                                 <sphereGeometry args={[100, 32, 32]} />
-                                {/* @ts-ignore */}
                                 <skybox side={2} />
                             </mesh>
                         </Canvas>
