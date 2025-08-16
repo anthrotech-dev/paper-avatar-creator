@@ -59,7 +59,20 @@ export const useEditor = () => {
             init: async () => {},
             parent: null,
             setParent: () => {},
-            textures: {},
+            textures: {
+                'Head-Front': new Texture(),
+                'Head-Back': new Texture(),
+                'Eyes-Closed': new Texture(),
+                'Mouth-Open': new Texture(),
+                'Body-Front': new Texture(),
+                'Body-Back': new Texture(),
+                'Hand-Front': new Texture(),
+                'Hand-Back': new Texture(),
+                'Legs-Front': new Texture(),
+                'Legs-Back': new Texture(),
+                'Tail-Front': new Texture(),
+                'Tail-Back': new Texture()
+            },
             editing: null,
             avatarParams: {
                 headSize: 0,

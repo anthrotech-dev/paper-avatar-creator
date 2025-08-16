@@ -365,81 +365,87 @@ export function Painter(props: PainterProps) {
                     </IconButton>
                 </Box>
 
-                <Stage
-                    ref={stageRef}
-                    width={props.size}
-                    height={props.size}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onTouchStart={handleMouseDown}
-                    onTouchMove={handleMouseMove}
-                    onTouchEnd={handleMouseUp}
-                    style={{ cursor: 'none', border: '1px solid #ccc' }}
+                <Box
+                    sx={{
+                        background: `repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0 / 25px 25px`
+                    }}
                 >
-                    {traceTexture && (
-                        <Layer>
-                            <Rect
-                                x={0}
-                                y={0}
-                                width={props.size}
-                                height={props.size}
-                                fillPatternImage={traceTexture.image as HTMLImageElement}
-                                fillPatternRepeat="no-repeat"
-                                fillPatternScaleX={props.size / traceTexture.image.width}
-                                fillPatternScaleY={props.size / traceTexture.image.height}
-                                fillPatternOffsetX={0}
-                                fillPatternOffsetY={0}
-                                opacity={0.3}
+                    <Stage
+                        ref={stageRef}
+                        width={props.size}
+                        height={props.size}
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onTouchStart={handleMouseDown}
+                        onTouchMove={handleMouseMove}
+                        onTouchEnd={handleMouseUp}
+                        style={{ cursor: 'none', border: '1px solid #ccc' }}
+                    >
+                        {traceTexture && (
+                            <Layer>
+                                <Rect
+                                    x={0}
+                                    y={0}
+                                    width={props.size}
+                                    height={props.size}
+                                    fillPatternImage={traceTexture.image as HTMLImageElement}
+                                    fillPatternRepeat="no-repeat"
+                                    fillPatternScaleX={props.size / traceTexture.image.width}
+                                    fillPatternScaleY={props.size / traceTexture.image.height}
+                                    fillPatternOffsetX={0}
+                                    fillPatternOffsetY={0}
+                                    opacity={0.3}
+                                />
+                            </Layer>
+                        )}
+                        <Layer ref={props.drawingLayerRef}>
+                            {oldTexture && (
+                                <Rect
+                                    x={0}
+                                    y={0}
+                                    width={props.size}
+                                    height={props.size}
+                                    fillPatternImage={oldTexture.image as HTMLImageElement}
+                                    fillPatternRepeat="no-repeat"
+                                    fillPatternScaleX={props.size / oldTexture.image.width}
+                                    fillPatternScaleY={props.size / oldTexture.image.height}
+                                    fillPatternOffsetX={0}
+                                    fillPatternOffsetY={0}
+                                />
+                            )}
+
+                            {layers.map((_layer, i) => {
+                                const layer = layers[layers.length - i - 1]
+                                if (hiddenLayers[layers.length - i - 1]) return null
+                                return layer.map((line, i) => (
+                                    <Line
+                                        key={i}
+                                        points={line.points}
+                                        stroke={line.color}
+                                        strokeWidth={line.width}
+                                        tension={0.5}
+                                        lineCap="round"
+                                        lineJoin="round"
+                                        globalCompositeOperation={
+                                            line.tool === 'eraser' ? 'destination-out' : 'source-over'
+                                        }
+                                    />
+                                ))
+                            })}
+                        </Layer>
+                        <Layer ref={previewLayerRef}>
+                            <Circle
+                                ref={circleRef}
+                                radius={width / 2}
+                                dash={[2, 2]}
+                                strokeWidth={1}
+                                visible={false}
+                                stroke="gray"
                             />
                         </Layer>
-                    )}
-                    <Layer ref={props.drawingLayerRef}>
-                        {oldTexture && (
-                            <Rect
-                                x={0}
-                                y={0}
-                                width={props.size}
-                                height={props.size}
-                                fillPatternImage={oldTexture.image as HTMLImageElement}
-                                fillPatternRepeat="no-repeat"
-                                fillPatternScaleX={props.size / oldTexture.image.width}
-                                fillPatternScaleY={props.size / oldTexture.image.height}
-                                fillPatternOffsetX={0}
-                                fillPatternOffsetY={0}
-                            />
-                        )}
-
-                        {layers.map((_layer, i) => {
-                            const layer = layers[layers.length - i - 1]
-                            if (hiddenLayers[layers.length - i - 1]) return null
-                            return layer.map((line, i) => (
-                                <Line
-                                    key={i}
-                                    points={line.points}
-                                    stroke={line.color}
-                                    strokeWidth={line.width}
-                                    tension={0.5}
-                                    lineCap="round"
-                                    lineJoin="round"
-                                    globalCompositeOperation={
-                                        line.tool === 'eraser' ? 'destination-out' : 'source-over'
-                                    }
-                                />
-                            ))
-                        })}
-                    </Layer>
-                    <Layer ref={previewLayerRef}>
-                        <Circle
-                            ref={circleRef}
-                            radius={width / 2}
-                            dash={[2, 2]}
-                            strokeWidth={1}
-                            visible={false}
-                            stroke="gray"
-                        />
-                    </Layer>
-                </Stage>
+                    </Stage>
+                </Box>
 
                 <Box display="flex" flexDirection="column" height={`${props.size}px`} justifyContent="flex-end" gap={1}>
                     <Box
@@ -453,7 +459,7 @@ export function Painter(props: PainterProps) {
                         }}
                         sx={{
                             cursor: 'pointer',
-                            backgroundColor: currentLayer === 0 ? 'primary.main' : 'transparent',
+                            backgroundColor: currentLayer === 0 ? 'primary.main' : 'text.disabled',
                             color: 'white',
                             padding: '5px',
                             borderRadius: '5px',
@@ -483,7 +489,7 @@ export function Painter(props: PainterProps) {
                         }}
                         sx={{
                             cursor: 'pointer',
-                            backgroundColor: currentLayer === 1 ? 'primary.main' : 'transparent',
+                            backgroundColor: currentLayer === 1 ? 'primary.main' : 'text.disabled',
                             color: 'white',
                             padding: '5px',
                             borderRadius: '5px',
@@ -513,7 +519,7 @@ export function Painter(props: PainterProps) {
                         }}
                         sx={{
                             cursor: 'pointer',
-                            backgroundColor: currentLayer === 2 ? 'primary.main' : 'transparent',
+                            backgroundColor: currentLayer === 2 ? 'primary.main' : 'text.disabled',
                             color: 'white',
                             padding: '5px',
                             borderRadius: '5px',
