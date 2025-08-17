@@ -1,62 +1,18 @@
 import { Editor } from './scenes/Editor'
 import { Plaza } from './scenes/Plaza'
 import { Box } from '@mui/material'
-import { OrbitControls, shaderMaterial } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
-import { Canvas, extend } from '@react-three/fiber'
+import { Canvas } from '@react-three/fiber'
 import { useEffect, useRef, useState } from 'react'
-import { Camera, Object3D, Vector3 } from 'three'
+import { Camera, Vector3 } from 'three'
 import { Drawer } from './ui/Drawer'
 import { useParams } from 'react-router-dom'
 import { Preview } from './scenes/Preview'
 import { usePersistent } from './usePersistent'
+import { Skybox } from './components/Skybox'
 
 const defaultCollection = ['5sn4vqpg9yame7n806cajt10nc']
-
-const Skybox = shaderMaterial(
-    {
-        topColor: [207.0 / 255, 210.0 / 255, 230.0 / 255],
-        middleColor: [1.0, 1.0, 1.0],
-        bottomColor: [1.0, 1.0, 1.0],
-        offset: 0,
-        exponent: 0.3
-    },
-    // vertex shader
-    `
-    varying vec3 vWorldPos;
-    void main(){
-      vec4 wp = modelMatrix * vec4(position,1.0);
-      vWorldPos = wp.xyz;
-      gl_Position = projectionMatrix * viewMatrix * wp;
-    }
-  `,
-    // fragment shader
-    `
-    uniform vec3 topColor;
-    uniform vec3 middleColor;
-    uniform vec3 bottomColor;
-    uniform float offset;
-    uniform float exponent;
-    varying vec3 vWorldPos;
-    void main(){
-        float h = normalize(vWorldPos + vec3(0.0, offset, 0.0)).y;
-        float t = pow(clamp(h, 0.0, 1.0), exponent);
-
-        vec3 col;
-        if (t < 0.5) {
-            float f = t / 0.5;
-            col = mix(bottomColor, middleColor, f);
-        } else {
-            float f = (t - 0.5) / 0.5;
-            col = mix(middleColor, topColor, f);
-        }
-
-        gl_FragColor = vec4(col, 1.0);
-    }
-  `
-)
-
-extend({ Skybox })
 
 function App() {
     const [mode, setMode] = useState<'edit' | 'plaza'>('plaza')
@@ -130,11 +86,7 @@ function App() {
                             {mode === 'edit' && <Editor.Scene />}
                             <OrbitControls ref={orbitRef} />
                             <Preview.Scene />
-                            <mesh>
-                                <sphereGeometry args={[100, 32, 32]} />
-                                {/* @ts-ignore */}
-                                <skybox side={2} />
-                            </mesh>
+                            <Skybox />
                         </Canvas>
 
                         {mode === 'plaza' && (
