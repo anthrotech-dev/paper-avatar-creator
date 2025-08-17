@@ -4,12 +4,23 @@ import {
     useCallback,
     useContext,
     useEffect,
+    useMemo,
     useRef,
     useState,
     type Dispatch,
+    type RefObject,
     type SetStateAction
 } from 'react'
-import { Texture, CanvasTexture, TextureLoader, SRGBColorSpace, Vector3 } from 'three'
+import {
+    Texture,
+    CanvasTexture,
+    TextureLoader,
+    SRGBColorSpace,
+    Vector3,
+    OrthographicCamera,
+    WebGLRenderer,
+    Object3D
+} from 'three'
 
 import { TexturePreview } from '../ui/TexturePreview'
 import {
@@ -48,6 +59,7 @@ type EditorState = {
     setTextures: Dispatch<SetStateAction<Record<TextureKind, Texture>>>
     setEditing: Dispatch<SetStateAction<TextureKind | null>>
     setAvatarParams: Dispatch<SetStateAction<AvatarParams>>
+    thumbnailCameraRef?: RefObject<OrthographicCamera | null>
 }
 
 const EditorContext = createContext<EditorState | null>(null)
@@ -97,6 +109,7 @@ export const useEditor = () => {
 }
 
 export function Editor({ children }: { children?: React.ReactNode }) {
+    const thumbnailCameraRef = useRef<OrthographicCamera>(null)
     const [parent, setParent] = useState<AvatarManifest | null>(null)
     const [textures, setTextures] = useState<Record<string, Texture>>({})
     const [editing, setEditing] = useState<TextureKind | null>(null)
@@ -172,7 +185,8 @@ export function Editor({ children }: { children?: React.ReactNode }) {
                 setEditing,
                 setAvatarParams,
                 parent,
-                setParent
+                setParent,
+                thumbnailCameraRef
             }}
         >
             {children}
@@ -180,18 +194,73 @@ export function Editor({ children }: { children?: React.ReactNode }) {
     )
 }
 
+const thumbnailWidth = 1280
+const thumbnailHeight = 720
+const thumbnailSceneWidth = 2.0
+const thumbnailSceneHeight = (thumbnailHeight / thumbnailWidth) * thumbnailSceneWidth
+
 Editor.Scene = () => {
-    const { avatarParams, editing, textures } = useEditor()
+    const { avatarParams, editing, textures, thumbnailCameraRef } = useEditor()
+
+    const thumbTitleTex = useMemo(() => {
+        const loader = new TextureLoader()
+        const texture = loader.load('/tex/OekakiAvatar_thumbnail_title.png', (tex) => {
+            tex.colorSpace = SRGBColorSpace
+        })
+        return texture
+    }, [])
+
+    const thumbBackgroundTex = useMemo(() => {
+        const loader = new TextureLoader()
+        const texture = loader.load('/tex/OekakiAvatar_thumbnail_background.png', (tex) => {
+            tex.colorSpace = SRGBColorSpace
+        })
+        return texture
+    }, [])
+
     return (
-        <group position={[0, 10, 0]}>
-            <mesh>
-                <cylinderGeometry args={[0.45, 0.45, 0.1, 32]} />
-                <meshBasicMaterial color="black" transparent opacity={0.65} depthWrite={false} toneMapped={false} />
-            </mesh>
-            <Suspense fallback={null}>
-                <EditableAvatar params={avatarParams} editing={editing} textures={textures} />
-            </Suspense>
-        </group>
+        <>
+            <group position={[0, 10, 0]}>
+                <mesh>
+                    <cylinderGeometry args={[0.45, 0.45, 0.1, 32]} />
+                    <meshBasicMaterial color="black" transparent opacity={0.65} depthWrite={false} toneMapped={false} />
+                </mesh>
+                <Suspense fallback={null}>
+                    <EditableAvatar params={avatarParams} editing={editing} textures={textures} />
+                </Suspense>
+            </group>
+            <group position={[0, -200, 0]}>
+                <orthographicCamera
+                    ref={thumbnailCameraRef}
+                    position={[0, 0.55, 1.0]}
+                    args={[
+                        -thumbnailSceneWidth / 2,
+                        thumbnailSceneWidth / 2,
+                        thumbnailSceneHeight / 2,
+                        -thumbnailSceneHeight / 2,
+                        0.1,
+                        1000
+                    ]}
+                    rotation={[0, 0, 0]}
+                />
+                <Suspense fallback={null}>
+                    <EditableAvatar params={avatarParams} editing={editing} textures={textures} />
+                </Suspense>
+                <mesh position={[0, 0.55, 0.5]}>
+                    <planeGeometry args={[thumbnailSceneWidth, thumbnailSceneHeight]} />
+                    <meshBasicMaterial map={thumbTitleTex} transparent={true} depthWrite={false} toneMapped={false} />
+                </mesh>
+                <mesh position={[0, 0.55, -0.5]}>
+                    <planeGeometry args={[thumbnailSceneWidth, thumbnailSceneHeight]} />
+                    <meshBasicMaterial
+                        map={thumbBackgroundTex}
+                        transparent={true}
+                        depthWrite={false}
+                        toneMapped={false}
+                    />
+                </mesh>
+            </group>
+        </>
     )
 }
 
@@ -199,8 +268,19 @@ Editor.Overlay = (props: {
     setView: (position: Vector3, lookAt: Vector3, speed: number) => void
     setMode: (mode: 'edit' | 'plaza') => void
     setCollection: Dispatch<SetStateAction<string[]>>
+    sceneRef?: RefObject<Object3D | null>
 }) => {
-    const { init, parent, textures, editing, setEditing, setTextures, avatarParams, setAvatarParams } = useEditor()
+    const {
+        init,
+        parent,
+        textures,
+        editing,
+        setEditing,
+        setTextures,
+        avatarParams,
+        setAvatarParams,
+        thumbnailCameraRef
+    } = useEditor()
 
     const handleEdit = (textureKind: TextureKind) => {
         setEditing(textureKind)
@@ -702,6 +782,33 @@ Editor.Overlay = (props: {
                                 }}
                             >
                                 キャンセル
+                            </Button>
+
+                            <Button
+                                onClick={() => {
+                                    if (!thumbnailCameraRef?.current) return
+                                    if (!props.sceneRef?.current) return
+
+                                    const canvas = document.createElement('canvas')
+                                    canvas.width = thumbnailWidth
+                                    canvas.height = thumbnailHeight
+
+                                    const camera = thumbnailCameraRef.current
+                                    camera.updateProjectionMatrix()
+                                    camera.updateMatrixWorld()
+
+                                    const renderer = new WebGLRenderer({ canvas })
+                                    renderer.setSize(thumbnailWidth, thumbnailHeight)
+                                    renderer.render(props.sceneRef.current, camera)
+
+                                    const dataURL = canvas.toDataURL('image/png')
+                                    const link = document.createElement('a')
+                                    link.href = dataURL
+                                    link.download = 'avatar-thumbnail.png'
+                                    link.click()
+                                }}
+                            >
+                                Render Thumbnail
                             </Button>
 
                             <Button

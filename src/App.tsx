@@ -5,7 +5,7 @@ import { OrbitControls, shaderMaterial } from '@react-three/drei'
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { Canvas, extend } from '@react-three/fiber'
 import { useEffect, useRef, useState } from 'react'
-import { Camera, Vector3 } from 'three'
+import { Camera, Object3D, Vector3 } from 'three'
 import { Drawer } from './ui/Drawer'
 import { useParams } from 'react-router-dom'
 import { Preview } from './scenes/Preview'
@@ -67,6 +67,7 @@ function App() {
     const [collection, setCollection] = usePersistent('collection', defaultCollection)
 
     const previewId = id ?? ''
+    const sceneRef = useRef<Object3D>(null)
 
     const setView = (position: Vector3, lookAt: Vector3, duration: number) => {
         if (!orbitRef.current || !camera) return
@@ -126,16 +127,18 @@ function App() {
                                 setCamera(camera)
                             }}
                         >
-                            <ambientLight intensity={2} />
-                            <Plaza.Scene avatars={collection} setView={setView} />
-                            {mode === 'edit' && <Editor.Scene />}
-                            <OrbitControls ref={orbitRef} />
-                            <Preview.Scene />
-                            <mesh>
-                                <sphereGeometry args={[100, 32, 32]} />
-                                {/* @ts-ignore */}
-                                <skybox side={2} />
-                            </mesh>
+                            <group ref={sceneRef}>
+                                <ambientLight intensity={2} />
+                                <Plaza.Scene avatars={collection} setView={setView} />
+                                {mode === 'edit' && <Editor.Scene />}
+                                <OrbitControls ref={orbitRef} />
+                                <Preview.Scene />
+                                <mesh>
+                                    <sphereGeometry args={[100, 32, 32]} />
+                                    {/* @ts-ignore */}
+                                    <skybox side={2} />
+                                </mesh>
+                            </group>
                         </Canvas>
 
                         {mode === 'plaza' && (
@@ -144,7 +147,12 @@ function App() {
                         <Preview.Overlay setView={setView} collection={collection} setCollection={setCollection} />
 
                         <Drawer open={mode === 'edit'}>
-                            <Editor.Overlay setMode={setMode} setView={setView} setCollection={setCollection} />
+                            <Editor.Overlay
+                                setMode={setMode}
+                                setView={setView}
+                                setCollection={setCollection}
+                                sceneRef={sceneRef}
+                            />
                         </Drawer>
                     </Plaza>
                 </Editor>
