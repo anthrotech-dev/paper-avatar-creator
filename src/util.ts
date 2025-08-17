@@ -4,7 +4,11 @@ import { Texture } from 'three'
 import brotliPromise from 'brotli-wasm'
 import type { AvatarManifest } from './types'
 
-export const handlePublish = async (manifest: Partial<AvatarManifest>, textures: Record<string, Texture>) => {
+export const handlePublish = async (
+    thumbnail: Blob,
+    manifest: Partial<AvatarManifest>,
+    textures: Record<string, Texture>
+) => {
     const endpoint = 'https://paper-avatar-creator.pages.dev/api/upload'
 
     const entries = await Promise.all(
@@ -18,6 +22,7 @@ export const handlePublish = async (manifest: Partial<AvatarManifest>, textures:
     const form = new FormData()
 
     form.append('manifest', new Blob([JSON.stringify(manifest)], { type: 'application/json' }), 'manifest.json')
+    form.append('thumbnail', thumbnail, 'thumbnail.png')
 
     for (const e of entries) {
         if (!e) continue

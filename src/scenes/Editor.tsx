@@ -308,6 +308,9 @@ Editor.Overlay = (props: {
     const [uploading, setUploading] = useState(false)
     const [uploaded, setUploaded] = useState<AvatarManifest | null>(null)
 
+    const [thumbnail, setThumbnail] = useState<string | null>(null)
+    const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null)
+
     return (
         <>
             <input
@@ -787,34 +790,6 @@ Editor.Overlay = (props: {
                             >
                                 キャンセル
                             </Button>
-
-                            <Button
-                                onClick={() => {
-                                    if (!thumbnailCameraRef?.current) return
-                                    if (!thumbSceneRef?.current) return
-
-                                    const canvas = document.createElement('canvas')
-                                    canvas.width = thumbnailWidth
-                                    canvas.height = thumbnailHeight
-
-                                    const camera = thumbnailCameraRef.current
-                                    camera.updateProjectionMatrix()
-                                    camera.updateMatrixWorld()
-
-                                    const renderer = new WebGLRenderer({ canvas })
-                                    renderer.setSize(thumbnailWidth, thumbnailHeight)
-                                    renderer.render(thumbSceneRef.current, camera)
-
-                                    const dataURL = canvas.toDataURL('image/png')
-                                    const link = document.createElement('a')
-                                    link.href = dataURL
-                                    link.download = 'avatar-thumbnail.png'
-                                    link.click()
-                                }}
-                            >
-                                Render Thumbnail
-                            </Button>
-
                             <Button
                                 variant="contained"
                                 onClick={() => {
@@ -853,6 +828,29 @@ Editor.Overlay = (props: {
                                 disabled={!manifest.name}
                                 onClick={() => {
                                     setOpen(true)
+
+                                    if (!thumbnailCameraRef?.current) return
+                                    if (!thumbSceneRef?.current) return
+
+                                    const canvas = document.createElement('canvas')
+                                    canvas.width = thumbnailWidth
+                                    canvas.height = thumbnailHeight
+
+                                    const camera = thumbnailCameraRef.current
+                                    camera.updateProjectionMatrix()
+                                    camera.updateMatrixWorld()
+
+                                    const renderer = new WebGLRenderer({ canvas })
+                                    renderer.setSize(thumbnailWidth, thumbnailHeight)
+                                    renderer.render(thumbSceneRef.current, camera)
+
+                                    const dataURL = canvas.toDataURL('image/png')
+                                    setThumbnail(dataURL)
+                                    canvas.toBlob((blob) => {
+                                        if (blob) {
+                                            setThumbnailBlob(blob)
+                                        }
+                                    }, 'image/png')
                                 }}
                             >
                                 公開
@@ -902,41 +900,64 @@ Editor.Overlay = (props: {
                 ) : (
                     <>
                         <DialogTitle>投稿: {manifest.name}</DialogTitle>
-                        <DialogContent>
-                            あなたのアバターを公開します。
-                            <TextField
-                                label="クリエイター名"
-                                variant="outlined"
-                                required
-                                value={manifest.creator || ''}
-                                onChange={(e) => setManifest((prev) => ({ ...prev, creator: e.target.value }))}
-                                fullWidth
-                                sx={{ marginBottom: '20px' }}
-                            />
-                            <FormGroup>
-                                <FormControlLabel
-                                    control={
-                                        <Checkbox
-                                            checked={manifest.editable || false}
-                                            onChange={(e) =>
-                                                setManifest((prev) => ({ ...prev, editable: e.target.checked }))
-                                            }
-                                        />
-                                    }
-                                    label="アバター出力を許可"
+                        <DialogContent
+                            sx={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                gap: '20px',
+                                alignItems: 'center'
+                            }}
+                        >
+                            <Box>
+                                {thumbnail && (
+                                    <img
+                                        src={thumbnail}
+                                        alt="Thumbnail"
+                                        style={{ width: '300px', height: 'auto', marginBottom: '20px' }}
+                                    />
+                                )}
+                            </Box>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    flex: 1,
+                                    flexDirection: 'column'
+                                }}
+                            >
+                                <TextField
+                                    label="クリエイター名"
+                                    variant="outlined"
+                                    required
+                                    value={manifest.creator || ''}
+                                    onChange={(e) => setManifest((prev) => ({ ...prev, creator: e.target.value }))}
+                                    fullWidth
+                                    sx={{ marginBottom: '20px' }}
                                 />
-                                <FormControlLabel
-                                    control={
-                                        <Checkbox
-                                            checked={manifest.exportable || false}
-                                            onChange={(e) =>
-                                                setManifest((prev) => ({ ...prev, exportable: e.target.checked }))
-                                            }
-                                        />
-                                    }
-                                    label="改変を許可"
-                                />
-                            </FormGroup>
+                                <FormGroup>
+                                    <FormControlLabel
+                                        control={
+                                            <Checkbox
+                                                checked={manifest.editable || false}
+                                                onChange={(e) =>
+                                                    setManifest((prev) => ({ ...prev, editable: e.target.checked }))
+                                                }
+                                            />
+                                        }
+                                        label="アバター出力を許可"
+                                    />
+                                    <FormControlLabel
+                                        control={
+                                            <Checkbox
+                                                checked={manifest.exportable || false}
+                                                onChange={(e) =>
+                                                    setManifest((prev) => ({ ...prev, exportable: e.target.checked }))
+                                                }
+                                            />
+                                        }
+                                        label="改変を許可"
+                                    />
+                                </FormGroup>
+                            </Box>
                         </DialogContent>
                         <DialogActions>
                             <Button onClick={() => setOpen(false)}>キャンセル</Button>
@@ -945,7 +966,12 @@ Editor.Overlay = (props: {
                                 disabled={uploading || !manifest.creator}
                                 onClick={() => {
                                     setUploading(true)
+                                    if (!thumbnailBlob) {
+                                        alert('サムネイルが生成されていません。もう一度公開を試みてください。')
+                                        return
+                                    }
                                     handlePublish(
+                                        thumbnailBlob,
                                         {
                                             ...manifest,
                                             extends: parent?.id,
