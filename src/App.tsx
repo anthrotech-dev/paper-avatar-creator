@@ -84,7 +84,7 @@ function App() {
                         >
                             <Plaza.Scene avatars={collection} setView={setView} />
                             {mode === 'edit' && <Editor.Scene />}
-                            <OrbitControls ref={orbitRef} />
+                            <OrbitControls ref={orbitRef} maxDistance={20} />
                             <Preview.Scene />
                             <Skybox />
                         </Canvas>
