@@ -15,11 +15,11 @@ const defaultCollection = ['5sn4vqpg9yame7n806cajt10nc']
 
 const Skybox = shaderMaterial(
     {
-        topColor: [0.1, 0.1, 0.4],
+        topColor: [207.0 / 255, 210.0 / 255, 230.0 / 255],
         middleColor: [1.0, 1.0, 1.0],
         bottomColor: [1.0, 1.0, 1.0],
-        offset: 15,
-        exponent: 0.6
+        offset: 0,
+        exponent: 0.3
     },
     // vertex shader
     `
