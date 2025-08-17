@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
     Group,
     AnimationMixer,
-    MeshPhongMaterial,
     Mesh,
     AnimationClip,
     VectorKeyframeTrack,
@@ -13,7 +12,8 @@ import {
     Object3D,
     TextureLoader,
     SRGBColorSpace,
-    Texture
+    Texture,
+    MeshBasicMaterial
 } from 'three'
 
 import { textureKeyMap, type AvatarManifest } from '../types'
@@ -183,16 +183,13 @@ export const Avatar = (props: AvatarProps) => {
         for (const key in nodes) {
             if (textureKeyMap[key] && nodes[key].type === 'Mesh') {
                 const mesh = nodes[key] as Mesh
-                mesh.material = new MeshPhongMaterial({
+                mesh.material = new MeshBasicMaterial({
                     color: '#FFFFFF',
                     map: textures[textureKeyMap[key]],
-                    flatShading: true,
-                    alphaTest: 0.5
+                    alphaTest: 0.5,
+                    toneMapped: false
                 })
                 mesh.material.needsUpdate = true
-                // console.log(`Set texture for ${key} to ${textureKeyMap[key]}`)
-            } else {
-                // console.warn(`No texture for ${key}`)
             }
         }
     }, [nodes, manifest, textures])

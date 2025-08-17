@@ -60,6 +60,7 @@ type EditorState = {
     setEditing: Dispatch<SetStateAction<TextureKind | null>>
     setAvatarParams: Dispatch<SetStateAction<AvatarParams>>
     thumbnailCameraRef?: RefObject<OrthographicCamera | null>
+    thumbSceneRef?: RefObject<Object3D | null>
 }
 
 const EditorContext = createContext<EditorState | null>(null)
@@ -113,6 +114,8 @@ export function Editor({ children }: { children?: React.ReactNode }) {
     const [parent, setParent] = useState<AvatarManifest | null>(null)
     const [textures, setTextures] = useState<Record<string, Texture>>({})
     const [editing, setEditing] = useState<TextureKind | null>(null)
+
+    const thumbSceneRef = useRef<Object3D>(null)
 
     const [avatarParams, setAvatarParams] = useState<AvatarParams>({
         headSize: 0,
@@ -186,7 +189,8 @@ export function Editor({ children }: { children?: React.ReactNode }) {
                 setAvatarParams,
                 parent,
                 setParent,
-                thumbnailCameraRef
+                thumbnailCameraRef,
+                thumbSceneRef
             }}
         >
             {children}
@@ -200,7 +204,7 @@ const thumbnailSceneWidth = 2.0
 const thumbnailSceneHeight = (thumbnailHeight / thumbnailWidth) * thumbnailSceneWidth
 
 Editor.Scene = () => {
-    const { avatarParams, editing, textures, thumbnailCameraRef } = useEditor()
+    const { avatarParams, editing, textures, thumbnailCameraRef, thumbSceneRef } = useEditor()
 
     const thumbTitleTex = useMemo(() => {
         const loader = new TextureLoader()
@@ -229,7 +233,7 @@ Editor.Scene = () => {
                     <EditableAvatar params={avatarParams} editing={editing} textures={textures} />
                 </Suspense>
             </group>
-            <group position={[0, -200, 0]}>
+            <group ref={thumbSceneRef} position={[0, -200, 0]}>
                 <orthographicCamera
                     ref={thumbnailCameraRef}
                     position={[0, 0.55, 1.0]}
@@ -268,7 +272,6 @@ Editor.Overlay = (props: {
     setView: (position: Vector3, lookAt: Vector3, speed: number) => void
     setMode: (mode: 'edit' | 'plaza') => void
     setCollection: Dispatch<SetStateAction<string[]>>
-    sceneRef?: RefObject<Object3D | null>
 }) => {
     const {
         init,
@@ -279,7 +282,8 @@ Editor.Overlay = (props: {
         setTextures,
         avatarParams,
         setAvatarParams,
-        thumbnailCameraRef
+        thumbnailCameraRef,
+        thumbSceneRef
     } = useEditor()
 
     const handleEdit = (textureKind: TextureKind) => {
@@ -787,7 +791,7 @@ Editor.Overlay = (props: {
                             <Button
                                 onClick={() => {
                                     if (!thumbnailCameraRef?.current) return
-                                    if (!props.sceneRef?.current) return
+                                    if (!thumbSceneRef?.current) return
 
                                     const canvas = document.createElement('canvas')
                                     canvas.width = thumbnailWidth
@@ -799,7 +803,7 @@ Editor.Overlay = (props: {
 
                                     const renderer = new WebGLRenderer({ canvas })
                                     renderer.setSize(thumbnailWidth, thumbnailHeight)
-                                    renderer.render(props.sceneRef.current, camera)
+                                    renderer.render(thumbSceneRef.current, camera)
 
                                     const dataURL = canvas.toDataURL('image/png')
                                     const link = document.createElement('a')

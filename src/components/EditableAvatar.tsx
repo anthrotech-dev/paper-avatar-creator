@@ -3,7 +3,6 @@ import {
     Texture,
     Group,
     AnimationMixer,
-    MeshPhongMaterial,
     Mesh,
     AnimationClip,
     VectorKeyframeTrack,
@@ -11,7 +10,8 @@ import {
     QuaternionKeyframeTrack,
     Euler,
     Quaternion,
-    Object3D
+    Object3D,
+    MeshBasicMaterial
 } from 'three'
 
 import { textureKeyMap, type AvatarParams, type TextureKind } from '../types'
@@ -131,16 +131,12 @@ export const EditableAvatar = ({ params, textures, editing, setSelected }: Avata
         for (const key in nodes) {
             if (textureKeyMap[key] && nodes[key].type === 'Mesh') {
                 const mesh = nodes[key] as Mesh
-                mesh.material = new MeshPhongMaterial({
+                mesh.material = new MeshBasicMaterial({
                     color: '#FFFFFF',
                     map: textures[textureKeyMap[key]],
-                    flatShading: true,
                     alphaTest: 0.5
                 })
                 mesh.material.needsUpdate = true
-                // console.log(`Set texture for ${key} to ${textureKeyMap[key]}`)
-            } else {
-                // console.warn(`No texture for ${key}`)
             }
         }
     }, [nodes, textures])

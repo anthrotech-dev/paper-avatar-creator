@@ -67,7 +67,6 @@ function App() {
     const [collection, setCollection] = usePersistent('collection', defaultCollection)
 
     const previewId = id ?? ''
-    const sceneRef = useRef<Object3D>(null)
 
     const setView = (position: Vector3, lookAt: Vector3, duration: number) => {
         if (!orbitRef.current || !camera) return
@@ -127,18 +126,15 @@ function App() {
                                 setCamera(camera)
                             }}
                         >
-                            <group ref={sceneRef}>
-                                <ambientLight intensity={2} />
-                                <Plaza.Scene avatars={collection} setView={setView} />
-                                {mode === 'edit' && <Editor.Scene />}
-                                <OrbitControls ref={orbitRef} />
-                                <Preview.Scene />
-                                <mesh>
-                                    <sphereGeometry args={[100, 32, 32]} />
-                                    {/* @ts-ignore */}
-                                    <skybox side={2} />
-                                </mesh>
-                            </group>
+                            <Plaza.Scene avatars={collection} setView={setView} />
+                            {mode === 'edit' && <Editor.Scene />}
+                            <OrbitControls ref={orbitRef} />
+                            <Preview.Scene />
+                            <mesh>
+                                <sphereGeometry args={[100, 32, 32]} />
+                                {/* @ts-ignore */}
+                                <skybox side={2} />
+                            </mesh>
                         </Canvas>
 
                         {mode === 'plaza' && (
@@ -147,12 +143,7 @@ function App() {
                         <Preview.Overlay setView={setView} collection={collection} setCollection={setCollection} />
 
                         <Drawer open={mode === 'edit'}>
-                            <Editor.Overlay
-                                setMode={setMode}
-                                setView={setView}
-                                setCollection={setCollection}
-                                sceneRef={sceneRef}
-                            />
+                            <Editor.Overlay setMode={setMode} setView={setView} setCollection={setCollection} />
                         </Drawer>
                     </Plaza>
                 </Editor>
