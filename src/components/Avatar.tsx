@@ -21,6 +21,7 @@ import { useGLTF } from '@react-three/drei'
 
 import { useFrame, useGraph } from '@react-three/fiber'
 import { FakeShadow } from './FakeShadow'
+import { a, useSpring } from '@react-spring/three'
 
 type AvatarEvent = {
     manifest: AvatarManifest
@@ -45,6 +46,11 @@ export const Avatar = (props: AvatarProps) => {
     const params = manifest?.params
 
     const [textures, setTextures] = useState<Record<string, Texture> | null>()
+    const [loaded, setLoaded] = useState(false)
+    const { s } = useSpring({
+        s: loaded ? 1.0 : 0,
+        config: { duration: 250 }
+    })
 
     useEffect(() => {
         const endpoint = `https://pub-01b22329d1ae4699af72f1db7103a0ab.r2.dev/uploads/${props.id}/manifest.json`
@@ -74,6 +80,7 @@ export const Avatar = (props: AvatarProps) => {
                         })
                         setTextures(textureMap)
                         props.onLoad?.(data)
+                        setLoaded(true)
                     })
                     .catch((error) => {
                         console.error('Error loading textures:', error)
@@ -263,7 +270,8 @@ export const Avatar = (props: AvatarProps) => {
     })
 
     return (
-        <group
+        <a.group
+            scale={s}
             onPointerDown={(e) => {
                 e.stopPropagation()
                 console.log('Avatar clicked', e)
@@ -276,6 +284,6 @@ export const Avatar = (props: AvatarProps) => {
         >
             <primitive scale={[0.01, 0.01, 0.01]} ref={group} object={clone} />
             <FakeShadow />
-        </group>
+        </a.group>
     )
 }
