@@ -365,17 +365,6 @@ Editor.Overlay = (props: {
                             <Button
                                 variant="contained"
                                 onClick={() => {
-                                    if (fileInputRef.current) {
-                                        fileInputRef.current.click()
-                                    }
-                                }}
-                            >
-                                Load
-                            </Button>
-
-                            <Button
-                                variant="contained"
-                                onClick={() => {
                                     if (!editing) return
                                     const canvas = editingTex.image as HTMLCanvasElement
                                     const tmp = document.createElement('canvas')

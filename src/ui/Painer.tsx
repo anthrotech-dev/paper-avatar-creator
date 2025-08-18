@@ -7,6 +7,7 @@ import { IoIosUndo } from 'react-icons/io'
 import { MdDelete } from 'react-icons/md'
 import { MdLayers } from 'react-icons/md'
 import { MdLayersClear } from 'react-icons/md'
+import { FaFileImport } from 'react-icons/fa'
 
 import Konva from 'konva'
 import { Stage, Layer, Line, Rect, Circle } from 'react-konva'
@@ -223,6 +224,7 @@ export function Painter(props: PainterProps) {
                         texture.flipY = false
                         texture.colorSpace = SRGBColorSpace
                         setOldTexture(texture)
+                        console.log('Loaded texture:', texture)
                     })
                 }}
             />
@@ -349,6 +351,22 @@ export function Painter(props: PainterProps) {
                         }}
                     >
                         <IoIosUndo color="white" />
+                    </IconButton>
+
+                    <IconButton
+                        size="large"
+                        sx={{
+                            width: '50px',
+                            height: '50px',
+                            backgroundColor: 'primary.main'
+                        }}
+                        onClick={() => {
+                            if (fileInputRef.current) {
+                                fileInputRef.current.click()
+                            }
+                        }}
+                    >
+                        <FaFileImport color="white" />
                     </IconButton>
 
                     <IconButton
