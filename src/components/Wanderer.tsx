@@ -86,20 +86,14 @@ export function Wanderer({ children, initial, bounds = 20, baseSpeed = 1.2, rest
         const actualSpeed = state.current.speed * (0.6 + 0.6 * ease) * wobble
         const maxStep = actualSpeed * dt
 
+        // 外へ出てしまっているときは、瞬時に振り返る
+        if (Math.abs(pos.x) > bounds || Math.abs(pos.z) > bounds) {
+            g.quaternion.setFromEuler(new Euler(0, Math.atan2(dir.x, dir.z), 0))
+        }
+
         // 前方方向に進める
         const forward = new Vector3(0, 0, 1).applyQuaternion(g.quaternion)
         pos.addScaledVector(forward, maxStep)
-
-        // フィールド外に出そうなら引き返すようターゲットを更新（衝突回避）
-        if (Math.abs(pos.x) > bounds || Math.abs(pos.z) > bounds) {
-            const nx = MathUtils.clamp(pos.x, -bounds + 0.5, bounds - 0.5) * -0.8
-            const nz = MathUtils.clamp(pos.z, -bounds + 0.5, bounds - 0.5) * -0.8
-            state.current.target.set(nx, 0, nz)
-            state.current.segStart.copy(pos)
-            state.current.segLength = Math.max(0.001, state.current.target.distanceTo(pos))
-            // 方向転換したので速度も少し変える
-            state.current.speed = baseSpeed * MathUtils.randFloat(0.85, 1.3)
-        }
     })
 
     return (
