@@ -189,7 +189,6 @@ export const Avatar = (props: AvatarProps) => {
                 position={position.to((x) => [0, Math.abs(x), 0])}
                 onPointerDown={(e) => {
                     e.stopPropagation()
-                    console.log('Avatar clicked', e)
                     props.onClick?.({
                         manifest: manifest!,
                         target: group.current!,

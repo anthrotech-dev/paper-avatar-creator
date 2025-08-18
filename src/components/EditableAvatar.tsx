@@ -130,7 +130,6 @@ export const EditableAvatar = ({ params, textures, editing, setSelected }: Avata
         <group
             onPointerDown={(e) => {
                 e.stopPropagation()
-                console.log('Avatar clicked', e)
                 setSelected?.(group.current)
             }}
         >

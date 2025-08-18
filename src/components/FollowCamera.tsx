@@ -24,7 +24,7 @@ export function FollowCamera({ target, frontDistance = 3, height = 2.5 }: Follow
         const cameraPos = position
             .clone()
             .addScaledVector(forward, frontDistance)
-            .addScaledVector(new Vector3(0, 1, 0), height)
+            .addScaledVector(new Vector3(0, 0.5, 0), height)
 
         const cameraLookAt = position.clone().add(new Vector3(0, 0.5, 0)) // Look at slightly above the target
 

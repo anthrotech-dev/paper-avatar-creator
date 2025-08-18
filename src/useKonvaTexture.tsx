@@ -18,7 +18,6 @@ export function useKonvaTexture(layerRef: React.RefObject<Konva.Layer | null>, e
 
         // Konva が何か描いたら GPU 転送を更新
         const update = () => {
-            console.log('Konva texture update')
             tex.needsUpdate = true
         }
         layer.on('draw', update)

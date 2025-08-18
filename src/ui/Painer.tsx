@@ -65,7 +65,6 @@ export function Painter(props: PainterProps) {
 
         // レイヤーはヒットテスト不要＆クリックイベントを受けない
         previewLayer.listening(false)
-        previewLayer.hitGraphEnabled(false)
 
         const updateCircle = () => {
             const p = stage.getPointerPosition()
