@@ -1,9 +1,10 @@
+import { type SpringValue, a } from '@react-spring/three'
 import { useMemo } from 'react'
 import { CanvasTexture, ClampToEdgeWrapping } from 'three'
 
 interface FakeShadowProps {
     radius?: number
-    opacity?: number
+    opacity?: number | SpringValue<number>
 }
 
 export function FakeShadow({ radius = 0.45, opacity = 0.5 }: FakeShadowProps) {
@@ -26,9 +27,9 @@ export function FakeShadow({ radius = 0.45, opacity = 0.5 }: FakeShadowProps) {
     }, [])
 
     return (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]} renderOrder={-1}>
+        <a.mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]} renderOrder={-1} material-opacity={opacity}>
             <planeGeometry args={[radius * 2, radius * 2]} />
-            <meshBasicMaterial map={texture} transparent opacity={opacity} depthWrite={false} toneMapped={false} />
-        </mesh>
+            <meshBasicMaterial map={texture} transparent depthWrite={false} toneMapped={false} />
+        </a.mesh>
     )
 }

@@ -38,6 +38,7 @@ export type AvatarParams = {
     tailSize: number
     tailPosition: number
     tailRotation: number
+    disableTail: boolean
     legsSize: number
     legsDistance: number
     legsDistanceFromBody: number

@@ -93,6 +93,7 @@ export const useEditor = () => {
                 headInFront: true,
                 handSize: 0,
                 bodySize: 0,
+                disableTail: false,
                 tailSize: 0,
                 tailPosition: 0,
                 tailRotation: 0,
@@ -123,6 +124,7 @@ export function Editor({ children }: { children?: React.ReactNode }) {
         headInFront: true,
         handSize: 0,
         bodySize: 0,
+        disableTail: false,
         tailSize: 0,
         tailPosition: 0,
         tailRotation: 0,
@@ -163,6 +165,7 @@ export function Editor({ children }: { children?: React.ReactNode }) {
             headInFront: true,
             handSize: 0,
             bodySize: 0,
+            disableTail: false,
             tailSize: 0,
             tailPosition: 0,
             tailRotation: 0,
@@ -707,74 +710,95 @@ Editor.Overlay = (props: {
                         )}
                         {tab === 'tail' && (
                             <>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        flexDirection: 'row',
-                                        gap: '10px'
-                                    }}
-                                >
-                                    <div>
-                                        <h4>Front</h4>
-                                        <TexturePreview
-                                            texture={textures['Tail-Front']}
-                                            sx={{ width: '100px', height: '100px' }}
-                                            onClick={() => handleEdit('Tail-Front')}
-                                        />
-                                    </div>
-                                    <div>
-                                        <h4>Back</h4>
-                                        <TexturePreview
-                                            texture={textures['Tail-Back']}
-                                            sx={{ width: '100px', height: '100px' }}
-                                            onClick={() => handleEdit('Tail-Back')}
-                                        />
-                                    </div>
-                                </div>
-                                <Box>
-                                    <Typography variant="h6">Tail Size</Typography>
-                                    <Slider
-                                        value={avatarParams.tailSize}
-                                        min={-20}
-                                        max={20}
-                                        step={0.01}
-                                        onChange={(_e, newValue) =>
-                                            setAvatarParams((prev) => ({
-                                                ...prev,
-                                                tailSize: newValue as number
-                                            }))
+                                <FormGroup>
+                                    <FormControlLabel
+                                        control={
+                                            <Checkbox
+                                                checked={avatarParams.disableTail}
+                                                onChange={(e) =>
+                                                    setAvatarParams((prev) => ({
+                                                        ...prev,
+                                                        disableTail: e.target.checked
+                                                    }))
+                                                }
+                                            />
                                         }
-                                        sx={{ width: '200px', padding: '20px' }}
+                                        label="しっぽを無効化"
                                     />
-                                    <Typography variant="h6">Tail Position</Typography>
-                                    <Slider
-                                        value={avatarParams.tailPosition}
-                                        min={-10}
-                                        max={10}
-                                        step={0.01}
-                                        onChange={(_e, newValue) =>
-                                            setAvatarParams((prev) => ({
-                                                ...prev,
-                                                tailPosition: newValue as number
-                                            }))
-                                        }
-                                        sx={{ width: '200px', padding: '20px' }}
-                                    />
-                                    <Typography variant="h6">Tail Rotation</Typography>
-                                    <Slider
-                                        value={avatarParams.tailRotation}
-                                        min={0}
-                                        max={2 * Math.PI}
-                                        step={0.001}
-                                        onChange={(_e, newValue) =>
-                                            setAvatarParams((prev) => ({
-                                                ...prev,
-                                                tailRotation: newValue as number
-                                            }))
-                                        }
-                                        sx={{ width: '200px', padding: '20px' }}
-                                    />
-                                </Box>
+                                </FormGroup>
+
+                                {!avatarParams.disableTail && (
+                                    <>
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                flexDirection: 'row',
+                                                gap: '10px'
+                                            }}
+                                        >
+                                            <div>
+                                                <h4>Front</h4>
+                                                <TexturePreview
+                                                    texture={textures['Tail-Front']}
+                                                    sx={{ width: '100px', height: '100px' }}
+                                                    onClick={() => handleEdit('Tail-Front')}
+                                                />
+                                            </div>
+                                            <div>
+                                                <h4>Back</h4>
+                                                <TexturePreview
+                                                    texture={textures['Tail-Back']}
+                                                    sx={{ width: '100px', height: '100px' }}
+                                                    onClick={() => handleEdit('Tail-Back')}
+                                                />
+                                            </div>
+                                        </div>
+                                        <Box>
+                                            <Typography variant="h6">Tail Size</Typography>
+                                            <Slider
+                                                value={avatarParams.tailSize}
+                                                min={-20}
+                                                max={20}
+                                                step={0.01}
+                                                onChange={(_e, newValue) =>
+                                                    setAvatarParams((prev) => ({
+                                                        ...prev,
+                                                        tailSize: newValue as number
+                                                    }))
+                                                }
+                                                sx={{ width: '200px', padding: '20px' }}
+                                            />
+                                            <Typography variant="h6">Tail Position</Typography>
+                                            <Slider
+                                                value={avatarParams.tailPosition}
+                                                min={-10}
+                                                max={10}
+                                                step={0.01}
+                                                onChange={(_e, newValue) =>
+                                                    setAvatarParams((prev) => ({
+                                                        ...prev,
+                                                        tailPosition: newValue as number
+                                                    }))
+                                                }
+                                                sx={{ width: '200px', padding: '20px' }}
+                                            />
+                                            <Typography variant="h6">Tail Rotation</Typography>
+                                            <Slider
+                                                value={avatarParams.tailRotation}
+                                                min={0}
+                                                max={2 * Math.PI}
+                                                step={0.001}
+                                                onChange={(_e, newValue) =>
+                                                    setAvatarParams((prev) => ({
+                                                        ...prev,
+                                                        tailRotation: newValue as number
+                                                    }))
+                                                }
+                                                sx={{ width: '200px', padding: '20px' }}
+                                            />
+                                        </Box>
+                                    </>
+                                )}
                             </>
                         )}
                         <Divider />

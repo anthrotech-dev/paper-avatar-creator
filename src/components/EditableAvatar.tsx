@@ -69,6 +69,9 @@ export const EditableAvatar = ({ params, textures, editing, setSelected }: Avata
         action.blendMode = AdditiveAnimationBlendMode
         action.play()
 
+        const TailNode = nodes['Tail_Front']
+        if (TailNode) TailNode.visible = !params.disableTail
+
         return () => {
             action.stop()
         }

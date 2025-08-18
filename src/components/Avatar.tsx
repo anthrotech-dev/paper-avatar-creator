@@ -43,8 +43,9 @@ export const Avatar = (props: AvatarProps) => {
 
     const [textures, setTextures] = useState<Record<string, Texture> | null>()
     const [loaded, setLoaded] = useState(false)
-    const { position } = useSpring({
-        position: loaded ? 0 : 10.0,
+    const { position, opacity } = useSpring({
+        position: loaded ? 0 : 5.0,
+        opacity: loaded ? 0.4 : 0,
         config: { tension: 220, friction: 20 }
     })
 
@@ -142,6 +143,9 @@ export const Avatar = (props: AvatarProps) => {
         action.blendMode = AdditiveAnimationBlendMode
         action.play()
 
+        const TailNode = nodes['Tail_Front']
+        if (TailNode) TailNode.visible = !params.disableTail
+
         return () => {
             action.stop()
         }
@@ -195,7 +199,7 @@ export const Avatar = (props: AvatarProps) => {
             >
                 <primitive scale={[0.01, 0.01, 0.01]} ref={group} object={clone} />
             </a.group>
-            <FakeShadow />
+            <FakeShadow opacity={opacity} />
         </group>
     )
 }
