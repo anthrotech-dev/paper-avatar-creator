@@ -43,9 +43,9 @@ export const Avatar = (props: AvatarProps) => {
 
     const [textures, setTextures] = useState<Record<string, Texture> | null>()
     const [loaded, setLoaded] = useState(false)
-    const { s } = useSpring({
-        s: loaded ? 1.0 : 0,
-        config: { duration: 250 }
+    const { position } = useSpring({
+        position: loaded ? 0 : 10.0,
+        config: { tension: 220, friction: 20 }
     })
 
     useEffect(() => {
@@ -76,7 +76,13 @@ export const Avatar = (props: AvatarProps) => {
                         })
                         setTextures(textureMap)
                         props.onLoad?.(data)
-                        setLoaded(true)
+                        //setLoaded(true)
+                        setTimeout(
+                            () => {
+                                setLoaded(true)
+                            },
+                            Math.random() * 1000 + 500
+                        ) // Random delay between 500ms and 1500ms
                     })
                     .catch((error) => {
                         console.error('Error loading textures:', error)
@@ -174,20 +180,22 @@ export const Avatar = (props: AvatarProps) => {
     })
 
     return (
-        <a.group
-            scale={s}
-            onPointerDown={(e) => {
-                e.stopPropagation()
-                console.log('Avatar clicked', e)
-                props.onClick?.({
-                    manifest: manifest!,
-                    target: group.current!,
-                    textures: textures || {}
-                })
-            }}
-        >
-            <primitive scale={[0.01, 0.01, 0.01]} ref={group} object={clone} />
+        <group>
+            <a.group
+                position={position.to((x) => [0, Math.abs(x), 0])}
+                onPointerDown={(e) => {
+                    e.stopPropagation()
+                    console.log('Avatar clicked', e)
+                    props.onClick?.({
+                        manifest: manifest!,
+                        target: group.current!,
+                        textures: textures || {}
+                    })
+                }}
+            >
+                <primitive scale={[0.01, 0.01, 0.01]} ref={group} object={clone} />
+            </a.group>
             <FakeShadow />
-        </a.group>
+        </group>
     )
 }

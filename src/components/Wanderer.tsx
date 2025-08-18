@@ -84,7 +84,8 @@ export function Wanderer({ children, initial, bounds = 20, baseSpeed = 1.2, rest
         const wobble = 0.9 + 0.2 * Math.sin(progress * Math.PI * 2 + 7.0)
 
         const actualSpeed = state.current.speed * (0.6 + 0.6 * ease) * wobble
-        const maxStep = actualSpeed * dt
+        const step = actualSpeed * dt
+        const safeStep = Math.min(step, 1.0)
 
         // 外へ出てしまっているときは、瞬時に振り返る
         if (Math.abs(pos.x) > bounds || Math.abs(pos.z) > bounds) {
@@ -93,7 +94,7 @@ export function Wanderer({ children, initial, bounds = 20, baseSpeed = 1.2, rest
 
         // 前方方向に進める
         const forward = new Vector3(0, 0, 1).applyQuaternion(g.quaternion)
-        pos.addScaledVector(forward, maxStep)
+        pos.addScaledVector(forward, safeStep)
     })
 
     return (
