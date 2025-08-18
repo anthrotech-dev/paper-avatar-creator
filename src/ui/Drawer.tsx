@@ -37,7 +37,7 @@ export const Drawer = (props: CCDrawerProps): ReactNode => {
                             sm: '800px'
                         },
                         height: {
-                            xs: '80vh',
+                            xs: '60vh',
                             sm: '100%'
                         },
                         borderRadius: {
