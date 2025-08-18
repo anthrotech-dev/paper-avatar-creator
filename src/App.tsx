@@ -21,8 +21,8 @@ function App() {
 
     const { id } = useParams()
     const [collection, setCollection] = usePersistent('collection', defaultCollection)
-    const theme = useTheme()
 
+    const theme = useTheme()
     const isMobileSize = useMediaQuery(theme.breakpoints.down('sm'))
 
     const previewId = id ?? ''
