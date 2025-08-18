@@ -79,7 +79,7 @@ export const handleExport = async (manifest: Partial<AvatarManifest>, textures: 
     URL.revokeObjectURL(url)
 }
 
-export const handleResoniteExport = async (textures: Record<string, Texture>) => {
+export const handleResoniteExport = async (manifest: Partial<AvatarManifest>, textures: Record<string, Texture>) => {
     const assets: Array<any> = []
 
     const zip = new JSZip()
@@ -103,6 +103,52 @@ export const handleResoniteExport = async (textures: Record<string, Texture>) =>
     for (const elem of assets) {
         slots = slots.replace(`[::${elem.part}::]`, elem.hash)
     }
+
+    const params = manifest.params!
+
+    const baseHeadSize = 0.6
+    const headSize = baseHeadSize + params.headSize * 0.02
+    slots = slots.replaceAll('::Head-Scale::', headSize.toString())
+
+    const baseNeckLength = -0.55
+    const neckLength = baseNeckLength + params.neckLength * -0.02
+    slots = slots.replaceAll('::Neck-Length::', neckLength.toString())
+
+    slots = slots.replaceAll('::Head-In-Front::', params.headInFront ? '0.001' : '-0.001')
+
+    const baseBodySize = 0.55
+    const bodySize = baseBodySize + params.bodySize * 0.02
+    slots = slots.replaceAll('::Body-Size::', bodySize.toString())
+
+    slots = slots.replaceAll('::Tail-Active::', params.disableTail ? 'false' : 'true')
+
+    const baseTailPosition = -0.12
+    const tailPosition = baseTailPosition + params.tailPosition * 0.2
+    slots = slots.replaceAll('::Tail-Position::', tailPosition.toString())
+    slots = slots.replaceAll('::Tail-Rotation::', params.tailRotation.toString())
+
+    const baseTailSize = 1.7
+    const tailSize = baseTailSize + params.tailSize * 0.2
+    slots = slots.replaceAll('::Tail-Scale::', tailSize.toString())
+
+    slots = slots.replaceAll('::Legs-In-Front::', params.legsInFront ? '0.001' : '-0.001')
+
+    const baseFeetDistance = 0.13
+    const feetDistance = baseFeetDistance + params.legsDistanceFromBody * -0.015
+    slots = slots.replaceAll('::Feet-Distance::', feetDistance.toString())
+
+    const baseFeetSize = 0.5
+    const feetSize = baseFeetSize + params.legsSize * 0.5
+    slots = slots.replaceAll('::Feet-Size::', feetSize.toString())
+
+    const baseLegsDistance = 0.38
+    const legsDistance = baseLegsDistance + params.legsDistance * 0.03
+    slots = slots.replaceAll('::Legs-Distance::', legsDistance.toString())
+
+    const baseHandSize = 0.3
+    const handSize = baseHandSize + params.handSize * 0.3
+    slots = slots.replaceAll('::Hand-Scale::', handSize.toString())
+
     const slotsBin = await Compress(slots)
     const slotsHash = await sha256SumBuffer(slotsBin)
 
@@ -318,7 +364,7 @@ export const createBaseAnimation = (params: AvatarParams) => {
     const track_legsPosition = new VectorKeyframeTrack(
         'Feet.position',
         [0],
-        [0, params.legsDistanceFromBody, params.legsInFront ? 0.5 : -0.5]
+        [0, -params.legsDistanceFromBody, params.legsInFront ? 0.5 : -0.5]
     )
 
     const clip = new AnimationClip('BaseAnimation', 1, [

@@ -650,8 +650,8 @@ Editor.Overlay = (props: {
                                     <Typography variant="h6">Legs Size</Typography>
                                     <Slider
                                         value={avatarParams.legsSize}
-                                        min={0.1}
-                                        max={2}
+                                        min={-1}
+                                        max={1}
                                         step={0.01}
                                         onChange={(_e, newValue) =>
                                             setAvatarParams((prev) => ({
@@ -842,7 +842,14 @@ Editor.Overlay = (props: {
                             <Button
                                 variant="contained"
                                 onClick={() => {
-                                    handleResoniteExport(textures)
+                                    handleResoniteExport(
+                                        {
+                                            ...manifest,
+                                            extends: parent?.id,
+                                            params: avatarParams
+                                        },
+                                        textures
+                                    )
                                 }}
                             >
                                 Resonite用に書き出し

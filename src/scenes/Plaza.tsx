@@ -233,7 +233,7 @@ Plaza.Overlay = (props: {
                             variant="contained"
                             disabled={!selectedManifest.exportable}
                             onClick={() => {
-                                handleResoniteExport(textures)
+                                handleResoniteExport(selectedManifest, textures)
                             }}
                         >
                             Resonite用に書き出し
