@@ -454,7 +454,7 @@ Editor.Overlay = (props: {
                                         <h4>Front</h4>
                                         <TexturePreview
                                             texture={textures['Head-Front']}
-                                            sx={{ width: '100px', height: '100px' }}
+                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
                                             onClick={() => handleEdit('Head-Front')}
                                         />
                                     </div>
@@ -462,7 +462,7 @@ Editor.Overlay = (props: {
                                         <h4>Back</h4>
                                         <TexturePreview
                                             texture={textures['Head-Back']}
-                                            sx={{ width: '100px', height: '100px' }}
+                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
                                             onClick={() => handleEdit('Head-Back')}
                                         />
                                     </div>
@@ -470,7 +470,7 @@ Editor.Overlay = (props: {
                                         <h4>Eyes Closed</h4>
                                         <TexturePreview
                                             texture={textures['Eyes-Closed']}
-                                            sx={{ width: '100px', height: '100px' }}
+                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
                                             onClick={() => handleEdit('Eyes-Closed')}
                                         />
                                     </div>
@@ -478,7 +478,7 @@ Editor.Overlay = (props: {
                                         <h4>Mouth Open</h4>
                                         <TexturePreview
                                             texture={textures['Mouth-Open']}
-                                            sx={{ width: '100px', height: '100px' }}
+                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
                                             onClick={() => handleEdit('Mouth-Open')}
                                         />
                                     </div>
@@ -545,7 +545,7 @@ Editor.Overlay = (props: {
                                         <h4>Front</h4>
                                         <TexturePreview
                                             texture={textures['Body-Front']}
-                                            sx={{ width: '100px', height: '100px' }}
+                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
                                             onClick={() => handleEdit('Body-Front')}
                                         />
                                     </div>
@@ -553,7 +553,7 @@ Editor.Overlay = (props: {
                                         <h4>Back</h4>
                                         <TexturePreview
                                             texture={textures['Body-Back']}
-                                            sx={{ width: '100px', height: '100px' }}
+                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
                                             onClick={() => handleEdit('Body-Back')}
                                         />
                                     </div>
@@ -589,7 +589,7 @@ Editor.Overlay = (props: {
                                         <h4>Front</h4>
                                         <TexturePreview
                                             texture={textures['Hand-Front']}
-                                            sx={{ width: '100px', height: '100px' }}
+                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
                                             onClick={() => handleEdit('Hand-Front')}
                                         />
                                     </div>
@@ -597,7 +597,7 @@ Editor.Overlay = (props: {
                                         <h4>Back</h4>
                                         <TexturePreview
                                             texture={textures['Hand-Back']}
-                                            sx={{ width: '100px', height: '100px' }}
+                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
                                             onClick={() => handleEdit('Hand-Back')}
                                         />
                                     </div>
@@ -633,7 +633,7 @@ Editor.Overlay = (props: {
                                         <h4>Front</h4>
                                         <TexturePreview
                                             texture={textures['Legs-Front']}
-                                            sx={{ width: '100px', height: '100px' }}
+                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
                                             onClick={() => handleEdit('Legs-Front')}
                                         />
                                     </div>
@@ -641,7 +641,7 @@ Editor.Overlay = (props: {
                                         <h4>Back</h4>
                                         <TexturePreview
                                             texture={textures['Legs-Back']}
-                                            sx={{ width: '100px', height: '100px' }}
+                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
                                             onClick={() => handleEdit('Legs-Back')}
                                         />
                                     </div>
@@ -740,7 +740,7 @@ Editor.Overlay = (props: {
                                                 <h4>Front</h4>
                                                 <TexturePreview
                                                     texture={textures['Tail-Front']}
-                                                    sx={{ width: '100px', height: '100px' }}
+                                                    sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
                                                     onClick={() => handleEdit('Tail-Front')}
                                                 />
                                             </div>
@@ -748,7 +748,7 @@ Editor.Overlay = (props: {
                                                 <h4>Back</h4>
                                                 <TexturePreview
                                                     texture={textures['Tail-Back']}
-                                                    sx={{ width: '100px', height: '100px' }}
+                                                    sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
                                                     onClick={() => handleEdit('Tail-Back')}
                                                 />
                                             </div>

@@ -42,8 +42,7 @@ export function TexturePreview(props: TexturePreviewProps) {
             sx={{
                 ...props.sx,
                 overflow: 'hidden',
-                cursor: props.onClick ? 'pointer' : 'default',
-                backgroundColor: 'rgba(0, 0, 0, 0.3)'
+                cursor: props.onClick ? 'pointer' : 'default'
             }}
             onClick={props.onClick}
         >
