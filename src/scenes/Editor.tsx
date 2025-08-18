@@ -888,7 +888,7 @@ Editor.Overlay = (props: {
                             アバターの公開が完了しました！
                             <Button
                                 onClick={() => {
-                                    navigator.clipboard.writeText(location.origin + '#' + uploaded.id)
+                                    navigator.clipboard.writeText(location.origin + '/' + uploaded.id)
                                 }}
                             >
                                 URLをコピー
@@ -899,7 +899,8 @@ Editor.Overlay = (props: {
                                 onClick={() => {
                                     window.open(
                                         `https://x.com/intent/tweet?text=${encodeURIComponent(
-                                            `${location.origin}/${uploaded.id}`
+                                            `#oekakiavatar
+${location.origin}/${uploaded.id}`
                                         )}`
                                     )
                                 }}
