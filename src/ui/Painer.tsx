@@ -13,6 +13,7 @@ import { PiPaletteFill } from 'react-icons/pi'
 import { PiEraserFill } from 'react-icons/pi'
 import { MdDelete } from 'react-icons/md'
 import { FaFileImport } from 'react-icons/fa'
+import { GrPan } from 'react-icons/gr'
 import type { Texture } from 'three'
 
 import { MdFaceRetouchingOff } from 'react-icons/md'
@@ -66,6 +67,8 @@ export function Painter(props: PainterProps) {
 
     const [showFaceTemplate, setShowFaceTemplate] = useState<boolean>(false)
 
+    const [enablePanning, setEnablePanning] = useState<boolean>(true)
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'z' && e.ctrlKey && !e.shiftKey) {
@@ -83,6 +86,9 @@ export function Painter(props: PainterProps) {
             } else if (e.key === 'g') {
                 e.preventDefault()
                 setTool('fill')
+            } else if (e.key === 'h') {
+                e.preventDefault()
+                setEnablePanning(!enablePanning)
             }
         }
         document.addEventListener('keydown', handleKeyDown)
@@ -385,8 +391,9 @@ export function Painter(props: PainterProps) {
                 maxScale={10}
                 wheel={{ step: 50 }}
                 limitToBounds={false}
+                disabled={!enablePanning}
                 panning={{
-                    disabled: true
+                    allowLeftClickPan: false
                 }}
                 doubleClick={{
                     disabled: true
@@ -768,12 +775,30 @@ export function Painter(props: PainterProps) {
                     />
                 </Box>
             </Box>
-            <Button
-                variant="contained"
+            <IconButton
                 sx={{
                     position: 'absolute',
                     bottom: 10,
-                    right: 10
+                    left: 10,
+                    backgroundColor: enablePanning ? 'primary.main' : 'text.disabled',
+                    width: 50,
+                    height: 50
+                }}
+                onClick={() => {
+                    setEnablePanning(!enablePanning)
+                }}
+            >
+                <GrPan color="white" size={24} />
+            </IconButton>
+
+            <Button
+                variant="contained"
+                size="large"
+                sx={{
+                    position: 'absolute',
+                    bottom: 10,
+                    left: '50%',
+                    transform: 'translateX(-50%)'
                 }}
                 onClick={() => {
                     const out = document.createElement('canvas')
