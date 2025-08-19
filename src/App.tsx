@@ -11,6 +11,7 @@ import { useParams } from 'react-router-dom'
 import { Preview } from './scenes/Preview'
 import { usePersistent } from './usePersistent'
 import { Skybox } from './components/Skybox'
+import { Helmet } from 'react-helmet-async'
 
 const defaultCollection = ['5sn4vqpg9yame7n806cajt10nc']
 
@@ -90,46 +91,51 @@ function App() {
     }, [!orbitRef.current || !camera])
 
     return (
-        <Box
-            sx={{
-                width: '100vw',
-                height: '100dvh',
-                position: 'relative'
-            }}
-        >
-            <Preview id={previewId}>
-                <Editor>
-                    <Plaza>
-                        <Canvas
-                            style={{
-                                width: '100vw',
-                                height: '100dvh',
-                                position: 'absolute',
-                                top: 0,
-                                left: 0
-                            }}
-                            camera={{ position: [-2, 2, 10], fov: isMobileSize ? 50 : 30 }}
-                            onCreated={({ camera }) => {
-                                setCamera(camera as PerspectiveCamera)
-                            }}
-                        >
-                            <Plaza.Scene avatars={collection} setView={setView} />
-                            {mode === 'edit' && <Editor.Scene />}
-                            <OrbitControls ref={orbitRef} maxDistance={20} />
-                            <Preview.Scene />
-                            <Skybox />
-                        </Canvas>
+        <>
+            <Helmet>
+                <title>おえかきアバター</title>
+            </Helmet>
+            <Box
+                sx={{
+                    width: '100vw',
+                    height: '100dvh',
+                    position: 'relative'
+                }}
+            >
+                <Preview id={previewId}>
+                    <Editor>
+                        <Plaza>
+                            <Canvas
+                                style={{
+                                    width: '100vw',
+                                    height: '100dvh',
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0
+                                }}
+                                camera={{ position: [-2, 2, 10], fov: isMobileSize ? 50 : 30 }}
+                                onCreated={({ camera }) => {
+                                    setCamera(camera as PerspectiveCamera)
+                                }}
+                            >
+                                <Plaza.Scene avatars={collection} setView={setView} />
+                                {mode === 'edit' && <Editor.Scene />}
+                                <OrbitControls ref={orbitRef} maxDistance={20} />
+                                <Preview.Scene />
+                                <Skybox />
+                            </Canvas>
 
-                        {mode === 'plaza' && <Plaza.Overlay setCollection={setCollection} />}
-                        <Preview.Overlay collection={collection} setCollection={setCollection} />
+                            {mode === 'plaza' && <Plaza.Overlay setCollection={setCollection} />}
+                            <Preview.Overlay collection={collection} setCollection={setCollection} />
 
-                        <Drawer open={mode === 'edit'}>
-                            <Editor.Overlay setCollection={setCollection} />
-                        </Drawer>
-                    </Plaza>
-                </Editor>
-            </Preview>
-        </Box>
+                            <Drawer open={mode === 'edit'}>
+                                <Editor.Overlay setCollection={setCollection} />
+                            </Drawer>
+                        </Plaza>
+                    </Editor>
+                </Preview>
+            </Box>
+        </>
     )
 }
 

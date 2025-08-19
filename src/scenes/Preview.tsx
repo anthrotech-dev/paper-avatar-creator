@@ -13,6 +13,7 @@ import type { AvatarManifest } from '../types'
 import { Drawer } from '../ui/Drawer'
 import { Avatar } from '../components/Avatar'
 import { useNavigate } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 
 interface PreviewProps {
     id: string
@@ -93,6 +94,10 @@ Preview.Overlay = (props: { collection: string[]; setCollection: Dispatch<SetSta
         <Drawer open={!!manifest}>
             {manifest && (
                 <>
+                    <Helmet>
+                        <title>おえかきアバター | {manifest.name}</title>
+                        <meta name="description" content={manifest.description} />
+                    </Helmet>
                     <Box
                         sx={{
                             padding: '1rem',

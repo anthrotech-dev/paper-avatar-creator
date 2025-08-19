@@ -13,6 +13,7 @@ import { useEditor } from './Editor'
 import { shaderMaterial } from '@react-three/drei'
 import { extend } from '@react-three/fiber'
 import { useNavigate } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 
 type PlazaState = {
     selected: Object3D | null
@@ -196,6 +197,12 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) =
 
     return (
         <>
+            {selectedManifest && (
+                <Helmet>
+                    <title>おえかきアバター | {selectedManifest.name}</title>
+                    <meta name="description" content={selectedManifest.description} />
+                </Helmet>
+            )}
             <Fab
                 color="primary"
                 sx={{
