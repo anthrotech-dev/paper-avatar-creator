@@ -232,7 +232,8 @@ export function Painter(props: PainterProps) {
     }
 
     const handlePointerMove = (e: React.PointerEvent) => {
-        if (enablePanning || !drawing || e.buttons !== 1) return
+        if (enablePanning && e.pointerType === 'touch') return
+        if (!drawing || e.buttons !== 1) return
 
         const rect = canvasRef.current!.getBoundingClientRect()
         const x = (e.clientX - rect.left) / transform.scale
@@ -345,6 +346,21 @@ export function Painter(props: PainterProps) {
                 }
             }}
         >
+            <Box
+                sx={{
+                    position: 'absolute',
+                    top: '50px',
+                    left: '50%',
+                    transform: 'translateX(-50%)'
+                }}
+            >
+                <Typography textAlign="center">
+                    パンツールを有効(スペースキー)にすると、マウスホイールでズーム、ドラッグで移動できます。
+                    <br />
+                    パンツールが有効の場合、タッチでの描画が無効になります。
+                </Typography>
+            </Box>
+
             <Box
                 ref={tipRef}
                 sx={{
@@ -739,7 +755,8 @@ export function Painter(props: PainterProps) {
                         flexDirection: 'column',
                         gap: 1,
                         marginLeft: 2,
-                        width: '200px'
+                        width: '200px',
+                        maxWidth: '20vw'
                     }}
                 >
                     <Typography variant="h6">ブラシサイズ</Typography>
