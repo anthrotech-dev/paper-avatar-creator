@@ -19,7 +19,6 @@ export const onRequest: PagesFunction<{ BUCKET: R2Bucket }> = async (context) =>
     }
 
     let manifest = {}
-    manifest['id'] = id
 
     try {
         const manifestText = await manifestFile.text()
@@ -27,6 +26,8 @@ export const onRequest: PagesFunction<{ BUCKET: R2Bucket }> = async (context) =>
     } catch (e) {
         return new Response('Invalid JSON in manifest', { status: 400 })
     }
+
+    manifest['id'] = id
 
     const texture = form.get('texture')
     if (!texture || !(texture instanceof File)) {
