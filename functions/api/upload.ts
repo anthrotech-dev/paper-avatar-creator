@@ -29,6 +29,16 @@ export const onRequest: PagesFunction<{ BUCKET: R2Bucket }> = async (context) =>
 
     manifest['id'] = id
 
+    const thumbnail = form.get('thumbnail')
+    if (thumbnail && thumbnail instanceof File) {
+        const mime = thumbnail.type || 'application/octet-stream'
+        const thumbnailPath = `uploads/${id}/thumbnail`
+        await env.BUCKET.put(thumbnailPath, thumbnail.stream(), {
+            httpMetadata: { contentType: mime, contentDisposition: `inline; filename="${id}"` },
+            customMetadata: { uploaderIp: ip }
+        })
+    }
+
     const texture = form.get('texture')
     if (!texture || !(texture instanceof File)) {
         return new Response('Texture file is required', { status: 400 })
