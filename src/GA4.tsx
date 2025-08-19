@@ -23,7 +23,7 @@ export const GA4Provider = (props: GA4ProviderProps): ReactNode => {
             } else {
                 console.error('gtag not found')
             }
-        }, 100)
+        }, 1000)
     }, [location.pathname, location.hash])
 
     return <GA4Context.Provider value={{}}>{props.children}</GA4Context.Provider>
