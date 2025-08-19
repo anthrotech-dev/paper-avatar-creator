@@ -37,6 +37,7 @@ import { Painter } from '../ui/Painer'
 import { symetricTextures, texturePositions, type AvatarManifest, type AvatarParams } from '../types'
 import { EditableAvatar } from '../components/EditableAvatar'
 import { useNavigate } from 'react-router-dom'
+import { ThumbnailAvatar } from '../components/ThumbnailAvatar'
 
 type EditorState = {
     init: () => Promise<void>
@@ -209,7 +210,7 @@ Editor.Scene = () => {
                     rotation={[0, 0, 0]}
                 />
                 <Suspense fallback={null}>
-                    <EditableAvatar params={avatarParams} texture={texture ?? defaultTexture} />
+                    <ThumbnailAvatar params={avatarParams} texture={texture ?? defaultTexture} />
                 </Suspense>
                 <mesh position={[0, 0.55, 0.5]}>
                     <planeGeometry args={[thumbnailSceneWidth, thumbnailSceneHeight]} />
