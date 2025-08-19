@@ -2,22 +2,6 @@ import { cdid } from '../lib/cdid'
 
 const baseURL = 'https://pub-01b22329d1ae4699af72f1db7103a0ab.r2.dev'
 
-const keys = [
-    'thumbnail',
-    'Head-Front',
-    'Head-Back',
-    'Eyes-Closed',
-    'Mouth-Open',
-    'Body-Front',
-    'Body-Back',
-    'Hand-Front',
-    'Hand-Back',
-    'Legs-Front',
-    'Legs-Back',
-    'Tail-Front',
-    'Tail-Back'
-]
-
 export const onRequest: PagesFunction<{ BUCKET: R2Bucket }> = async (context) => {
     const { request, env } = context
 
@@ -33,9 +17,10 @@ export const onRequest: PagesFunction<{ BUCKET: R2Bucket }> = async (context) =>
     if (!manifestFile || !(manifestFile instanceof File)) {
         return new Response('Manifest file is required', { status: 400 })
     }
-    let manifest = {
-        textures: {}
-    }
+
+    let manifest = {}
+    manifest['id'] = id
+
     try {
         const manifestText = await manifestFile.text()
         manifest = JSON.parse(manifestText)
@@ -43,31 +28,18 @@ export const onRequest: PagesFunction<{ BUCKET: R2Bucket }> = async (context) =>
         return new Response('Invalid JSON in manifest', { status: 400 })
     }
 
-    manifest.textures = manifest.textures ?? {}
-
-    for (const key of keys) {
-        if (!form.has(key)) {
-            return new Response(`Missing required field: ${key}`, { status: 400 })
-        }
-
-        const file = form.get(key) as File
-        if (!file) {
-            return new Response('No file uploaded', { status: 400 })
-        }
-
-        const mime = file.type || 'application/octet-stream'
-
-        const path = `uploads/${id}/${key}`
-
-        await env.BUCKET.put(path, file.stream(), {
-            httpMetadata: { contentType: mime, contentDisposition: `inline; filename="${id}"` },
-            customMetadata: { uploaderIp: ip }
-        })
-
-        manifest['textures'][key] = `${baseURL}/${path}`
+    const texture = form.get('texture')
+    if (!texture || !(texture instanceof File)) {
+        return new Response('Texture file is required', { status: 400 })
     }
 
-    manifest['id'] = id
+    const mime = texture.type || 'application/octet-stream'
+    const texturePath = `uploads/${id}/texture`
+    await env.BUCKET.put(texturePath, texture.stream(), {
+        httpMetadata: { contentType: mime, contentDisposition: `inline; filename="${id}"` },
+        customMetadata: { uploaderIp: ip }
+    })
+    manifest['textureURL'] = `${baseURL}/${texturePath}`
 
     const manifestString = JSON.stringify(manifest)
 

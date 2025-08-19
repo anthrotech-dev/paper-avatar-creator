@@ -49,7 +49,7 @@ export type AvatarManifest = {
     id: string
     extends?: string
     params: AvatarParams
-    textures: Record<TextureKind, string>
+    textureURL: string
 
     name: string
     creator: string
