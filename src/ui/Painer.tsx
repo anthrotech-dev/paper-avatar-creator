@@ -86,9 +86,9 @@ export function Painter(props: PainterProps) {
             } else if (e.key === 'g') {
                 e.preventDefault()
                 setTool('fill')
-            } else if (e.key === 'h') {
+            } else if (e.key === 'h' || e.key === ' ') {
                 e.preventDefault()
-                setEnablePanning(!enablePanning)
+                setEnablePanning((prev) => !prev)
             }
         }
         document.addEventListener('keydown', handleKeyDown)
