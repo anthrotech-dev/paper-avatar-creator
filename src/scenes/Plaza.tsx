@@ -16,8 +16,8 @@ import { extend } from '@react-three/fiber'
 type PlazaState = {
     selected: Object3D | null
     setSelected: Dispatch<SetStateAction<Object3D | null>>
-    textures: Record<string, Texture>
-    setTextures: Dispatch<SetStateAction<Record<string, Texture>>>
+    texture: Texture | null
+    setTexture: Dispatch<SetStateAction<Texture | null>>
     selectedManifest: AvatarManifest | null
     setSelectedManifest: (manifest: AvatarManifest | null) => void
 }
@@ -30,8 +30,8 @@ const usePlaza = () => {
         return {
             selected: null,
             setSelected: () => {},
-            textures: {},
-            setTextures: () => {},
+            texture: {},
+            setTexture: () => {},
             selectedManifest: null,
             setSelectedManifest: () => {}
         }
@@ -42,14 +42,14 @@ const usePlaza = () => {
 export function Plaza({ children }: { children?: React.ReactNode }) {
     const [selected, setSelected] = useState<Object3D | null>(null)
     const [selectedManifest, setSelectedManifest] = useState<AvatarManifest | null>(null)
-    const [textures, setTextures] = useState<Record<string, Texture>>({})
+    const [texture, setTexture] = useState<Texture | null>(null)
 
     return (
         <PlazaContext.Provider
             value={{
-                textures,
+                texture,
                 selectedManifest,
-                setTextures,
+                setTexture,
                 setSelectedManifest,
                 selected,
                 setSelected
@@ -108,7 +108,7 @@ const FadingFloorMaterial = shaderMaterial(
 extend({ FadingFloorMaterial })
 
 Plaza.Scene = (props: { avatars: string[]; setView: (position: Vector3, lookAt: Vector3, speed: number) => void }) => {
-    const { selected, setSelected, setSelectedManifest, setTextures } = usePlaza()
+    const { selected, setSelected, setSelectedManifest, setTexture } = usePlaza()
 
     const texture = useMemo(() => {
         const textureLoader = new TextureLoader()
@@ -139,7 +139,7 @@ Plaza.Scene = (props: { avatars: string[]; setView: (position: Vector3, lookAt: 
                     <fadingFloorMaterial fadeRadius={20} map={texture} />
                 </mesh>
                 <AvatarsRenderer
-                    setTextures={setTextures}
+                    setTexture={setTexture}
                     avatars={props.avatars}
                     setSelectedManifest={setSelectedManifest}
                     setSelected={setSelected}
@@ -155,12 +155,12 @@ const AvatarsRenderer = memo(
         avatars,
         setSelectedManifest,
         setSelected,
-        setTextures
+        setTexture
     }: {
         avatars: string[]
         setSelectedManifest: (_: AvatarManifest | null) => void
         setSelected: (_: Object3D | null) => void
-        setTextures: Dispatch<SetStateAction<Record<string, Texture>>>
+        setTexture: Dispatch<SetStateAction<Texture | null>>
     }) => {
         return (
             <>
@@ -177,7 +177,7 @@ const AvatarsRenderer = memo(
                                 onClick={(e) => {
                                     setSelected(e.target)
                                     setSelectedManifest(e.manifest)
-                                    setTextures(e.textures)
+                                    setTexture(e.texture)
                                 }}
                             />
                         </Suspense>
@@ -193,9 +193,9 @@ Plaza.Overlay = (props: {
     setMode: (mode: 'edit' | 'plaza') => void
     setCollection: Dispatch<SetStateAction<string[]>>
 }) => {
-    const { setSelected, selectedManifest, setSelectedManifest, textures } = usePlaza()
+    const { setSelected, selectedManifest, setSelectedManifest, texture } = usePlaza()
 
-    const { setTextures, setParent } = useEditor()
+    const { setTexture, setParent } = useEditor()
 
     return (
         <>
@@ -233,7 +233,11 @@ Plaza.Overlay = (props: {
                             variant="contained"
                             disabled={!selectedManifest.exportable}
                             onClick={() => {
-                                handleResoniteExport(selectedManifest, textures)
+                                if (!texture) {
+                                    console.error('No texture available for export')
+                                    return
+                                }
+                                handleResoniteExport(selectedManifest, texture)
                             }}
                         >
                             Resonite用に書き出し
@@ -242,7 +246,7 @@ Plaza.Overlay = (props: {
                             variant="contained"
                             disabled={!selectedManifest.editable}
                             onClick={() => {
-                                setTextures(textures)
+                                if (texture) setTexture(texture)
                                 setParent(selectedManifest)
                                 setSelected(null)
                                 setSelectedManifest(null)

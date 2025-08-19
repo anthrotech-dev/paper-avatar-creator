@@ -45,12 +45,13 @@ type EditorState = {
     setAvatarParams: Dispatch<SetStateAction<AvatarParams>>
     thumbnailCameraRef?: RefObject<OrthographicCamera | null>
     thumbSceneRef?: RefObject<Object3D | null>
+    setTexture: Dispatch<SetStateAction<Texture>>
     texture: Texture
 }
 
 const EditorContext = createContext<EditorState | null>(null)
 
-export const useEditor = () => {
+export const useEditor = (): EditorState => {
     const ctx = useContext(EditorContext)
     if (!ctx) {
         return {
@@ -58,6 +59,7 @@ export const useEditor = () => {
             parent: null,
             setParent: () => {},
             texture: new Texture(),
+            setTexture: () => {},
             avatarParams: {
                 headSize: 0,
                 neckLength: 0,
@@ -142,7 +144,8 @@ export function Editor({ children }: { children?: React.ReactNode }) {
                 parent,
                 setParent,
                 thumbnailCameraRef,
-                thumbSceneRef
+                thumbSceneRef,
+                setTexture
             }}
         >
             {children}

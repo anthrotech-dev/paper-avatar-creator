@@ -39,7 +39,7 @@ export const onRequest: PagesFunction<{ BUCKET: R2Bucket }> = async (context) =>
         httpMetadata: { contentType: mime, contentDisposition: `inline; filename="${id}"` },
         customMetadata: { uploaderIp: ip }
     })
-    manifest['texture'] = `${baseURL}/${texturePath}`
+    manifest['textureURL'] = `${baseURL}/${texturePath}`
 
     const manifestString = JSON.stringify(manifest)
 

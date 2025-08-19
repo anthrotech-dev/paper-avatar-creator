@@ -22,7 +22,7 @@ import { createBaseAnimation } from '../util'
 type AvatarEvent = {
     manifest: AvatarManifest
     target: Object3D
-    textures: Record<string, Texture>
+    texture: Texture | null
 }
 
 type AvatarProps = {
@@ -41,7 +41,7 @@ export const Avatar = (props: AvatarProps) => {
     const [manifest, setManifest] = useState<AvatarManifest>()
     const params = manifest?.params
 
-    const [textures, setTextures] = useState<Record<string, Texture> | null>()
+    const [texture, setTexture] = useState<Texture | null>(null)
     const [loaded, setLoaded] = useState(false)
     const { position, opacity } = useSpring({
         position: loaded ? 0 : 5.0,
@@ -62,32 +62,19 @@ export const Avatar = (props: AvatarProps) => {
                 setManifest(data)
 
                 const textureLoader = new TextureLoader()
-                const texturePromises = Object.entries(data.textures).map(async ([key, url]) => {
-                    const texture = await textureLoader.loadAsync(url)
+                textureLoader.loadAsync(data.textureURL).then((texture) => {
                     texture.flipY = false
                     texture.colorSpace = SRGBColorSpace
-                    return [key, texture] as const
-                })
 
-                Promise.all(texturePromises)
-                    .then((loadedTextures) => {
-                        const textureMap: Record<string, Texture> = {}
-                        loadedTextures.forEach(([key, texture]) => {
-                            textureMap[key] = texture
-                        })
-                        setTextures(textureMap)
-                        props.onLoad?.(data)
-                        //setLoaded(true)
-                        setTimeout(
-                            () => {
-                                setLoaded(true)
-                            },
-                            Math.random() * 1000 + 500
-                        ) // Random delay between 500ms and 1500ms
-                    })
-                    .catch((error) => {
-                        console.error('Error loading textures:', error)
-                    })
+                    setTexture(texture)
+                    props.onLoad?.(data)
+                    setTimeout(
+                        () => {
+                            setLoaded(true)
+                        },
+                        Math.random() * 1000 + 500
+                    ) // Random delay between 500ms and 1500ms
+                })
             })
             .catch((error) => {
                 console.error('Error fetching avatar manifest:', error)
@@ -95,20 +82,30 @@ export const Avatar = (props: AvatarProps) => {
     }, [props.id])
 
     useEffect(() => {
-        if (!nodes || !manifest || !textures) return
+        if (!texture || !nodes) return
+        const faceMaterial = new MeshBasicMaterial({
+            color: '#FFFFFF',
+            map: texture.clone(),
+            alphaTest: 0.5
+        })
+
+        const bodyMaterial = new MeshBasicMaterial({
+            color: '#FFFFFF',
+            map: texture.clone(),
+            alphaTest: 0.5
+        })
+
         for (const key in nodes) {
             if (textureKeyMap[key] && nodes[key].type === 'Mesh') {
                 const mesh = nodes[key] as Mesh
-                mesh.material = new MeshBasicMaterial({
-                    color: '#FFFFFF',
-                    map: textures[textureKeyMap[key]],
-                    alphaTest: 0.5,
-                    toneMapped: false
-                })
-                mesh.material.needsUpdate = true
+                if (key === 'Head_Front') {
+                    mesh.material = faceMaterial
+                } else {
+                    mesh.material = bodyMaterial
+                }
             }
         }
-    }, [nodes, manifest, textures])
+    }, [nodes, texture])
 
     useEffect(() => {
         if (group.current) {
@@ -156,29 +153,28 @@ export const Avatar = (props: AvatarProps) => {
     const chanceToOpenMouth = 0.002
     const chanceToReturnToNormal = 0.05
     useFrame((_state, delta) => {
-        if (!loaded) return
         mixer.current?.update(delta)
         if (facial === 'Head-Front') {
             if (Math.random() < chanceToCloseEyes) {
                 facial = 'Eyes-Closed'
                 // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Eyes-Closed']
+                nodes['Head_Front'].material.map.offset.set(0.166, 0)
             } else if (Math.random() < chanceToOpenMouth) {
                 facial = 'Mouth-Open'
                 // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Mouth-Open']
+                nodes['Head_Front'].material.map.offset.set(0.167, 0)
             }
         } else if (facial === 'Eyes-Closed') {
             if (Math.random() < chanceToReturnToNormal) {
                 facial = 'Head-Front'
                 // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Head-Front']
+                nodes['Head_Front'].material.map.offset.set(0, 0)
             }
         } else if (facial === 'Mouth-Open') {
             if (Math.random() < chanceToReturnToNormal) {
                 facial = 'Head-Front'
                 // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Head-Front']
+                nodes['Head_Front'].material.map.offset.set(0, 0)
             }
         }
     })
@@ -192,7 +188,7 @@ export const Avatar = (props: AvatarProps) => {
                     props.onClick?.({
                         manifest: manifest!,
                         target: group.current!,
-                        textures: textures || {}
+                        texture: texture || null
                     })
                 }}
             >
