@@ -315,6 +315,7 @@ Editor.Overlay = (props: {
                     sx={{ marginBottom: '20px' }}
                 />
 
+                <Typography variant="h6">テクスチャ</Typography>
                 <TexturePreview
                     texture={texture ?? defaultTexture}
                     sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}

@@ -1,4 +1,4 @@
-import { Box, Button, IconButton } from '@mui/material'
+import { Box, Button, IconButton, Slider, Typography } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
@@ -564,7 +564,7 @@ export function Painter(props: PainterProps) {
             <Box
                 sx={{
                     display: 'flex',
-                    flexDirection: 'column',
+                    flexDirection: 'row',
                     position: 'absolute',
                     top: 0,
                     left: 0,
@@ -572,55 +572,47 @@ export function Painter(props: PainterProps) {
                     gap: 1
                 }}
             >
-                <input
-                    type="range"
-                    min="8"
-                    max="128"
-                    value={brushSize}
-                    onChange={(e) => setBrushSize(Number(e.target.value))}
-                />
-                <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={hardness}
-                    onChange={(e) => setHardness(Number(e.target.value))}
-                />
-                <IconButton
-                    size="large"
+                <Box
                     sx={{
-                        width: '50px',
-                        height: '50px',
-                        backgroundColor: tool === 'brush' ? 'primary.main' : 'text.disabled'
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1
                     }}
-                    onClick={() => setTool('brush')}
                 >
-                    <PiPaintBrushFill color="white" />
-                </IconButton>
-                <IconButton
-                    size="large"
-                    sx={{
-                        width: '50px',
-                        height: '50px',
-                        backgroundColor: tool === 'eraser' ? 'primary.main' : 'text.disabled'
-                    }}
-                    onClick={() => setTool('eraser')}
-                >
-                    <PiEraserFill color="white" />
-                </IconButton>
-                <IconButton
-                    size="large"
-                    sx={{
-                        width: '50px',
-                        height: '50px',
-                        backgroundColor: tool === 'fill' ? 'primary.main' : 'text.disabled'
-                    }}
-                    onClick={() => setTool('fill')}
-                >
-                    <PiPaintBucketFill color="white" />
-                </IconButton>
-                <Box display="flex" flexDirection="row" alignItems="center" justifyContent="center" gap={2}>
+                    <IconButton
+                        size="large"
+                        sx={{
+                            width: '50px',
+                            height: '50px',
+                            backgroundColor: tool === 'brush' ? 'primary.main' : 'text.disabled'
+                        }}
+                        onClick={() => setTool('brush')}
+                    >
+                        <PiPaintBrushFill color="white" />
+                    </IconButton>
+                    <IconButton
+                        size="large"
+                        sx={{
+                            width: '50px',
+                            height: '50px',
+                            backgroundColor: tool === 'eraser' ? 'primary.main' : 'text.disabled'
+                        }}
+                        onClick={() => setTool('eraser')}
+                    >
+                        <PiEraserFill color="white" />
+                    </IconButton>
+                    <IconButton
+                        size="large"
+                        sx={{
+                            width: '50px',
+                            height: '50px',
+                            backgroundColor: tool === 'fill' ? 'primary.main' : 'text.disabled'
+                        }}
+                        onClick={() => setTool('fill')}
+                    >
+                        <PiPaintBucketFill color="white" />
+                    </IconButton>
+
                     <IconButton
                         size="large"
                         sx={{
@@ -647,44 +639,74 @@ export function Painter(props: PainterProps) {
                         />
                     </IconButton>
 
-                    <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.01"
+                    <IconButton
+                        size="large"
+                        sx={{
+                            width: '50px',
+                            height: '50px',
+                            backgroundColor: 'primary.main'
+                        }}
+                        onClick={() => {
+                            fileInputRef.current?.click()
+                        }}
+                    >
+                        <FaFileImport color="white" />
+                    </IconButton>
+
+                    <IconButton
+                        size="large"
+                        onClick={() => {
+                            const ctx = canvasRef.current!.getContext('2d')!
+                            ctx.clearRect(0, 0, props.width, props.height)
+                        }}
+                        sx={{
+                            width: '50px',
+                            height: '50px',
+                            backgroundColor: 'error.main'
+                        }}
+                    >
+                        <MdDelete color="white" />
+                    </IconButton>
+                </Box>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1,
+                        marginLeft: 2,
+                        width: '200px'
+                    }}
+                >
+                    <Typography variant="h6">ブラシサイズ</Typography>
+                    <Slider
+                        value={brushSize}
+                        onChange={(_e, value) => setBrushSize(value as number)}
+                        min={1}
+                        max={64}
+                        step={1}
+                        valueLabelDisplay="auto"
+                    />
+
+                    <Typography variant="h6">固さ</Typography>
+                    <Slider
+                        value={hardness}
+                        onChange={(_e, value) => setHardness(value as number)}
+                        min={0.1}
+                        max={1}
+                        step={0.01}
+                        valueLabelDisplay="auto"
+                    />
+
+                    <Typography variant="h6">濃度</Typography>
+                    <Slider
                         value={alpha}
-                        onChange={(e) => setAlpha(Number(e.target.value))}
+                        onChange={(_e, value) => setAlpha(value as number)}
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        valueLabelDisplay="auto"
                     />
                 </Box>
-
-                <IconButton
-                    size="large"
-                    sx={{
-                        width: '50px',
-                        height: '50px',
-                        backgroundColor: 'primary.main'
-                    }}
-                    onClick={() => {
-                        fileInputRef.current?.click()
-                    }}
-                >
-                    <FaFileImport color="white" />
-                </IconButton>
-
-                <IconButton
-                    size="large"
-                    onClick={() => {
-                        const ctx = canvasRef.current!.getContext('2d')!
-                        ctx.clearRect(0, 0, props.width, props.height)
-                    }}
-                    sx={{
-                        width: '50px',
-                        height: '50px',
-                        backgroundColor: 'error.main'
-                    }}
-                >
-                    <MdDelete color="white" />
-                </IconButton>
             </Box>
             <Button
                 variant="contained"
@@ -716,7 +738,7 @@ export function Painter(props: PainterProps) {
                     }
                 }}
             >
-                Done
+                完了
             </Button>
         </Box>
     )
