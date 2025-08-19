@@ -511,7 +511,10 @@ export function Painter(props: PainterProps) {
                     sx={{
                         width: '50px',
                         height: '50px',
-                        backgroundColor: 'primary.main'
+                        backgroundColor: 'primary.main',
+                        '&:hover': {
+                            backgroundColor: 'primary.dark'
+                        }
                     }}
                     onClick={undo}
                 >
@@ -522,7 +525,10 @@ export function Painter(props: PainterProps) {
                     sx={{
                         width: '50px',
                         height: '50px',
-                        backgroundColor: 'primary.main'
+                        backgroundColor: 'primary.main',
+                        '&:hover': {
+                            backgroundColor: 'primary.dark'
+                        }
                     }}
                     onClick={redo}
                 >
@@ -665,7 +671,10 @@ export function Painter(props: PainterProps) {
                         sx={{
                             width: '50px',
                             height: '50px',
-                            backgroundColor: tool === 'brush' ? 'primary.main' : 'text.disabled'
+                            backgroundColor: tool === 'brush' ? 'primary.main' : 'text.disabled',
+                            '&:hover': {
+                                backgroundColor: 'primary.dark'
+                            }
                         }}
                         onClick={() => setTool('brush')}
                     >
@@ -676,7 +685,10 @@ export function Painter(props: PainterProps) {
                         sx={{
                             width: '50px',
                             height: '50px',
-                            backgroundColor: tool === 'eraser' ? 'primary.main' : 'text.disabled'
+                            backgroundColor: tool === 'eraser' ? 'primary.main' : 'text.disabled',
+                            '&:hover': {
+                                backgroundColor: 'primary.dark'
+                            }
                         }}
                         onClick={() => setTool('eraser')}
                     >
@@ -687,7 +699,10 @@ export function Painter(props: PainterProps) {
                         sx={{
                             width: '50px',
                             height: '50px',
-                            backgroundColor: tool === 'fill' ? 'primary.main' : 'text.disabled'
+                            backgroundColor: tool === 'fill' ? 'primary.main' : 'text.disabled',
+                            '&:hover': {
+                                backgroundColor: 'primary.dark'
+                            }
                         }}
                         onClick={() => setTool('fill')}
                     >
@@ -699,7 +714,10 @@ export function Painter(props: PainterProps) {
                         sx={{
                             width: '50px',
                             height: '50px',
-                            backgroundColor: color
+                            backgroundColor: color,
+                            '&:hover': {
+                                backgroundColor: 'primary.dark'
+                            }
                         }}
                         onClick={() => {
                             if (colorInputRef.current) {
@@ -725,7 +743,10 @@ export function Painter(props: PainterProps) {
                         sx={{
                             width: '50px',
                             height: '50px',
-                            backgroundColor: 'primary.main'
+                            backgroundColor: 'primary.main',
+                            '&:hover': {
+                                backgroundColor: 'primary.dark'
+                            }
                         }}
                         onClick={() => {
                             fileInputRef.current?.click()
@@ -743,7 +764,10 @@ export function Painter(props: PainterProps) {
                         sx={{
                             width: '50px',
                             height: '50px',
-                            backgroundColor: 'error.main'
+                            backgroundColor: 'error.main',
+                            '&:hover': {
+                                backgroundColor: 'error.dark'
+                            }
                         }}
                     >
                         <MdDelete color="white" />
@@ -797,7 +821,10 @@ export function Painter(props: PainterProps) {
                     left: 10,
                     backgroundColor: enablePanning ? 'primary.main' : 'text.disabled',
                     width: 50,
-                    height: 50
+                    height: 50,
+                    '&:hover': {
+                        backgroundColor: enablePanning ? 'primary.dark' : 'text.disabled'
+                    }
                 }}
                 onClick={() => {
                     setEnablePanning(!enablePanning)
