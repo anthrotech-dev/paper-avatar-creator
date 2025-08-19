@@ -67,6 +67,31 @@ export function Painter(props: PainterProps) {
     const [showFaceTemplate, setShowFaceTemplate] = useState<boolean>(false)
 
     useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'z' && e.ctrlKey && !e.shiftKey) {
+                e.preventDefault()
+                undo()
+            } else if (e.key === 'z' && e.ctrlKey && e.shiftKey) {
+                e.preventDefault()
+                redo()
+            } else if (e.key === 'b') {
+                e.preventDefault()
+                setTool('brush')
+            } else if (e.key === 'e') {
+                e.preventDefault()
+                setTool('eraser')
+            } else if (e.key === 'g') {
+                e.preventDefault()
+                setTool('fill')
+            }
+        }
+        document.addEventListener('keydown', handleKeyDown)
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [])
+
+    useEffect(() => {
         console.log('on load!')
         if (props.initialTexture) {
             const ctx = canvasRef2.current!.getContext('2d')!
@@ -360,6 +385,9 @@ export function Painter(props: PainterProps) {
                 wheel={{ step: 50 }}
                 limitToBounds={false}
                 panning={{
+                    disabled: true
+                }}
+                doubleClick={{
                     disabled: true
                 }}
                 onTransformed={(_, { scale, positionX, positionY }) => {
