@@ -30,7 +30,6 @@ function App() {
 
     const setView = useCallback(
         (position: Vector3, lookAt: Vector3, duration: number) => {
-            console.log('setView!!!')
             if (!orbitRef.current || !camera) return
 
             let dt = 0
