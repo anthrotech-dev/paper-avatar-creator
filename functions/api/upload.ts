@@ -1,6 +1,6 @@
 import { cdid } from '../lib/cdid'
 
-const baseURL = 'https://pub-01b22329d1ae4699af72f1db7103a0ab.r2.dev'
+const baseURL = 'https://oekaki-avatar-files.anthrotech.dev'
 
 export const onRequest: PagesFunction<{ BUCKET: R2Bucket }> = async (context) => {
     const { request, env } = context

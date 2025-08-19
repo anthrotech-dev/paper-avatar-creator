@@ -12,7 +12,7 @@ export const onRequest: PagesFunction = async (context) => {
     <title></title>
     <meta property="og:title" content="oekaki avatar">
     <meta property="og:description" content="oekaki avatarは、web上でおえかきするだけで簡単にアバターが作成できるサービスです。">
-    <meta property="og:image" content="https://pub-01b22329d1ae4699af72f1db7103a0ab.r2.dev/uploads/${id}/thumbnail">
+    <meta property="og:image" content="https://oekaki-avatar-files.anthrotech.dev/uploads/${id}/thumbnail">
     <meta property="twitter:card" content="summary_large_image">
     <meta name="theme-color" content="#0476d9" />
     <link rel="canonical" href="${originalPath}">

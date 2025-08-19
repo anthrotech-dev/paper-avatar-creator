@@ -13,7 +13,7 @@ import brotliPromise from 'brotli-wasm'
 import type { AvatarManifest, AvatarParams } from './types'
 
 export const handlePublish = async (thumbnail: Blob, manifest: Partial<AvatarManifest>, texture: Texture) => {
-    const endpoint = 'https://paper-avatar-creator.pages.dev/api/upload'
+    const endpoint = '/api/upload'
 
     const form = new FormData()
 
