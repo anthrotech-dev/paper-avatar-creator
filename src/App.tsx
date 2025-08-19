@@ -4,7 +4,7 @@ import { Box, useMediaQuery, useTheme } from '@mui/material'
 import { OrbitControls } from '@react-three/drei'
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { Canvas } from '@react-three/fiber'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { PerspectiveCamera, Vector3 } from 'three'
 import { Drawer } from './ui/Drawer'
 import { useParams } from 'react-router-dom'
@@ -15,7 +15,6 @@ import { Skybox } from './components/Skybox'
 const defaultCollection = ['5sn4vqpg9yame7n806cajt10nc']
 
 function App() {
-    const [mode, setMode] = useState<'edit' | 'plaza'>('plaza')
     const [camera, setCamera] = useState<PerspectiveCamera>()
     const orbitRef = useRef<OrbitControlsImpl>(null)
 
@@ -27,28 +26,42 @@ function App() {
 
     const previewId = id ?? ''
 
-    const setView = (position: Vector3, lookAt: Vector3, duration: number) => {
-        if (!orbitRef.current || !camera) return
+    const mode = id === 'edit' ? 'edit' : 'plaza'
 
-        let dt = 0
+    const setView = useCallback(
+        (position: Vector3, lookAt: Vector3, duration: number) => {
+            console.log('setView!!!')
+            if (!orbitRef.current || !camera) return
 
-        const animate = () => {
-            dt += 0.01
-            const t = Math.min(dt / duration, 1)
+            let dt = 0
 
-            camera.position.lerp(position, t)
-            orbitRef.current?.target.lerp(lookAt, t)
+            const animate = () => {
+                dt += 0.01
+                const t = Math.min(dt / duration, 1)
 
-            if (t < 1) {
-                requestAnimationFrame(animate)
-            } else {
-                camera.position.set(...position.toArray())
-                if (orbitRef.current) orbitRef.current.target = new Vector3(...lookAt)
+                camera.position.lerp(position, t)
+                orbitRef.current?.target.lerp(lookAt, t)
+
+                if (t < 1) {
+                    requestAnimationFrame(animate)
+                } else {
+                    camera.position.set(...position.toArray())
+                    if (orbitRef.current) orbitRef.current.target = new Vector3(...lookAt)
+                }
             }
-        }
 
-        animate()
-    }
+            animate()
+        },
+        [camera]
+    )
+
+    useEffect(() => {
+        if (id) {
+            setView(new Vector3(0, 10.5, 3), new Vector3(0, 10.5, 0), 1)
+        } else {
+            setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
+        }
+    }, [id, setView])
 
     useEffect(() => {
         if (!camera) return
@@ -74,7 +87,6 @@ function App() {
             !collection.every((e) => defaultCollection.includes(e))
         )
             return
-        setMode('edit')
         setView(new Vector3(0, 10.5, 3), new Vector3(0, 10.5, 0), 1)
     }, [!orbitRef.current || !camera])
 
@@ -86,7 +98,7 @@ function App() {
                 position: 'relative'
             }}
         >
-            <Preview id={previewId} setView={setView}>
+            <Preview id={previewId}>
                 <Editor>
                     <Plaza>
                         <Canvas
@@ -109,13 +121,11 @@ function App() {
                             <Skybox />
                         </Canvas>
 
-                        {mode === 'plaza' && (
-                            <Plaza.Overlay setMode={setMode} setView={setView} setCollection={setCollection} />
-                        )}
-                        <Preview.Overlay setView={setView} collection={collection} setCollection={setCollection} />
+                        {mode === 'plaza' && <Plaza.Overlay setCollection={setCollection} />}
+                        <Preview.Overlay collection={collection} setCollection={setCollection} />
 
                         <Drawer open={mode === 'edit'}>
-                            <Editor.Overlay setMode={setMode} setView={setView} setCollection={setCollection} />
+                            <Editor.Overlay setCollection={setCollection} />
                         </Drawer>
                     </Plaza>
                 </Editor>

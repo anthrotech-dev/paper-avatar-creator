@@ -12,12 +12,10 @@ import {
 import type { AvatarManifest } from '../types'
 import { Drawer } from '../ui/Drawer'
 import { Avatar } from '../components/Avatar'
-import { Vector3 } from 'three'
 import { useNavigate } from 'react-router-dom'
 
 interface PreviewProps {
     id: string
-    setView: (position: Vector3, lookAt: Vector3, speed: number) => void
     children?: ReactNode
 }
 
@@ -47,7 +45,6 @@ export function Preview(props: PreviewProps) {
             return
         }
         if (!manifest) return
-        props.setView(new Vector3(0, 10.5, 3), new Vector3(0, 10.5, 0), 1)
     }, [props.id, manifest])
 
     return (
@@ -88,11 +85,7 @@ Preview.Scene = () => {
     )
 }
 
-Preview.Overlay = (props: {
-    collection: string[]
-    setCollection: Dispatch<SetStateAction<string[]>>
-    setView: (position: Vector3, lookAt: Vector3, speed: number) => void
-}) => {
+Preview.Overlay = (props: { collection: string[]; setCollection: Dispatch<SetStateAction<string[]>> }) => {
     const { manifest } = usePreview()
     const navigate = useNavigate()
 
@@ -141,7 +134,6 @@ Preview.Overlay = (props: {
                         color="primary"
                         sx={{ margin: '1rem' }}
                         onClick={() => {
-                            props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
                             navigate('/')
                         }}
                     >
@@ -153,7 +145,6 @@ Preview.Overlay = (props: {
                         disabled={props.collection.includes(manifest.id)}
                         onClick={() => {
                             props.setCollection([...props.collection, manifest.id])
-                            props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
                             navigate('/')
                         }}
                     >

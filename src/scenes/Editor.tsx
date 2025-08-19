@@ -36,6 +36,7 @@ import { Painter } from '../ui/Painer'
 
 import { symetricTextures, texturePositions, type AvatarManifest, type AvatarParams } from '../types'
 import { EditableAvatar } from '../components/EditableAvatar'
+import { useNavigate } from 'react-router-dom'
 
 type EditorState = {
     init: () => Promise<void>
@@ -228,11 +229,7 @@ Editor.Scene = () => {
     )
 }
 
-Editor.Overlay = (props: {
-    setView: (position: Vector3, lookAt: Vector3, speed: number) => void
-    setMode: (mode: 'edit' | 'plaza') => void
-    setCollection: Dispatch<SetStateAction<string[]>>
-}) => {
+Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) => {
     const {
         init,
         parent,
@@ -244,6 +241,8 @@ Editor.Overlay = (props: {
         setTexture,
         defaultTexture
     } = useEditor()
+
+    const navigate = useNavigate()
 
     const [editing, setEditing] = useState<boolean>(false)
 
@@ -582,8 +581,7 @@ Editor.Overlay = (props: {
                         color="secondary"
                         onClick={() => {
                             init()
-                            props.setMode('plaza')
-                            props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
+                            navigate('/')
                         }}
                     >
                         キャンセル
@@ -728,8 +726,7 @@ ${location.origin}/${uploaded.id}`
                                 onClick={() => {
                                     setOpen(false)
                                     init()
-                                    props.setMode('plaza')
-                                    props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
+                                    navigate('/')
                                 }}
                             >
                                 閉じる

@@ -12,6 +12,7 @@ import { handleResoniteExport } from '../util'
 import { useEditor } from './Editor'
 import { shaderMaterial } from '@react-three/drei'
 import { extend } from '@react-three/fiber'
+import { useNavigate } from 'react-router-dom'
 
 type PlazaState = {
     selected: Object3D | null
@@ -188,14 +189,10 @@ const AvatarsRenderer = memo(
     }
 )
 
-Plaza.Overlay = (props: {
-    setView: (position: Vector3, lookAt: Vector3, speed: number) => void
-    setMode: (mode: 'edit' | 'plaza') => void
-    setCollection: Dispatch<SetStateAction<string[]>>
-}) => {
+Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) => {
     const { setSelected, selectedManifest, setSelectedManifest, texture } = usePlaza()
-
     const { setTexture, setParent } = useEditor()
+    const navigate = useNavigate()
 
     return (
         <>
@@ -208,8 +205,7 @@ Plaza.Overlay = (props: {
                     zIndex: 1000
                 }}
                 onClick={() => {
-                    props.setMode('edit')
-                    props.setView(new Vector3(0, 10.5, 3), new Vector3(0, 10.5, 0), 1)
+                    navigate('/edit')
                 }}
             >
                 <MdAdd style={{ width: '2rem', height: '2rem', color: 'white' }} />
@@ -250,8 +246,7 @@ Plaza.Overlay = (props: {
                                 setParent(selectedManifest)
                                 setSelected(null)
                                 setSelectedManifest(null)
-                                props.setView(new Vector3(0, 10.5, 3), new Vector3(0, 10.5, 0), 1)
-                                props.setMode('edit')
+                                navigate('/edit')
                             }}
                         >
                             改変する
@@ -269,10 +264,9 @@ Plaza.Overlay = (props: {
                             color="error"
                             variant="contained"
                             onClick={() => {
-                                props.setMode('plaza')
+                                navigate('/')
                                 props.setCollection((c) => c.filter((id) => id !== selectedManifest.id))
                                 setSelectedManifest(null)
-                                props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
                             }}
                         >
                             コレクションから削除
