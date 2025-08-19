@@ -350,7 +350,8 @@ export function Painter(props: PainterProps) {
                     borderRadius: '50%',
                     border: '1px dashed black',
                     zIndex: 1000,
-                    pointerEvents: 'none'
+                    pointerEvents: 'none',
+                    display: { xs: 'none', sm: 'none', md: 'block' }
                 }}
             />
 
