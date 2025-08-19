@@ -727,6 +727,9 @@ ${location.origin}/${uploaded.id}`
                             <Button
                                 onClick={() => {
                                     setOpen(false)
+                                    init()
+                                    props.setMode('plaza')
+                                    props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
                                 }}
                             >
                                 閉じる
