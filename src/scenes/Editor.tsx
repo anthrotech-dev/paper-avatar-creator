@@ -395,7 +395,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                 <Typography variant="h6">テクスチャ</Typography>
                 <TexturePreview
                     texture={texture ?? defaultTexture}
-                    sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
+                    sx={{ width: '300px', height: '150px', border: '1px solid #ccc' }}
                     onClick={() => setEditing(true)}
                 />
 
