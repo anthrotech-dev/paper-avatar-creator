@@ -232,9 +232,7 @@ export function Painter(props: PainterProps) {
     }
 
     const handlePointerMove = (e: React.PointerEvent) => {
-        if (!drawing) return
-        // only handle left mouse button
-        if (e.buttons !== 1) return
+        if (enablePanning || !drawing || e.buttons !== 1) return
 
         const rect = canvasRef.current!.getBoundingClientRect()
         const x = (e.clientX - rect.left) / transform.scale
