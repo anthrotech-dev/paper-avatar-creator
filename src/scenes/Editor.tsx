@@ -13,7 +13,6 @@ import {
 } from 'react'
 import {
     Texture,
-    CanvasTexture,
     TextureLoader,
     SRGBColorSpace,
     Vector3,
@@ -34,9 +33,8 @@ import {
     Divider,
     FormControlLabel,
     FormGroup,
+    Modal,
     Slider,
-    Tab,
-    Tabs,
     TextField,
     Typography
 } from '@mui/material'
@@ -44,23 +42,18 @@ import {
 import { handleExport, handlePublish, handleResoniteExport } from '../util'
 import { Painter } from '../ui/Painer'
 
-import Konva from 'konva'
 import { type AvatarManifest, type AvatarParams, type TextureKind } from '../types'
-import { useKonvaTexture } from '../useKonvaTexture'
 import { EditableAvatar } from '../components/EditableAvatar'
 
 type EditorState = {
     init: () => Promise<void>
     parent: AvatarManifest | null
     setParent: Dispatch<SetStateAction<AvatarManifest | null>>
-    textures: Record<TextureKind, Texture>
-    editing: TextureKind | null
     avatarParams: AvatarParams
-    setTextures: Dispatch<SetStateAction<Record<TextureKind, Texture>>>
-    setEditing: Dispatch<SetStateAction<TextureKind | null>>
     setAvatarParams: Dispatch<SetStateAction<AvatarParams>>
     thumbnailCameraRef?: RefObject<OrthographicCamera | null>
     thumbSceneRef?: RefObject<Object3D | null>
+    texture: Texture
 }
 
 const EditorContext = createContext<EditorState | null>(null)
@@ -72,21 +65,7 @@ export const useEditor = () => {
             init: async () => {},
             parent: null,
             setParent: () => {},
-            textures: {
-                'Head-Front': new Texture(),
-                'Head-Back': new Texture(),
-                'Eyes-Closed': new Texture(),
-                'Mouth-Open': new Texture(),
-                'Body-Front': new Texture(),
-                'Body-Back': new Texture(),
-                'Hand-Front': new Texture(),
-                'Hand-Back': new Texture(),
-                'Legs-Front': new Texture(),
-                'Legs-Back': new Texture(),
-                'Tail-Front': new Texture(),
-                'Tail-Back': new Texture()
-            },
-            editing: null,
+            texture: new Texture(),
             avatarParams: {
                 headSize: 0,
                 neckLength: 0,
@@ -102,8 +81,6 @@ export const useEditor = () => {
                 legsDistanceFromBody: 0,
                 legsInFront: true
             },
-            setTextures: () => {},
-            setEditing: () => {},
             setAvatarParams: () => {}
         }
     }
@@ -113,8 +90,7 @@ export const useEditor = () => {
 export function Editor({ children }: { children?: React.ReactNode }) {
     const thumbnailCameraRef = useRef<OrthographicCamera>(null)
     const [parent, setParent] = useState<AvatarManifest | null>(null)
-    const [textures, setTextures] = useState<Record<string, Texture>>({})
-    const [editing, setEditing] = useState<TextureKind | null>(null)
+    const [texture, setTexture] = useState<Texture>(new Texture())
 
     const thumbSceneRef = useRef<Object3D>(null)
 
@@ -156,9 +132,8 @@ export function Editor({ children }: { children?: React.ReactNode }) {
             textures[key as TextureKind].colorSpace = SRGBColorSpace
         }
 
-        setTextures(textures)
+        //setTextures(textures)
         setParent(null)
-        setEditing(null)
         setAvatarParams({
             headSize: 0,
             neckLength: 0,
@@ -184,11 +159,8 @@ export function Editor({ children }: { children?: React.ReactNode }) {
         <EditorContext.Provider
             value={{
                 init,
-                textures,
-                editing,
+                texture,
                 avatarParams,
-                setTextures,
-                setEditing,
                 setAvatarParams,
                 parent,
                 setParent,
@@ -207,7 +179,7 @@ const thumbnailSceneWidth = 2.0
 const thumbnailSceneHeight = (thumbnailHeight / thumbnailWidth) * thumbnailSceneWidth
 
 Editor.Scene = () => {
-    const { avatarParams, editing, textures, thumbnailCameraRef, thumbSceneRef } = useEditor()
+    const { avatarParams, texture, thumbnailCameraRef, thumbSceneRef } = useEditor()
 
     const thumbTitleTex = useMemo(() => {
         const loader = new TextureLoader()
@@ -233,7 +205,7 @@ Editor.Scene = () => {
                     <meshBasicMaterial color="black" transparent opacity={0.65} depthWrite={false} toneMapped={false} />
                 </mesh>
                 <Suspense fallback={null}>
-                    <EditableAvatar params={avatarParams} editing={editing} textures={textures} />
+                    <EditableAvatar params={avatarParams} textures={texture} />
                 </Suspense>
             </group>
             <group ref={thumbSceneRef} position={[0, -200, 0]}>
@@ -251,7 +223,7 @@ Editor.Scene = () => {
                     rotation={[0, 0, 0]}
                 />
                 <Suspense fallback={null}>
-                    <EditableAvatar params={avatarParams} editing={editing} textures={textures} />
+                    <EditableAvatar params={avatarParams} textures={texture} />
                 </Suspense>
                 <mesh position={[0, 0.55, 0.5]}>
                     <planeGeometry args={[thumbnailSceneWidth, thumbnailSceneHeight]} />
@@ -279,33 +251,19 @@ Editor.Overlay = (props: {
     const {
         init,
         parent,
-        textures,
-        editing,
-        setEditing,
-        setTextures,
+        texture,
         avatarParams,
         setAvatarParams,
         thumbnailCameraRef,
         thumbSceneRef
     } = useEditor()
 
-    const handleEdit = (textureKind: TextureKind) => {
-        setEditing(textureKind)
-        setOldTexture(textures[textureKind] || null)
-        setTextures((prev) => ({
-            ...prev,
-            [textureKind]: editingTex
-        }))
-    }
-
-    const drawingLayerRef = useRef<Konva.Layer>(null)
-    const editingTex = useKonvaTexture(drawingLayerRef, editing)
+    const [editing, setEditing] = useState<boolean>(false)
 
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [oldTexture, setOldTexture] = useState<Texture | null>(null)
 
     const [manifest, setManifest] = useState<Partial<AvatarManifest>>({})
-    const [tab, setTab] = useState<'info' | 'head' | 'body' | 'hand' | 'legs' | 'tail'>('head')
 
     const [open, setOpen] = useState(false)
     const [uploading, setUploading] = useState(false)
@@ -350,535 +308,335 @@ Editor.Overlay = (props: {
                     flexDirection: 'column'
                 }}
             >
-                {editing ? (
-                    <>
-                        <h2>Edit Texture: {editing}</h2>
+                <h2>Avatar Editor</h2>
+                <TextField
+                    required
+                    label="名前"
+                    variant="outlined"
+                    value={manifest.name || ''}
+                    onChange={(e) => setManifest((prev) => ({ ...prev, name: e.target.value }))}
+                    sx={{ marginBottom: '20px' }}
+                />
+                <TextField
+                    label="説明"
+                    variant="outlined"
+                    value={manifest.description || ''}
+                    onChange={(e) => setManifest((prev) => ({ ...prev, description: e.target.value }))}
+                    multiline
+                    rows={4}
+                    sx={{ marginBottom: '20px' }}
+                />
 
-                        <Painter
-                            size={512}
-                            initialTexture={oldTexture}
-                            drawingLayerRef={drawingLayerRef}
-                            references={textures}
-                        />
+                <TexturePreview
+                    texture={texture}
+                    sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
+                    onClick={() => setEditing(true)}
+                />
 
-                        <Box display="flex" gap="10px">
-                            <Button
-                                variant="contained"
-                                onClick={() => {
-                                    if (!editing) return
-                                    const canvas = editingTex.image as HTMLCanvasElement
-                                    const tmp = document.createElement('canvas')
-                                    tmp.width = canvas.width
-                                    tmp.height = canvas.height
-                                    const ctx = tmp.getContext('2d')
-                                    if (!ctx) return
-                                    ctx.drawImage(canvas, 0, 0)
+                <Box>
+                    <Typography variant="h6">Head Size</Typography>
+                    <Slider
+                        value={avatarParams.headSize}
+                        min={-20}
+                        max={20}
+                        step={0.01}
+                        onChange={(_e, newValue) =>
+                            setAvatarParams((prev) => ({
+                                ...prev,
+                                headSize: newValue as number
+                            }))
+                        }
+                        sx={{ width: '200px', padding: '20px' }}
+                    />
+                    <Typography variant="h6">Neck Length</Typography>
+                    <Slider
+                        value={avatarParams.neckLength}
+                        min={-10}
+                        max={10}
+                        step={0.01}
+                        onChange={(_e, newValue) =>
+                            setAvatarParams((prev) => ({
+                                ...prev,
+                                neckLength: newValue as number
+                            }))
+                        }
+                        sx={{ width: '200px', padding: '20px' }}
+                    />
 
-                                    const editedTexture = new CanvasTexture(tmp)
-                                    editedTexture.flipY = false
-                                    editedTexture.colorSpace = SRGBColorSpace
-
-                                    setTextures((prev) => ({
-                                        ...prev,
-                                        [editing]: editedTexture
-                                    }))
-
-                                    setEditing(null)
-                                }}
-                            >
-                                Done
-                            </Button>
-                        </Box>
-                    </>
-                ) : (
-                    <>
-                        <h2>Avatar Editor</h2>
-                        <Tabs
-                            value={tab}
-                            onChange={(_e, newValue) =>
-                                setTab(newValue as 'info' | 'head' | 'body' | 'hand' | 'legs' | 'tail')
-                            }
-                            sx={{ marginBottom: '20px', color: 'white' }}
-                        >
-                            <Tab label={'プロフィール' + (manifest.name ? '' : '*')} value="info" />
-                            <Tab label="あたま" value="head" />
-                            <Tab label="からだ" value="body" />
-                            <Tab label="て" value="hand" />
-                            <Tab label="あし" value="legs" />
-                            <Tab label="しっぽ" value="tail" />
-                        </Tabs>
-
-                        {tab === 'info' && (
-                            <>
-                                <TextField
-                                    required
-                                    label="名前"
-                                    variant="outlined"
-                                    value={manifest.name || ''}
-                                    onChange={(e) => setManifest((prev) => ({ ...prev, name: e.target.value }))}
-                                    sx={{ marginBottom: '20px' }}
-                                />
-                                <TextField
-                                    label="説明"
-                                    variant="outlined"
-                                    value={manifest.description || ''}
-                                    onChange={(e) => setManifest((prev) => ({ ...prev, description: e.target.value }))}
-                                    multiline
-                                    rows={4}
-                                    sx={{ marginBottom: '20px' }}
-                                />
-                            </>
-                        )}
-
-                        {tab === 'head' && (
-                            <>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        flexDirection: 'row',
-                                        gap: '10px'
-                                    }}
-                                >
-                                    <div>
-                                        <h4>Front</h4>
-                                        <TexturePreview
-                                            texture={textures['Head-Front']}
-                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
-                                            onClick={() => handleEdit('Head-Front')}
-                                        />
-                                    </div>
-                                    <div>
-                                        <h4>Back</h4>
-                                        <TexturePreview
-                                            texture={textures['Head-Back']}
-                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
-                                            onClick={() => handleEdit('Head-Back')}
-                                        />
-                                    </div>
-                                    <div>
-                                        <h4>Eyes Closed</h4>
-                                        <TexturePreview
-                                            texture={textures['Eyes-Closed']}
-                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
-                                            onClick={() => handleEdit('Eyes-Closed')}
-                                        />
-                                    </div>
-                                    <div>
-                                        <h4>Mouth Open</h4>
-                                        <TexturePreview
-                                            texture={textures['Mouth-Open']}
-                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
-                                            onClick={() => handleEdit('Mouth-Open')}
-                                        />
-                                    </div>
-                                </div>
-                                <Box>
-                                    <Typography variant="h6">Head Size</Typography>
-                                    <Slider
-                                        value={avatarParams.headSize}
-                                        min={-20}
-                                        max={20}
-                                        step={0.01}
-                                        onChange={(_e, newValue) =>
-                                            setAvatarParams((prev) => ({
-                                                ...prev,
-                                                headSize: newValue as number
-                                            }))
-                                        }
-                                        sx={{ width: '200px', padding: '20px' }}
-                                    />
-                                    <Typography variant="h6">Neck Length</Typography>
-                                    <Slider
-                                        value={avatarParams.neckLength}
-                                        min={-10}
-                                        max={10}
-                                        step={0.01}
-                                        onChange={(_e, newValue) =>
-                                            setAvatarParams((prev) => ({
-                                                ...prev,
-                                                neckLength: newValue as number
-                                            }))
-                                        }
-                                        sx={{ width: '200px', padding: '20px' }}
-                                    />
-
-                                    <FormGroup>
-                                        <FormControlLabel
-                                            control={
-                                                <Checkbox
-                                                    checked={avatarParams.headInFront ?? true}
-                                                    onChange={(e) =>
-                                                        setAvatarParams((prev) => ({
-                                                            ...prev,
-                                                            headInFront: e.target.checked
-                                                        }))
-                                                    }
-                                                />
-                                            }
-                                            label="あたまを体の前に出す"
-                                        />
-                                    </FormGroup>
-                                </Box>
-                            </>
-                        )}
-                        {tab === 'body' && (
-                            <>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        flexDirection: 'row',
-                                        gap: '10px'
-                                    }}
-                                >
-                                    <div>
-                                        <h4>Front</h4>
-                                        <TexturePreview
-                                            texture={textures['Body-Front']}
-                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
-                                            onClick={() => handleEdit('Body-Front')}
-                                        />
-                                    </div>
-                                    <div>
-                                        <h4>Back</h4>
-                                        <TexturePreview
-                                            texture={textures['Body-Back']}
-                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
-                                            onClick={() => handleEdit('Body-Back')}
-                                        />
-                                    </div>
-                                </div>
-                                <Box>
-                                    <Typography variant="h6">Body Size</Typography>
-                                    <Slider
-                                        value={avatarParams.bodySize}
-                                        min={-20}
-                                        max={20}
-                                        step={0.01}
-                                        onChange={(_e, newValue) =>
-                                            setAvatarParams((prev) => ({
-                                                ...prev,
-                                                bodySize: newValue as number
-                                            }))
-                                        }
-                                        sx={{ width: '200px', padding: '20px' }}
-                                    />
-                                </Box>
-                            </>
-                        )}
-                        {tab === 'hand' && (
-                            <>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        flexDirection: 'row',
-                                        gap: '10px'
-                                    }}
-                                >
-                                    <div>
-                                        <h4>Front</h4>
-                                        <TexturePreview
-                                            texture={textures['Hand-Front']}
-                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
-                                            onClick={() => handleEdit('Hand-Front')}
-                                        />
-                                    </div>
-                                    <div>
-                                        <h4>Back</h4>
-                                        <TexturePreview
-                                            texture={textures['Hand-Back']}
-                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
-                                            onClick={() => handleEdit('Hand-Back')}
-                                        />
-                                    </div>
-                                </div>
-                                <Box>
-                                    <Typography variant="h6">Hand Size</Typography>
-                                    <Slider
-                                        value={avatarParams.handSize}
-                                        min={-1}
-                                        max={1}
-                                        step={0.01}
-                                        onChange={(_e, newValue) =>
-                                            setAvatarParams((prev) => ({
-                                                ...prev,
-                                                handSize: newValue as number
-                                            }))
-                                        }
-                                        sx={{ width: '200px', padding: '20px' }}
-                                    />
-                                </Box>
-                            </>
-                        )}
-                        {tab === 'legs' && (
-                            <>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        flexDirection: 'row',
-                                        gap: '10px'
-                                    }}
-                                >
-                                    <div>
-                                        <h4>Front</h4>
-                                        <TexturePreview
-                                            texture={textures['Legs-Front']}
-                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
-                                            onClick={() => handleEdit('Legs-Front')}
-                                        />
-                                    </div>
-                                    <div>
-                                        <h4>Back</h4>
-                                        <TexturePreview
-                                            texture={textures['Legs-Back']}
-                                            sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
-                                            onClick={() => handleEdit('Legs-Back')}
-                                        />
-                                    </div>
-                                </div>
-                                <Box>
-                                    <Typography variant="h6">Legs Size</Typography>
-                                    <Slider
-                                        value={avatarParams.legsSize}
-                                        min={-1}
-                                        max={1}
-                                        step={0.01}
-                                        onChange={(_e, newValue) =>
-                                            setAvatarParams((prev) => ({
-                                                ...prev,
-                                                legsSize: newValue as number
-                                            }))
-                                        }
-                                        sx={{ width: '200px', padding: '20px' }}
-                                    />
-                                    <Typography variant="h6">Legs Distance</Typography>
-                                    <Slider
-                                        value={avatarParams.legsDistance}
-                                        min={-5}
-                                        max={5}
-                                        step={0.01}
-                                        onChange={(_e, newValue) =>
-                                            setAvatarParams((prev) => ({
-                                                ...prev,
-                                                legsDistance: newValue as number
-                                            }))
-                                        }
-                                        sx={{ width: '200px', padding: '20px' }}
-                                    />
-                                    <Typography variant="h6">Legs Distance from Body</Typography>
-                                    <Slider
-                                        value={avatarParams.legsDistanceFromBody}
-                                        min={-10}
-                                        max={10}
-                                        step={0.01}
-                                        onChange={(_e, newValue) =>
-                                            setAvatarParams((prev) => ({
-                                                ...prev,
-                                                legsDistanceFromBody: newValue as number
-                                            }))
-                                        }
-                                        sx={{ width: '200px', padding: '20px' }}
-                                    />
-                                    <FormGroup>
-                                        <FormControlLabel
-                                            control={
-                                                <Checkbox
-                                                    checked={avatarParams.legsInFront}
-                                                    onChange={(e) =>
-                                                        setAvatarParams((prev) => ({
-                                                            ...prev,
-                                                            legsInFront: e.target.checked
-                                                        }))
-                                                    }
-                                                />
-                                            }
-                                            label="足を体の前に出す"
-                                        />
-                                    </FormGroup>
-                                </Box>
-                            </>
-                        )}
-                        {tab === 'tail' && (
-                            <>
-                                <FormGroup>
-                                    <FormControlLabel
-                                        control={
-                                            <Checkbox
-                                                checked={avatarParams.disableTail}
-                                                onChange={(e) =>
-                                                    setAvatarParams((prev) => ({
-                                                        ...prev,
-                                                        disableTail: e.target.checked
-                                                    }))
-                                                }
-                                            />
-                                        }
-                                        label="しっぽを無効化"
-                                    />
-                                </FormGroup>
-
-                                {!avatarParams.disableTail && (
-                                    <>
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                flexDirection: 'row',
-                                                gap: '10px'
-                                            }}
-                                        >
-                                            <div>
-                                                <h4>Front</h4>
-                                                <TexturePreview
-                                                    texture={textures['Tail-Front']}
-                                                    sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
-                                                    onClick={() => handleEdit('Tail-Front')}
-                                                />
-                                            </div>
-                                            <div>
-                                                <h4>Back</h4>
-                                                <TexturePreview
-                                                    texture={textures['Tail-Back']}
-                                                    sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
-                                                    onClick={() => handleEdit('Tail-Back')}
-                                                />
-                                            </div>
-                                        </div>
-                                        <Box>
-                                            <Typography variant="h6">Tail Size</Typography>
-                                            <Slider
-                                                value={avatarParams.tailSize}
-                                                min={-20}
-                                                max={20}
-                                                step={0.01}
-                                                onChange={(_e, newValue) =>
-                                                    setAvatarParams((prev) => ({
-                                                        ...prev,
-                                                        tailSize: newValue as number
-                                                    }))
-                                                }
-                                                sx={{ width: '200px', padding: '20px' }}
-                                            />
-                                            <Typography variant="h6">Tail Position</Typography>
-                                            <Slider
-                                                value={avatarParams.tailPosition}
-                                                min={-10}
-                                                max={10}
-                                                step={0.01}
-                                                onChange={(_e, newValue) =>
-                                                    setAvatarParams((prev) => ({
-                                                        ...prev,
-                                                        tailPosition: newValue as number
-                                                    }))
-                                                }
-                                                sx={{ width: '200px', padding: '20px' }}
-                                            />
-                                            <Typography variant="h6">Tail Rotation</Typography>
-                                            <Slider
-                                                value={avatarParams.tailRotation}
-                                                min={0}
-                                                max={2 * Math.PI}
-                                                step={0.001}
-                                                onChange={(_e, newValue) =>
-                                                    setAvatarParams((prev) => ({
-                                                        ...prev,
-                                                        tailRotation: newValue as number
-                                                    }))
-                                                }
-                                                sx={{ width: '200px', padding: '20px' }}
-                                            />
-                                        </Box>
-                                    </>
-                                )}
-                            </>
-                        )}
-                        <Divider />
-                        <Box display="flex" gap="10px">
-                            <Button
-                                variant="contained"
-                                color="secondary"
-                                onClick={() => {
-                                    init()
-                                    props.setMode('plaza')
-                                    props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
-                                }}
-                            >
-                                キャンセル
-                            </Button>
-                            <Button
-                                variant="contained"
-                                onClick={() => {
-                                    if (fileInputRef.current) {
-                                        fileInputRef.current.click()
+                    <FormGroup>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={avatarParams.headInFront ?? true}
+                                    onChange={(e) =>
+                                        setAvatarParams((prev) => ({
+                                            ...prev,
+                                            headInFront: e.target.checked
+                                        }))
                                     }
-                                }}
-                            >
-                                ロード
-                            </Button>
-                            <Button
-                                variant="contained"
-                                onClick={() => {
-                                    handleExport(
-                                        {
-                                            ...manifest,
-                                            extends: parent?.id,
-                                            params: avatarParams
-                                        },
-                                        textures
-                                    )
-                                }}
-                            >
-                                エクスポート
-                            </Button>
-                            <Button
-                                variant="contained"
-                                onClick={() => {
-                                    handleResoniteExport(
-                                        {
-                                            ...manifest,
-                                            extends: parent?.id,
-                                            params: avatarParams
-                                        },
-                                        textures
-                                    )
-                                }}
-                            >
-                                Resonite用に書き出し
-                            </Button>
-                            <Button
-                                variant="contained"
-                                disabled={!manifest.name}
-                                onClick={() => {
-                                    setOpen(true)
-
-                                    if (!thumbnailCameraRef?.current) return
-                                    if (!thumbSceneRef?.current) return
-
-                                    const canvas = document.createElement('canvas')
-                                    canvas.width = thumbnailWidth
-                                    canvas.height = thumbnailHeight
-
-                                    const camera = thumbnailCameraRef.current
-                                    camera.updateProjectionMatrix()
-                                    camera.updateMatrixWorld()
-
-                                    const renderer = new WebGLRenderer({ canvas })
-                                    renderer.setSize(thumbnailWidth, thumbnailHeight)
-                                    renderer.render(thumbSceneRef.current, camera)
-
-                                    const dataURL = canvas.toDataURL('image/png')
-                                    setThumbnail(dataURL)
-                                    canvas.toBlob((blob) => {
-                                        if (blob) {
-                                            setThumbnailBlob(blob)
-                                        }
-                                    }, 'image/png')
-                                }}
-                            >
-                                公開
-                            </Button>
+                                />
+                            }
+                            label="あたまを体の前に出す"
+                        />
+                    </FormGroup>
+                </Box>
+                <Box>
+                    <Typography variant="h6">Body Size</Typography>
+                    <Slider
+                        value={avatarParams.bodySize}
+                        min={-20}
+                        max={20}
+                        step={0.01}
+                        onChange={(_e, newValue) =>
+                            setAvatarParams((prev) => ({
+                                ...prev,
+                                bodySize: newValue as number
+                            }))
+                        }
+                        sx={{ width: '200px', padding: '20px' }}
+                    />
+                </Box>
+                <Box>
+                    <Typography variant="h6">Hand Size</Typography>
+                    <Slider
+                        value={avatarParams.handSize}
+                        min={-1}
+                        max={1}
+                        step={0.01}
+                        onChange={(_e, newValue) =>
+                            setAvatarParams((prev) => ({
+                                ...prev,
+                                handSize: newValue as number
+                            }))
+                        }
+                        sx={{ width: '200px', padding: '20px' }}
+                    />
+                </Box>
+                <Box>
+                    <Typography variant="h6">Legs Size</Typography>
+                    <Slider
+                        value={avatarParams.legsSize}
+                        min={-1}
+                        max={1}
+                        step={0.01}
+                        onChange={(_e, newValue) =>
+                            setAvatarParams((prev) => ({
+                                ...prev,
+                                legsSize: newValue as number
+                            }))
+                        }
+                        sx={{ width: '200px', padding: '20px' }}
+                    />
+                    <Typography variant="h6">Legs Distance</Typography>
+                    <Slider
+                        value={avatarParams.legsDistance}
+                        min={-5}
+                        max={5}
+                        step={0.01}
+                        onChange={(_e, newValue) =>
+                            setAvatarParams((prev) => ({
+                                ...prev,
+                                legsDistance: newValue as number
+                            }))
+                        }
+                        sx={{ width: '200px', padding: '20px' }}
+                    />
+                    <Typography variant="h6">Legs Distance from Body</Typography>
+                    <Slider
+                        value={avatarParams.legsDistanceFromBody}
+                        min={-10}
+                        max={10}
+                        step={0.01}
+                        onChange={(_e, newValue) =>
+                            setAvatarParams((prev) => ({
+                                ...prev,
+                                legsDistanceFromBody: newValue as number
+                            }))
+                        }
+                        sx={{ width: '200px', padding: '20px' }}
+                    />
+                    <FormGroup>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={avatarParams.legsInFront}
+                                    onChange={(e) =>
+                                        setAvatarParams((prev) => ({
+                                            ...prev,
+                                            legsInFront: e.target.checked
+                                        }))
+                                    }
+                                />
+                            }
+                            label="足を体の前に出す"
+                        />
+                    </FormGroup>
+                </Box>
+                <FormGroup>
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={avatarParams.disableTail}
+                                onChange={(e) =>
+                                    setAvatarParams((prev) => ({
+                                        ...prev,
+                                        disableTail: e.target.checked
+                                    }))
+                                }
+                            />
+                        }
+                        label="しっぽを無効化"
+                    />
+                </FormGroup>
+                {!avatarParams.disableTail && (
+                    <>
+                        <Box>
+                            <Typography variant="h6">Tail Size</Typography>
+                            <Slider
+                                value={avatarParams.tailSize}
+                                min={-20}
+                                max={20}
+                                step={0.01}
+                                onChange={(_e, newValue) =>
+                                    setAvatarParams((prev) => ({
+                                        ...prev,
+                                        tailSize: newValue as number
+                                    }))
+                                }
+                                sx={{ width: '200px', padding: '20px' }}
+                            />
+                            <Typography variant="h6">Tail Position</Typography>
+                            <Slider
+                                value={avatarParams.tailPosition}
+                                min={-10}
+                                max={10}
+                                step={0.01}
+                                onChange={(_e, newValue) =>
+                                    setAvatarParams((prev) => ({
+                                        ...prev,
+                                        tailPosition: newValue as number
+                                    }))
+                                }
+                                sx={{ width: '200px', padding: '20px' }}
+                            />
+                            <Typography variant="h6">Tail Rotation</Typography>
+                            <Slider
+                                value={avatarParams.tailRotation}
+                                min={0}
+                                max={2 * Math.PI}
+                                step={0.001}
+                                onChange={(_e, newValue) =>
+                                    setAvatarParams((prev) => ({
+                                        ...prev,
+                                        tailRotation: newValue as number
+                                    }))
+                                }
+                                sx={{ width: '200px', padding: '20px' }}
+                            />
                         </Box>
                     </>
                 )}
+                <Divider />
+                <Box display="flex" gap="10px">
+                    <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={() => {
+                            init()
+                            props.setMode('plaza')
+                            props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
+                        }}
+                    >
+                        キャンセル
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={() => {
+                            if (fileInputRef.current) {
+                                fileInputRef.current.click()
+                            }
+                        }}
+                    >
+                        ロード
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={() => {
+                            handleExport(
+                                {
+                                    ...manifest,
+                                    extends: parent?.id,
+                                    params: avatarParams
+                                },
+                                texture
+                            )
+                        }}
+                    >
+                        エクスポート
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={() => {
+                            handleResoniteExport(
+                                {
+                                    ...manifest,
+                                    extends: parent?.id,
+                                    params: avatarParams
+                                },
+                                texture
+                            )
+                        }}
+                    >
+                        Resonite用に書き出し
+                    </Button>
+                    <Button
+                        variant="contained"
+                        disabled={!manifest.name}
+                        onClick={() => {
+                            setOpen(true)
+
+                            if (!thumbnailCameraRef?.current) return
+                            if (!thumbSceneRef?.current) return
+
+                            const canvas = document.createElement('canvas')
+                            canvas.width = thumbnailWidth
+                            canvas.height = thumbnailHeight
+
+                            const camera = thumbnailCameraRef.current
+                            camera.updateProjectionMatrix()
+                            camera.updateMatrixWorld()
+
+                            const renderer = new WebGLRenderer({ canvas })
+                            renderer.setSize(thumbnailWidth, thumbnailHeight)
+                            renderer.render(thumbSceneRef.current, camera)
+
+                            const dataURL = canvas.toDataURL('image/png')
+                            setThumbnail(dataURL)
+                            canvas.toBlob((blob) => {
+                                if (blob) {
+                                    setThumbnailBlob(blob)
+                                }
+                            }, 'image/png')
+                        }}
+                    >
+                        公開
+                    </Button>
+                </Box>
             </Box>
+
+            <Modal
+                open={!!editing}
+                onClose={() => {
+                    setEditing(null)
+                }}
+            >
+                <>
+                    <Painter
+                        width={2048}
+                        height={1024}
+                    />
+                </>
+            </Modal>
 
             <Dialog open={open} onClose={() => setOpen(false)}>
                 {uploaded ? (
@@ -998,7 +756,7 @@ ${location.origin}/${uploaded.id}`
                                             extends: parent?.id,
                                             params: avatarParams
                                         },
-                                        textures
+                                        texture
                                     )
                                         .then((data) => {
                                             console.log('Published successfully:', data)

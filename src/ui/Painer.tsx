@@ -1,611 +1,332 @@
-import { Box, IconButton, Menu, MenuItem, Popover, Slider, Typography } from '@mui/material'
 
-import { BsFillEraserFill } from 'react-icons/bs'
-import { BsBrushFill } from 'react-icons/bs'
-import { BsFillPaletteFill } from 'react-icons/bs'
-import { IoIosUndo } from 'react-icons/io'
-import { MdDelete } from 'react-icons/md'
-import { MdLayers } from 'react-icons/md'
-import { MdLayersClear } from 'react-icons/md'
-import { FaFileImport } from 'react-icons/fa'
+import { Box } from '@mui/material';
+import { useEffect, useRef, useState } from 'react'
 
-import Konva from 'konva'
-import { Stage, Layer, Line, Rect, Circle } from 'react-konva'
-import { useEffect, useRef, useState, type RefObject } from 'react'
-import { CanvasTexture, SRGBColorSpace, Texture, TextureLoader } from 'three'
-import { TexturePreview } from './TexturePreview'
+import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
+
+const MAX_HISTORY = 30;
 
 type PainterProps = {
-    initialTexture?: Texture | null
-    drawingLayerRef: RefObject<Konva.Layer | null>
-    references?: Record<string, Texture>
-    size: number
-}
-
-interface stroke {
-    tool: string
-    points: number[]
-    color: string
     width: number
+    height: number
 }
 
 export function Painter(props: PainterProps) {
-    const fileInputRef = useRef<HTMLInputElement>(null)
 
-    const stageRef = useRef<Konva.Stage>(null)
-    const previewLayerRef = useRef<Konva.Layer>(null)
-    const circleRef = useRef<Konva.Circle>(null)
+    const [tool, setTool] = useState<'brush' | 'eraser' | 'fill'>('brush');
 
-    const isDrawing = useRef(false)
+    const historyRef = useRef<ImageData[]>([]);
+    const redoRef    = useRef<ImageData[]>([]);
 
-    const [color, setColor] = useState('#2e7eff')
-    const [width, setWidth] = useState(20)
-    const [widthAnchor, setWidthAnchor] = useState<HTMLButtonElement | null>(null)
+    const [brushSize, setBrushSize] = useState<number>(32);
 
-    const [oldTexture, setOldTexture] = useState<Texture | null>(null)
+    const [color, setColor] = useState<string>('#000000');
+    const [alpha, setAlpha] = useState<number>(1.0);
 
-    const [traceAnchor, setTraceAnchor] = useState<HTMLDivElement | null>(null)
-    const [traceTexture, setTraceTexture] = useState<Texture | undefined>(undefined)
+    const [hardness, setHardness] = useState<number>(0.5);
 
-    const colorInputRef = useRef<HTMLInputElement>(null)
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const brushRef   = useRef<HTMLCanvasElement>(null);
+    const [drawing, setDrawing] = useState(false);
+    const prevPos = useRef<[number, number] | null>(null);
+    const leftoverRef = useRef(0)
 
-    const [tool, setTool] = useState('brush')
-
-    const [layers, setLayers] = useState<Array<stroke>[]>([[], [], []])
-    const [currentLayer, setCurrentLayer] = useState<0 | 1 | 2>(0)
-
-    const [hiddenLayers, setHiddenLayers] = useState<Array<boolean>>([false, false, false])
+    const transform = useRef<{
+        scale: number,
+        positionX: number,
+        positionY: number
+    }>({
+        scale: 1,
+        positionX: 0,
+        positionY: 0
+    });
 
     useEffect(() => {
-        const stage = stageRef.current
-        const previewLayer = previewLayerRef.current
-        const circle = circleRef.current
+        let b = brushRef.current
+        if (!b) {
+            brushRef.current = b = document.createElement('canvas');
+        }
+        b.width = b.height = brushSize;
+        const g = b.getContext('2d')!;
+        const r = brushSize / 2;
+        const grad = g.createRadialGradient(r, r, 0, r, r, r);
+        const alphaColor = color + Math.round(alpha * 255).toString(16).padStart(2, '0');
+        grad.addColorStop(0, alphaColor);
+        grad.addColorStop(hardness, alphaColor);
+        grad.addColorStop(1, `${color}00`);
+        g.fillStyle = grad;
+        g.fillRect(0, 0, brushSize, brushSize);
+        brushRef.current = b;
+    }, [brushSize, color, hardness, alpha]);
 
-        if (!stage || !previewLayer || !circle) return
+    const stamp = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+        const r = brushSize / 2;
+        ctx.save();
+        ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
+        ctx.drawImage(brushRef.current!, x - r, y - r);
+        ctx.restore();
+    };
 
-        // レイヤーはヒットテスト不要＆クリックイベントを受けない
-        previewLayer.listening(false)
+    const bucketFill = (sx: number, sy: number) => {
+        const ctx = canvasRef.current!.getContext('2d')!;
+        const fill = color.replace('#', '').match(/../g)!.map(c => parseInt(c, 16));
+        fill.push(Math.round(alpha * 255)); // アルファ値を追加
+        console.log('fill', color, alpha, fill);
+        sx |= 0; sy |= 0;                         // 小数対策
+        const { width: W, height: H } = ctx.canvas;
 
-        const updateCircle = () => {
-            const p = stage.getPointerPosition()
-            if (!p) {
-                // ステージ外なら隠す
-                circle.visible(false)
-                previewLayer.batchDraw()
-                return
+        const img = ctx.getImageData(0, 0, W, H);
+        const buf32 = new Uint32Array(img.data.buffer);   // BGRA リトルエンディアン
+
+        const toUint32 = ([r, g, b, a]: number[]) =>
+            (a << 24) | (b << 16) | (g << 8) | r;
+
+        const target = buf32[sy * W + sx];
+        const fill32 = toUint32(fill);
+
+        if (target === fill32) return;            // 既に同色なら何もしない
+
+        const stack: [number, number][] = [[sx, sy]];
+
+        const tot   = W * H;
+        const visited = new Uint8Array(Math.ceil(tot / 8));
+
+        const isVisited = (i: number) => (visited[i>>3] & (1 << (i & 7))) !== 0;
+        const setVisited= (i: number) => { visited[i>>3] |= (1 << (i & 7)); };
+
+        while (stack.length) {
+            let [x, y] = stack.pop()!;
+            let pos = y * W + x;
+
+            /* ① 上へ伸ばす */
+            while (y > 0 && buf32[pos - W] === target) {
+                y--; pos -= W;
             }
-            // ステージがズーム・ドラッグしている場合も正しく表示
-            // getRelativePointerPosition(layer) を使うと簡単
-            const pos = stage.getRelativePointerPosition()
-            circle.position(pos)
-            circle.visible(true)
-            previewLayer.batchDraw()
+
+            /* ② 下へ走査しながら左右をキューに積む */
+            let spanLeft = false, spanRight = false;
+            while (y < H && buf32[pos] === target && !isVisited(pos)) {
+                buf32[pos] = fill32; // 塗り
+                setVisited(pos);
+
+                // 左チェック
+                if (x > 0) {
+                    if (buf32[pos - 1] === target) {
+                    if (!spanLeft) { stack.push([x - 1, y]); spanLeft = true; }
+                    } else spanLeft = false;
+                }
+
+                // 右チェック
+                if (x < W - 1) {
+                    if (buf32[pos + 1] === target) {
+                    if (!spanRight) { stack.push([x + 1, y]); spanRight = true; }
+                    } else spanRight = false;
+                }
+
+                y++;
+                pos += W; // 下へ 1 ピクセル
+            }
         }
 
-        // 描画負荷を減らすため requestAnimationFrame を挟む
-        let raf = 0
-        const handleMove = () => {
-            if (raf) cancelAnimationFrame(raf)
-            raf = requestAnimationFrame(updateCircle)
-        }
-
-        stage.on('mousemove touchmove', handleMove)
-        stage.on('mouseout', () => {
-            circle.visible(false)
-            previewLayer.batchDraw()
-        })
-
-        return () => {
-            stage.off('mousemove touchmove', handleMove)
-            stage.off('mouseout')
-            if (raf) cancelAnimationFrame(raf)
-        }
-    }, [])
-
-    useEffect(() => {
-        if (props.initialTexture) setOldTexture(props.initialTexture.clone())
-    }, [props.initialTexture])
-
-    const handleUndo = () => {
-        if (layers[currentLayer].length === 0) return
-        const newLayers = [...layers]
-        newLayers[currentLayer] = newLayers[currentLayer].slice(0, -1)
-        setLayers(newLayers)
+        ctx.putImageData(img, 0, 0);
     }
 
-    // register keyboard shortcuts
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault()
-                handleUndo()
+
+    const handlePointerMove = (e: React.PointerEvent) => {
+        if (!drawing) return;
+        // only handle left mouse button
+        if (e.buttons !== 1) return;
+
+        const rect = canvasRef.current!.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / transform.current.scale;
+        const y = (e.clientY - rect.top) / transform.current.scale;
+
+        const ctx = canvasRef.current!.getContext('2d')!;
+        const spacing = brushSize * 0.1;
+
+        if (prevPos.current) {
+            let [px, py] = prevPos.current;
+            let dx = x - px, dy = y - py;
+            let dist = Math.hypot(dx, dy);
+
+            // ① 余り距離を加算
+            dist += leftoverRef.current;
+
+            // ② ベクトル正規化（0 除算防止）
+            const ux = dx === 0 && dy === 0 ? 0 : dx / Math.hypot(dx, dy);
+            const uy = dy === 0 && dx === 0 ? 0 : dy / Math.hypot(dx, dy);
+
+            // ③ 等間隔でスタンプ
+            while (dist >= spacing) {
+                px += ux * spacing;
+                py += uy * spacing;
+                stamp(ctx, px, py);
+                dist -= spacing;
             }
-        }
 
-        window.addEventListener('keydown', handleKeyDown)
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown)
-        }
-    }, [handleUndo])
-
-    useEffect(() => {
-        const circle = circleRef.current
-        if (!circle) return
-        circle.radius(width / 2)
-        circle.getLayer()?.batchDraw()
-    }, [width])
-
-    const handleMouseUp = () => {
-        isDrawing.current = false
-    }
-
-    const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
-        isDrawing.current = true
-        const pos = e.target.getStage()?.getPointerPosition()
-        if (!pos) return
-        const newStroke: stroke = {
-            tool,
-            points: [pos.x, pos.y],
-            color,
-            width
-        }
-        const newLayers = [...layers]
-        if (newLayers[currentLayer]) {
-            newLayers[currentLayer].push(newStroke)
+            // ④ 余った距離を保存
+            leftoverRef.current = dist;
+            prevPos.current = [px, py];
         } else {
-            newLayers[currentLayer] = [newStroke]
+            stamp(ctx, x, y);
+            leftoverRef.current = 0;
+            prevPos.current = [x, y];
         }
-        setLayers(newLayers)
-    }
+    };
 
-    const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
-        // no drawing - skipping
-        if (!isDrawing.current) {
-            return
-        }
-        const stage = e.target.getStage()
-        const point = stage?.getPointerPosition()
-        if (!point) return
+    const pushHistory = () => {
+        const ctx = canvasRef.current!.getContext('2d')!;
+        historyRef.current.push(ctx.getImageData(0, 0, props.width, props.height));
+        if (historyRef.current.length > MAX_HISTORY) historyRef.current.shift();
+        redoRef.current.length = 0; // 新操作したら Redo クリア
+    };
 
-        let strokes = layers[currentLayer]
-        const lastStroke = strokes[strokes.length - 1]
+    const undo = () => {
+        if (!historyRef.current.length) return;
+        const ctx = canvasRef.current!.getContext('2d')!;
+        const img = historyRef.current.pop()!;
+        redoRef.current.push(ctx.getImageData(0, 0, props.width, props.height));
+        ctx.putImageData(img, 0, 0);
+    };
+    const redo = () => {
+        if (!redoRef.current.length) return;
+        const ctx = canvasRef.current!.getContext('2d')!;
+        const img = redoRef.current.pop()!;
+        historyRef.current.push(ctx.getImageData(0, 0, props.width, props.height));
+        ctx.putImageData(img, 0, 0);
+    };
 
-        lastStroke.points = lastStroke.points.concat([point.x, point.y])
-
-        strokes.splice(strokes.length - 1, 1, lastStroke)
-
-        setLayers((prev) => {
-            const newLayers = [...prev]
-            newLayers[currentLayer] = strokes
-            return newLayers
-        })
-    }
-
-    const setReferenceByName = (name: string) => {
-        const loader = new TextureLoader()
-        loader.load(`/tex/${name}.png`, (texture) => {
-            texture.flipY = false
-            texture.colorSpace = SRGBColorSpace
-            setTraceTexture(texture)
-        })
-    }
-
-    const setReferenceByTexture = (texture: Texture) => {
-        const canvas = texture.image as HTMLCanvasElement
-        const tmp = document.createElement('canvas')
-        tmp.width = canvas.width
-        tmp.height = canvas.height
-        const ctx = tmp.getContext('2d')
-        if (!ctx) return
-        ctx.drawImage(canvas, 0, 0)
-        const editedTexture = new CanvasTexture(tmp)
-        editedTexture.flipY = false
-        editedTexture.colorSpace = SRGBColorSpace
-        setTraceTexture(editedTexture)
-    }
-
-    return (
-        <>
-            <input
-                type="file"
-                accept="image/*"
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                multiple={false}
-                onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (!file) return
-
-                    const url = URL.createObjectURL(file)
-                    const loader = new TextureLoader()
-
-                    loader.load(url, (texture) => {
-                        texture.flipY = false
-                        texture.colorSpace = SRGBColorSpace
-                        setOldTexture(texture)
-                        console.log('Loaded texture:', texture)
-                    })
-                }}
-            />
-            <Box
-                display="flex"
-                alignItems="center"
-                gap={1}
-                sx={{
-                    userSelect: 'none'
+    return <Box
+        width={'100%'}
+        height={'100%'}
+        position={'relative'}
+    >
+        <TransformWrapper
+            initialScale={1}
+            initialPositionX={0}
+            initialPositionY={0}
+            minScale={0.1}
+            maxScale={10}
+            wheel={{ step: 50 }}
+            panning={{
+                allowLeftClickPan: false
+            }}
+            onTransformed={(_, { scale, positionX, positionY }) => {
+                transform.current = { scale, positionX, positionY };
+            }}
+        >
+            <TransformComponent
+                wrapperStyle={{
+                    width: '100%',
+                    height: '100%'
                 }}
             >
                 <Box
-                    display="flex"
-                    flexDirection="column"
-                    alignItems="center"
-                    justifyContent="flex-end"
-                    height={`${props.size}px`}
-                    gap={1}
-                >
-                    <IconButton
-                        size="large"
-                        sx={{
-                            width: '50px',
-                            height: '50px',
-                            backgroundColor: tool === 'brush' ? 'primary.main' : 'text.disabled'
-                        }}
-                        onClick={() => setTool('brush')}
-                    >
-                        <BsBrushFill color="white" />
-                    </IconButton>
-                    <IconButton
-                        size="large"
-                        sx={{
-                            width: '50px',
-                            height: '50px',
-                            backgroundColor: tool === 'eraser' ? 'primary.main' : 'text.disabled'
-                        }}
-                        onClick={() => setTool('eraser')}
-                    >
-                        <BsFillEraserFill color="white" />
-                    </IconButton>
-
-                    <IconButton
-                        size="large"
-                        sx={{
-                            width: '50px',
-                            height: '50px',
-                            backgroundColor: color
-                        }}
-                        onClick={() => {
-                            if (colorInputRef.current) {
-                                colorInputRef.current.click()
-                            }
-                        }}
-                    >
-                        <BsFillPaletteFill color="white" />
-                        <input
-                            type="color"
-                            ref={colorInputRef}
-                            value={color}
-                            onChange={(e) => setColor(e.target.value)}
-                            style={{
-                                visibility: 'hidden',
-                                width: '0',
-                                height: '0'
-                            }}
-                        />
-                    </IconButton>
-
-                    <IconButton
-                        size="large"
-                        sx={{
-                            width: '50px',
-                            height: '50px',
-                            backgroundColor: 'primary.main'
-                        }}
-                        onClick={(e) => setWidthAnchor(e.currentTarget)}
-                    >
-                        <Typography variant="body1" sx={{ color: 'white' }}>
-                            {width}
-                        </Typography>
-                    </IconButton>
-
-                    <Popover
-                        open={Boolean(widthAnchor)}
-                        anchorEl={widthAnchor}
-                        onClose={() => setWidthAnchor(null)}
-                        anchorOrigin={{
-                            vertical: 'bottom',
-                            horizontal: 'center'
-                        }}
-                        transformOrigin={{
-                            vertical: 'top',
-                            horizontal: 'center'
-                        }}
-                        slotProps={{
-                            paper: {
-                                sx: {
-                                    padding: '10px',
-                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                    color: 'white',
-                                    borderRadius: '10px'
-                                }
-                            }
-                        }}
-                    >
-                        <Slider
-                            value={width}
-                            min={1}
-                            max={50}
-                            onChange={(_e, newValue) => setWidth(newValue as number)}
-                            sx={{ width: '200px', padding: '20px' }}
-                            onChangeCommitted={() => setWidthAnchor(null)}
-                        />
-                    </Popover>
-
-                    <IconButton
-                        size="large"
-                        onClick={handleUndo}
-                        sx={{
-                            width: '50px',
-                            height: '50px',
-                            backgroundColor: 'primary.main'
-                        }}
-                    >
-                        <IoIosUndo color="white" />
-                    </IconButton>
-
-                    <IconButton
-                        size="large"
-                        sx={{
-                            width: '50px',
-                            height: '50px',
-                            backgroundColor: 'primary.main'
-                        }}
-                        onClick={() => {
-                            if (fileInputRef.current) {
-                                fileInputRef.current.click()
-                            }
-                        }}
-                    >
-                        <FaFileImport color="white" />
-                    </IconButton>
-
-                    <IconButton
-                        size="large"
-                        onClick={() => {
-                            setLayers([])
-                            setOldTexture(null)
-                        }}
-                        sx={{
-                            backgroundColor: 'error.main'
-                        }}
-                    >
-                        <MdDelete color="white" />
-                    </IconButton>
-                </Box>
-
-                <Box
                     sx={{
-                        background: `repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0 / 25px 25px`
+                        backgroundColor: '#fff',
+                        width: `${props.width}px`,
+                        height: `${props.height}px`,
                     }}
                 >
-                    <Stage
-                        ref={stageRef}
-                        width={props.size}
-                        height={props.size}
-                        onMouseDown={handleMouseDown}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUp}
-                        onTouchStart={handleMouseDown}
-                        onTouchMove={handleMouseMove}
-                        onTouchEnd={handleMouseUp}
-                        style={{ cursor: 'none', border: '1px solid #ccc' }}
-                    >
-                        {traceTexture && (
-                            <Layer>
-                                <Rect
-                                    x={0}
-                                    y={0}
-                                    width={props.size}
-                                    height={props.size}
-                                    fillPatternImage={traceTexture.image as HTMLImageElement}
-                                    fillPatternRepeat="no-repeat"
-                                    fillPatternScaleX={props.size / traceTexture.image.width}
-                                    fillPatternScaleY={props.size / traceTexture.image.height}
-                                    fillPatternOffsetX={0}
-                                    fillPatternOffsetY={0}
-                                    opacity={0.3}
-                                />
-                            </Layer>
-                        )}
-                        <Layer ref={props.drawingLayerRef}>
-                            {oldTexture && (
-                                <Rect
-                                    x={0}
-                                    y={0}
-                                    width={props.size}
-                                    height={props.size}
-                                    fillPatternImage={oldTexture.image as HTMLImageElement}
-                                    fillPatternRepeat="no-repeat"
-                                    fillPatternScaleX={props.size / oldTexture.image.width}
-                                    fillPatternScaleY={props.size / oldTexture.image.height}
-                                    fillPatternOffsetX={0}
-                                    fillPatternOffsetY={0}
-                                />
-                            )}
+                    <canvas
+                        ref={canvasRef}
+                        width={props.width}
+                        height={props.height}
+                        style={{ touchAction: 'none' }}
+                        onPointerDown={e => { 
+                            pushHistory();
 
-                            {layers.map((_layer, i) => {
-                                const layer = layers[layers.length - i - 1]
-                                if (hiddenLayers[layers.length - i - 1]) return null
-                                return layer.map((line, i) => (
-                                    <Line
-                                        key={i}
-                                        points={line.points}
-                                        stroke={line.color}
-                                        strokeWidth={line.width}
-                                        tension={0.5}
-                                        lineCap="round"
-                                        lineJoin="round"
-                                        globalCompositeOperation={
-                                            line.tool === 'eraser' ? 'destination-out' : 'source-over'
-                                        }
-                                    />
-                                ))
-                            })}
-                        </Layer>
-                        <Layer ref={previewLayerRef}>
-                            <Circle
-                                ref={circleRef}
-                                radius={width / 2}
-                                dash={[2, 2]}
-                                strokeWidth={1}
-                                visible={false}
-                                stroke="gray"
-                            />
-                        </Layer>
-                    </Stage>
-                </Box>
-
-                <Box display="flex" flexDirection="column" height={`${props.size}px`} justifyContent="flex-end" gap={1}>
-                    <Box
-                        onClick={() => {
-                            if (currentLayer === 0) {
-                                hiddenLayers[0] = !hiddenLayers[0]
-                                setHiddenLayers([...hiddenLayers])
+                            if (tool === 'fill') {
+                                const rect = canvasRef.current!.getBoundingClientRect();
+                                const x = e.clientX - rect.left;
+                                const y = e.clientY - rect.top;
+                                bucketFill(x, y);
                             } else {
-                                setCurrentLayer(0)
+                                setDrawing(true);
+                                prevPos.current = null; // 前の位置をリセット
+                                handlePointerMove(e);
                             }
                         }}
-                        sx={{
-                            cursor: 'pointer',
-                            backgroundColor: currentLayer === 0 ? 'primary.main' : 'text.disabled',
-                            color: 'white',
-                            padding: '5px',
-                            borderRadius: '5px',
-                            border: '1px solid white',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '5px'
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={() => { 
+                            setDrawing(false);
+                            prevPos.current = null; // 描画終了時に前の位置をリセット
                         }}
-                    >
-                        {hiddenLayers[0] ? (
-                            <MdLayersClear color="white" size={24} />
-                        ) : (
-                            <MdLayers color="white" size={24} />
-                        )}
-                        1
-                    </Box>
-
-                    <Box
-                        onClick={() => {
-                            if (currentLayer === 1) {
-                                hiddenLayers[1] = !hiddenLayers[1]
-                                setHiddenLayers([...hiddenLayers])
-                            } else {
-                                setCurrentLayer(1)
-                            }
-                        }}
-                        sx={{
-                            cursor: 'pointer',
-                            backgroundColor: currentLayer === 1 ? 'primary.main' : 'text.disabled',
-                            color: 'white',
-                            padding: '5px',
-                            borderRadius: '5px',
-                            border: '1px solid white',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '5px'
-                        }}
-                    >
-                        {hiddenLayers[1] ? (
-                            <MdLayersClear color="white" size={24} />
-                        ) : (
-                            <MdLayers color="white" size={24} />
-                        )}
-                        2
-                    </Box>
-
-                    <Box
-                        onClick={() => {
-                            if (currentLayer === 2) {
-                                hiddenLayers[2] = !hiddenLayers[2]
-                                setHiddenLayers([...hiddenLayers])
-                            } else {
-                                setCurrentLayer(2)
-                            }
-                        }}
-                        sx={{
-                            cursor: 'pointer',
-                            backgroundColor: currentLayer === 2 ? 'primary.main' : 'text.disabled',
-                            color: 'white',
-                            padding: '5px',
-                            borderRadius: '5px',
-                            border: '1px solid white',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '5px'
-                        }}
-                    >
-                        {hiddenLayers[2] ? (
-                            <MdLayersClear color="white" size={24} />
-                        ) : (
-                            <MdLayers color="white" size={24} />
-                        )}
-                        3
-                    </Box>
-
-                    <TexturePreview
-                        texture={traceTexture}
-                        sx={{
-                            width: '80px',
-                            height: '80px',
-                            cursor: 'pointer',
-                            border: '1px dashed white',
-                            borderRadius: '5px'
-                        }}
-                        onClick={(e) => {
-                            setTraceAnchor(e.currentTarget)
+                        onPointerLeave={() => {
+                            setDrawing(false);
+                            prevPos.current = null; // キャンバスから離れた時に前の位置をリセット
                         }}
                     />
-
-                    <Menu
-                        anchorEl={traceAnchor}
-                        open={Boolean(traceAnchor)}
-                        onClose={() => setTraceAnchor(null)}
-                        style={{ color: 'white' }}
-                        slotProps={{
-                            paper: {
-                                style: {
-                                    maxHeight: `${props.size}px`
-                                }
-                            }
-                        }}
-                    >
-                        <MenuItem onClick={() => setTraceTexture(undefined)}>None</MenuItem>
-
-                        {props.references &&
-                            Object.keys(props.references).map((name) => (
-                                <MenuItem key={name} onClick={() => setReferenceByTexture(props.references![name])}>
-                                    {name}
-                                </MenuItem>
-                            ))}
-
-                        <MenuItem onClick={() => setReferenceByName('Head-Front')}>Head Front (Template)</MenuItem>
-                        <MenuItem onClick={() => setReferenceByName('Head-Back')}>Head Back (Template)</MenuItem>
-                        <MenuItem onClick={() => setReferenceByName('Eyes-Closed')}>Eyes Closed (Template)</MenuItem>
-                        <MenuItem onClick={() => setReferenceByName('Mouth-Open')}>Mouth Open (Template)</MenuItem>
-                        <MenuItem onClick={() => setReferenceByName('Body-Front')}>Body Front (Template)</MenuItem>
-                        <MenuItem onClick={() => setReferenceByName('Body-Back')}>Body Back (Template)</MenuItem>
-                        <MenuItem onClick={() => setReferenceByName('Hand-Front')}>Hand Front (Template)</MenuItem>
-                        <MenuItem onClick={() => setReferenceByName('Hand-Back')}>Hand Back (Template)</MenuItem>
-                        <MenuItem onClick={() => setReferenceByName('Legs-Front')}>Legs Front (Template)</MenuItem>
-                        <MenuItem onClick={() => setReferenceByName('Legs-Back')}>Legs Back (Template)</MenuItem>
-                        <MenuItem onClick={() => setReferenceByName('Tail-Front')}>Tail Front (Template)</MenuItem>
-                        <MenuItem onClick={() => setReferenceByName('Tail-Back')}>Tail Back (Template)</MenuItem>
-                    </Menu>
                 </Box>
-            </Box>
-        </>
-    )
+            </TransformComponent>
+        </TransformWrapper>
+
+
+        <div
+            style={{
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+            }}
+        >
+
+            <button onClick={undo}>
+                Undo
+            </button>
+
+            <button onClick={redo}>
+                Redo
+            </button>
+
+            <button onClick={() => setTool('brush')}>
+                Brush
+            </button>
+            <button onClick={() => setTool('eraser')}>
+                Eraser
+            </button>
+            <button onClick={() => setTool('fill')}>
+                Fill
+            </button>
+
+            <input
+                type="range"
+                min="8"
+                max="128"
+                value={brushSize}
+                onChange={e => setBrushSize(Number(e.target.value))}
+            />
+            <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={hardness}
+                onChange={e => setHardness(Number(e.target.value))}
+            />
+            <input
+                type="color"
+                value={color}
+                onChange={e => setColor(e.target.value)}
+            />
+            <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={alpha}
+                onChange={e => setAlpha(Number(e.target.value))}
+            />
+            <button
+                onClick={() => {
+                    const ctx = canvasRef.current!.getContext('2d')!;
+                    ctx.clearRect(0, 0, props.width, props.height);
+                }}
+            >
+                Clear
+            </button>
+        </div>
+    </Box>
+
 }
