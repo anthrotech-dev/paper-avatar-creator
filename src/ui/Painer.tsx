@@ -295,6 +295,8 @@ export function Painter(props: PainterProps) {
         prevPos.current = null // 描画終了時に前の位置をリセット
     }
 
+    const initialScale = Math.min(document.body.clientWidth / props.width, document.body.clientHeight / props.height, 1)
+
     return (
         <Box
             width={'100%'}
@@ -327,12 +329,13 @@ export function Painter(props: PainterProps) {
             />
 
             <TransformWrapper
-                initialScale={1}
-                initialPositionX={0}
-                initialPositionY={0}
+                initialScale={initialScale}
+                initialPositionX={(document.body.clientWidth - props.width * initialScale) / 2}
+                initialPositionY={(document.body.clientHeight - props.height * initialScale) / 2}
                 minScale={0.1}
                 maxScale={10}
                 wheel={{ step: 50 }}
+                limitToBounds={false}
                 panning={{
                     allowLeftClickPan: false
                 }}
