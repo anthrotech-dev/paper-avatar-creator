@@ -11,7 +11,7 @@ import {
     type RefObject,
     type SetStateAction
 } from 'react'
-import { Texture, TextureLoader, SRGBColorSpace, Vector3, OrthographicCamera, WebGLRenderer, Object3D } from 'three'
+import { Texture, TextureLoader, SRGBColorSpace, OrthographicCamera, WebGLRenderer, Object3D } from 'three'
 
 import { TexturePreview } from '../ui/TexturePreview'
 import {
