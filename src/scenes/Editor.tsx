@@ -262,11 +262,38 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
         <>
             <input
                 type="file"
-                accept="image/*"
+                accept="image/*,application/json"
                 ref={fileInputRef}
                 style={{ display: 'none' }}
                 multiple={true}
                 onChange={(e) => {
+                    // Check if the file is a manifest.json
+                    for (const file of e.target.files || []) {
+                        if (file.name === 'manifest.json') {
+                            const reader = new FileReader()
+                            reader.onload = (event) => {
+                                console.log('Reading manifest.json:', event.target?.result)
+                                try {
+                                    const data = JSON.parse(event.target?.result as string) as AvatarManifest
+                                    setAvatarParams((prev) => ({
+                                        ...prev,
+                                        ...data.params
+                                    }))
+                                    setManifest((prev) => ({
+                                        ...prev,
+                                        name: data.name,
+                                        description: data.description
+                                    }))
+                                } catch (error) {
+                                    console.error('Error parsing manifest.json:', error)
+                                }
+                            }
+                            reader.readAsText(file)
+                            return
+                        }
+                    }
+
+                    // load textures
                     if (e.target.files?.length === 0) return
                     if (e.target.files?.length === 1) {
                         const file = e.target.files[0]
