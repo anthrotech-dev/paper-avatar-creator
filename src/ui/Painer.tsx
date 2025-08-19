@@ -33,6 +33,8 @@ interface History {
 }
 
 export function Painter(props: PainterProps) {
+    const tipRef = useRef<HTMLDivElement>(null)
+
     const [tool, setTool] = useState<'brush' | 'eraser' | 'fill'>('brush')
 
     const [currentLayer, setCurrentLayer] = useState<number>(2)
@@ -79,7 +81,7 @@ export function Painter(props: PainterProps) {
         }
     }, [props.initialTexture])
 
-    const transform = useRef<{
+    const [transform, setTransform] = useState<{
         scale: number
         positionX: number
         positionY: number
@@ -128,8 +130,8 @@ export function Painter(props: PainterProps) {
         fill.push(Math.round(alpha * 255)) // アルファ値を追加
         console.log('fill', color, alpha, fill)
 
-        const sx = Math.floor((e.clientX - e.currentTarget.getBoundingClientRect().left) / transform.current.scale)
-        const sy = Math.floor((e.clientY - e.currentTarget.getBoundingClientRect().top) / transform.current.scale)
+        const sx = Math.floor((e.clientX - e.currentTarget.getBoundingClientRect().left) / transform.scale)
+        const sy = Math.floor((e.clientY - e.currentTarget.getBoundingClientRect().top) / transform.scale)
 
         const { width: W, height: H } = ctx.canvas
 
@@ -199,13 +201,23 @@ export function Painter(props: PainterProps) {
     }
 
     const handlePointerMove = (e: React.PointerEvent) => {
+        /*
+        if (tipRef.current) {
+            const rect = canvasRef.current!.getBoundingClientRect()
+            const x = (e.clientX - rect.left) / transform.current.scale
+            const y = (e.clientY - rect.top) / transform.current.scale
+            tipRef.current.style.left = `${x - brushSize / 2}px`
+            tipRef.current.style.top = `${y - brushSize / 2}px`
+        }
+        */
+
         if (!drawing) return
         // only handle left mouse button
         if (e.buttons !== 1) return
 
         const rect = canvasRef.current!.getBoundingClientRect()
-        const x = (e.clientX - rect.left) / transform.current.scale
-        const y = (e.clientY - rect.top) / transform.current.scale
+        const x = (e.clientX - rect.left) / transform.scale
+        const y = (e.clientY - rect.top) / transform.scale
 
         const ctx = canvasRef.current!.getContext('2d')!
         const spacing = brushSize * 0.1
@@ -305,7 +317,28 @@ export function Painter(props: PainterProps) {
             sx={{
                 userSelect: 'none'
             }}
+            onMouseMove={(e) => {
+                if (tipRef.current) {
+                    const x = e.clientX
+                    const y = e.clientY
+                    tipRef.current.style.left = `${x - (brushSize * transform.scale) / 2}px`
+                    tipRef.current.style.top = `${y - (brushSize * transform.scale) / 2}px`
+                }
+            }}
         >
+            <Box
+                ref={tipRef}
+                sx={{
+                    width: `${brushSize * transform.scale}px`,
+                    height: `${brushSize * transform.scale}px`,
+                    position: 'absolute',
+                    borderRadius: '50%',
+                    border: '1px dashed black',
+                    zIndex: 1000,
+                    pointerEvents: 'none'
+                }}
+            />
+
             <input
                 type="file"
                 accept="image/*"
@@ -340,7 +373,11 @@ export function Painter(props: PainterProps) {
                     allowLeftClickPan: false
                 }}
                 onTransformed={(_, { scale, positionX, positionY }) => {
-                    transform.current = { scale, positionX, positionY }
+                    setTransform({
+                        scale,
+                        positionX,
+                        positionY
+                    })
                 }}
             >
                 <TransformComponent
@@ -354,7 +391,8 @@ export function Painter(props: PainterProps) {
                             backgroundColor: '#fff',
                             width: `${props.width}px`,
                             height: `${props.height}px`,
-                            position: 'relative'
+                            position: 'relative',
+                            cursor: 'none'
                         }}
                     >
                         <img
