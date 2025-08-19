@@ -67,7 +67,7 @@ export function Painter(props: PainterProps) {
 
     const [showFaceTemplate, setShowFaceTemplate] = useState<boolean>(false)
 
-    const [enablePanning, setEnablePanning] = useState<boolean>(true)
+    const [enablePanning, setEnablePanning] = useState<boolean>(false)
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
