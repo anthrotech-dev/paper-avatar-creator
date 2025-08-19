@@ -12,30 +12,16 @@ import {
 import brotliPromise from 'brotli-wasm'
 import type { AvatarManifest, AvatarParams } from './types'
 
-export const handlePublish = async (
-    thumbnail: Blob,
-    manifest: Partial<AvatarManifest>,
-    textures: Record<string, Texture>
-) => {
+export const handlePublish = async (thumbnail: Blob, manifest: Partial<AvatarManifest>, texture: Texture) => {
     const endpoint = 'https://paper-avatar-creator.pages.dev/api/upload'
-
-    const entries = await Promise.all(
-        Object.entries(textures).map(async ([key, tex]) => {
-            if (!tex) return null
-            const { blob } = await textureToPng(tex) // ← 既存ユーティリティ
-            return { key, blob }
-        })
-    )
 
     const form = new FormData()
 
     form.append('manifest', new Blob([JSON.stringify(manifest)], { type: 'application/json' }), 'manifest.json')
     form.append('thumbnail', thumbnail, 'thumbnail.png')
 
-    for (const e of entries) {
-        if (!e) continue
-        form.append(e.key, e.blob, `${e.key}.png`)
-    }
+    const { blob } = await textureToPng(texture)
+    form.append('texture', blob, 'texture.png')
 
     const res = await fetch(endpoint, {
         method: 'POST',
@@ -55,15 +41,11 @@ export const handlePublish = async (
     })
 }
 
-export const handleExport = async (manifest: Partial<AvatarManifest>, textures: Record<string, Texture>) => {
+export const handleExport = async (manifest: Partial<AvatarManifest>, texture: Texture) => {
     const zip = new JSZip()
-    for (const key in textures) {
-        const texture = textures[key]
-        if (!texture) continue
 
-        const { blob } = await textureToPng(texture)
-        zip.file(`${key}.png`, blob)
-    }
+    const { blob } = await textureToPng(texture)
+    zip.file('texture.png', blob)
 
     const manifestStr = JSON.stringify(manifest, null, 2)
     zip.file('manifest.json', manifestStr)
@@ -79,25 +61,19 @@ export const handleExport = async (manifest: Partial<AvatarManifest>, textures: 
     URL.revokeObjectURL(url)
 }
 
-export const handleResoniteExport = async (manifest: Partial<AvatarManifest>, textures: Record<string, Texture>) => {
+export const handleResoniteExport = async (manifest: Partial<AvatarManifest>, texture: Texture) => {
     const assets: Array<any> = []
 
     const zip = new JSZip()
 
-    for (const key in textures) {
-        const texture = textures[key]
-        if (!texture) continue
-
-        const { blob } = await textureToPng(texture)
-        const hash = await sha256SumBlob(blob)
-
-        zip.file(`Assets/${hash}`, blob)
-        assets.push({
-            part: key,
-            hash: hash,
-            bytes: blob.size
-        })
-    }
+    const { blob } = await textureToPng(texture)
+    const hash = await sha256SumBlob(blob)
+    zip.file(`Assets/${hash}`, blob)
+    assets.push({
+        part: 'texture',
+        hash: hash,
+        bytes: blob.size
+    })
 
     let slots = await fetch('/package/slots.json').then((res) => res.text())
     for (const elem of assets) {

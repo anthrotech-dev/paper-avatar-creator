@@ -11,15 +11,7 @@ import {
     type RefObject,
     type SetStateAction
 } from 'react'
-import {
-    Texture,
-    TextureLoader,
-    SRGBColorSpace,
-    Vector3,
-    OrthographicCamera,
-    WebGLRenderer,
-    Object3D
-} from 'three'
+import { Texture, TextureLoader, SRGBColorSpace, Vector3, OrthographicCamera, WebGLRenderer, Object3D } from 'three'
 
 import { TexturePreview } from '../ui/TexturePreview'
 import {
@@ -42,7 +34,7 @@ import {
 import { handleExport, handlePublish, handleResoniteExport } from '../util'
 import { Painter } from '../ui/Painer'
 
-import { type AvatarManifest, type AvatarParams, type TextureKind } from '../types'
+import { type AvatarManifest, type AvatarParams } from '../types'
 import { EditableAvatar } from '../components/EditableAvatar'
 
 type EditorState = {
@@ -112,27 +104,12 @@ export function Editor({ children }: { children?: React.ReactNode }) {
 
     const init = useCallback(async () => {
         const loader = new TextureLoader()
-        const textures: Record<TextureKind, Texture> = {
-            'Head-Front': await loader.loadAsync('/tex/Head-Front.png'),
-            'Head-Back': await loader.loadAsync('/tex/Head-Back.png'),
-            'Eyes-Closed': await loader.loadAsync('/tex/Eyes-Closed.png'),
-            'Mouth-Open': await loader.loadAsync('/tex/Mouth-Open.png'),
-            'Body-Front': await loader.loadAsync('/tex/Body-Front.png'),
-            'Body-Back': await loader.loadAsync('/tex/Body-Back.png'),
-            'Hand-Front': await loader.loadAsync('/tex/Hand-Front.png'),
-            'Hand-Back': await loader.loadAsync('/tex/Hand-Back.png'),
-            'Legs-Front': await loader.loadAsync('/tex/Legs-Front.png'),
-            'Legs-Back': await loader.loadAsync('/tex/Legs-Back.png'),
-            'Tail-Front': await loader.loadAsync('/tex/Tail-Front.png'),
-            'Tail-Back': await loader.loadAsync('/tex/Tail-Back.png')
-        }
 
-        for (const key in textures) {
-            textures[key as TextureKind].flipY = false
-            textures[key as TextureKind].colorSpace = SRGBColorSpace
-        }
+        const texture = loader.load('/tex/template.png')
+        texture.flipY = false
+        texture.colorSpace = SRGBColorSpace
+        setTexture(texture)
 
-        //setTextures(textures)
         setParent(null)
         setAvatarParams({
             headSize: 0,
@@ -205,7 +182,7 @@ Editor.Scene = () => {
                     <meshBasicMaterial color="black" transparent opacity={0.65} depthWrite={false} toneMapped={false} />
                 </mesh>
                 <Suspense fallback={null}>
-                    <EditableAvatar params={avatarParams} textures={texture} />
+                    <EditableAvatar params={avatarParams} texture={texture} />
                 </Suspense>
             </group>
             <group ref={thumbSceneRef} position={[0, -200, 0]}>
@@ -223,7 +200,7 @@ Editor.Scene = () => {
                     rotation={[0, 0, 0]}
                 />
                 <Suspense fallback={null}>
-                    <EditableAvatar params={avatarParams} textures={texture} />
+                    <EditableAvatar params={avatarParams} texture={texture} />
                 </Suspense>
                 <mesh position={[0, 0.55, 0.5]}>
                     <planeGeometry args={[thumbnailSceneWidth, thumbnailSceneHeight]} />
@@ -248,20 +225,12 @@ Editor.Overlay = (props: {
     setMode: (mode: 'edit' | 'plaza') => void
     setCollection: Dispatch<SetStateAction<string[]>>
 }) => {
-    const {
-        init,
-        parent,
-        texture,
-        avatarParams,
-        setAvatarParams,
-        thumbnailCameraRef,
-        thumbSceneRef
-    } = useEditor()
+    const { init, parent, texture, avatarParams, setAvatarParams, thumbnailCameraRef, thumbSceneRef } = useEditor()
 
     const [editing, setEditing] = useState<boolean>(false)
 
     const fileInputRef = useRef<HTMLInputElement>(null)
-    const [oldTexture, setOldTexture] = useState<Texture | null>(null)
+    //const [oldTexture, setOldTexture] = useState<Texture | null>(null)
 
     const [manifest, setManifest] = useState<Partial<AvatarManifest>>({})
 
@@ -274,6 +243,7 @@ Editor.Overlay = (props: {
 
     return (
         <>
+            {/*
             <input
                 type="file"
                 accept="image/*"
@@ -301,6 +271,7 @@ Editor.Overlay = (props: {
                     }
                 }}
             />
+        */}
             <Box
                 sx={{
                     padding: 2,
@@ -627,14 +598,11 @@ Editor.Overlay = (props: {
             <Modal
                 open={!!editing}
                 onClose={() => {
-                    setEditing(null)
+                    setEditing(false)
                 }}
             >
                 <>
-                    <Painter
-                        width={2048}
-                        height={1024}
-                    />
+                    <Painter width={2048} height={1024} />
                 </>
             </Modal>
 

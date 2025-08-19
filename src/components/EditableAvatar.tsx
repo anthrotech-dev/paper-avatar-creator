@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Texture, Group, AnimationMixer, Mesh, AdditiveAnimationBlendMode, Object3D, MeshBasicMaterial } from 'three'
 
-import { textureKeyMap, type AvatarParams, type TextureKind } from '../types'
+import { textureKeyMap, type AvatarParams } from '../types'
 import { useGLTF } from '@react-three/drei'
 
 import { useFrame, useGraph } from '@react-three/fiber'
@@ -10,12 +10,11 @@ import { createBaseAnimation } from '../util'
 
 type AvatarProps = {
     params: AvatarParams
-    textures: Record<string, Texture>
-    editing: TextureKind | null
+    texture: Texture
     setSelected?: (selected: Object3D | null) => void
 }
 
-export const EditableAvatar = ({ params, textures, editing, setSelected }: AvatarProps) => {
+export const EditableAvatar = ({ params, texture, setSelected }: AvatarProps) => {
     const group = useRef<Group>(null)
     const { scene, animations } = useGLTF('/anim@RESO_Pera_idle.glb')
     const clone = useMemo(() => scene.clone(), [scene])
@@ -23,18 +22,29 @@ export const EditableAvatar = ({ params, textures, editing, setSelected }: Avata
     const mixer = useRef<AnimationMixer>(null)
 
     useEffect(() => {
+        const faceMaterial = new MeshBasicMaterial({
+            color: '#FFFFFF',
+            map: texture.clone(),
+            alphaTest: 0.5
+        })
+
+        const bodyMaterial = new MeshBasicMaterial({
+            color: '#FFFFFF',
+            map: texture.clone(),
+            alphaTest: 0.5
+        })
+
         for (const key in nodes) {
             if (textureKeyMap[key] && nodes[key].type === 'Mesh') {
                 const mesh = nodes[key] as Mesh
-                mesh.material = new MeshBasicMaterial({
-                    color: '#FFFFFF',
-                    map: textures[textureKeyMap[key]],
-                    alphaTest: 0.5
-                })
-                mesh.material.needsUpdate = true
+                if (key === 'Head_Front') {
+                    mesh.material = faceMaterial
+                } else {
+                    mesh.material = bodyMaterial
+                }
             }
         }
-    }, [nodes, textures])
+    }, [nodes, texture])
 
     useEffect(() => {
         if (group.current) {
@@ -77,51 +87,33 @@ export const EditableAvatar = ({ params, textures, editing, setSelected }: Avata
         }
     }, [params, mixer])
 
-    useEffect(() => {
-        switch (editing) {
-            case 'Head-Front':
-                // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Head-Front']
-                break
-            case 'Eyes-Closed':
-                // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Eyes-Closed']
-                break
-            case 'Mouth-Open':
-                // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Mouth-Open']
-                break
-        }
-    }, [editing])
-
     let facial: 'Head-Front' | 'Eyes-Closed' | 'Mouth-Open' = 'Head-Front'
     const chanceToCloseEyes = 0.004
     const chanceToOpenMouth = 0.002
     const chanceToReturnToNormal = 0.05
     useFrame((_state, delta) => {
         mixer.current?.update(delta)
-        if (editing) return
         if (facial === 'Head-Front') {
             if (Math.random() < chanceToCloseEyes) {
                 facial = 'Eyes-Closed'
                 // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Eyes-Closed']
+                nodes['Head_Front'].material.map.offset.set(0.166, 0)
             } else if (Math.random() < chanceToOpenMouth) {
                 facial = 'Mouth-Open'
                 // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Mouth-Open']
+                nodes['Head_Front'].material.map.offset.set(0.167, 0)
             }
         } else if (facial === 'Eyes-Closed') {
             if (Math.random() < chanceToReturnToNormal) {
                 facial = 'Head-Front'
                 // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Head-Front']
+                nodes['Head_Front'].material.map.offset.set(0, 0)
             }
         } else if (facial === 'Mouth-Open') {
             if (Math.random() < chanceToReturnToNormal) {
                 facial = 'Head-Front'
                 // @ts-ignore
-                nodes['Head_Front'].material.map = textures['Head-Front']
+                nodes['Head_Front'].material.map.offset.set(0, 0)
             }
         }
     })
