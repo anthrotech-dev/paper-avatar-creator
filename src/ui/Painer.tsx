@@ -360,7 +360,7 @@ export function Painter(props: PainterProps) {
                 wheel={{ step: 50 }}
                 limitToBounds={false}
                 panning={{
-                    allowLeftClickPan: false
+                    disabled: true
                 }}
                 onTransformed={(_, { scale, positionX, positionY }) => {
                     setTransform({
