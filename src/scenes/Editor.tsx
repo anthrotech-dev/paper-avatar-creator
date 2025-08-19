@@ -45,8 +45,9 @@ type EditorState = {
     setAvatarParams: Dispatch<SetStateAction<AvatarParams>>
     thumbnailCameraRef?: RefObject<OrthographicCamera | null>
     thumbSceneRef?: RefObject<Object3D | null>
-    setTexture: Dispatch<SetStateAction<Texture>>
-    texture: Texture
+    setTexture: Dispatch<SetStateAction<Texture | null>>
+    texture: Texture | null
+    defaultTexture: Texture
 }
 
 const EditorContext = createContext<EditorState | null>(null)
@@ -58,7 +59,7 @@ export const useEditor = (): EditorState => {
             init: async () => {},
             parent: null,
             setParent: () => {},
-            texture: new Texture(),
+            texture: null,
             setTexture: () => {},
             avatarParams: {
                 headSize: 0,
@@ -75,7 +76,8 @@ export const useEditor = (): EditorState => {
                 legsDistanceFromBody: 0,
                 legsInFront: true
             },
-            setAvatarParams: () => {}
+            setAvatarParams: () => {},
+            defaultTexture: new Texture()
         }
     }
     return ctx
@@ -84,9 +86,17 @@ export const useEditor = (): EditorState => {
 export function Editor({ children }: { children?: React.ReactNode }) {
     const thumbnailCameraRef = useRef<OrthographicCamera>(null)
     const [parent, setParent] = useState<AvatarManifest | null>(null)
-    const [texture, setTexture] = useState<Texture>(new Texture())
+    const [texture, setTexture] = useState<Texture | null>(null)
 
     const thumbSceneRef = useRef<Object3D>(null)
+
+    const defaultTexture = useMemo(() => {
+        const loader = new TextureLoader()
+        const texture = loader.load('/tex/sample.png')
+        texture.flipY = false
+        texture.colorSpace = SRGBColorSpace
+        return texture
+    }, [])
 
     const [avatarParams, setAvatarParams] = useState<AvatarParams>({
         headSize: 0,
@@ -105,13 +115,7 @@ export function Editor({ children }: { children?: React.ReactNode }) {
     })
 
     const init = useCallback(async () => {
-        const loader = new TextureLoader()
-
-        const texture = loader.load('/tex/template.png')
-        texture.flipY = false
-        texture.colorSpace = SRGBColorSpace
-        setTexture(texture)
-
+        setTexture(null)
         setParent(null)
         setAvatarParams({
             headSize: 0,
@@ -145,7 +149,8 @@ export function Editor({ children }: { children?: React.ReactNode }) {
                 setParent,
                 thumbnailCameraRef,
                 thumbSceneRef,
-                setTexture
+                setTexture,
+                defaultTexture
             }}
         >
             {children}
@@ -159,7 +164,7 @@ const thumbnailSceneWidth = 2.0
 const thumbnailSceneHeight = (thumbnailHeight / thumbnailWidth) * thumbnailSceneWidth
 
 Editor.Scene = () => {
-    const { avatarParams, texture, thumbnailCameraRef, thumbSceneRef } = useEditor()
+    const { avatarParams, texture, thumbnailCameraRef, thumbSceneRef, defaultTexture } = useEditor()
 
     const thumbTitleTex = useMemo(() => {
         const loader = new TextureLoader()
@@ -185,7 +190,7 @@ Editor.Scene = () => {
                     <meshBasicMaterial color="black" transparent opacity={0.65} depthWrite={false} toneMapped={false} />
                 </mesh>
                 <Suspense fallback={null}>
-                    <EditableAvatar params={avatarParams} texture={texture} />
+                    <EditableAvatar params={avatarParams} texture={texture ?? defaultTexture} />
                 </Suspense>
             </group>
             <group ref={thumbSceneRef} position={[0, -200, 0]}>
@@ -203,7 +208,7 @@ Editor.Scene = () => {
                     rotation={[0, 0, 0]}
                 />
                 <Suspense fallback={null}>
-                    <EditableAvatar params={avatarParams} texture={texture} />
+                    <EditableAvatar params={avatarParams} texture={texture ?? defaultTexture} />
                 </Suspense>
                 <mesh position={[0, 0.55, 0.5]}>
                     <planeGeometry args={[thumbnailSceneWidth, thumbnailSceneHeight]} />
@@ -228,12 +233,21 @@ Editor.Overlay = (props: {
     setMode: (mode: 'edit' | 'plaza') => void
     setCollection: Dispatch<SetStateAction<string[]>>
 }) => {
-    const { init, parent, texture, avatarParams, setAvatarParams, thumbnailCameraRef, thumbSceneRef } = useEditor()
+    const {
+        init,
+        parent,
+        texture,
+        avatarParams,
+        setAvatarParams,
+        thumbnailCameraRef,
+        thumbSceneRef,
+        setTexture,
+        defaultTexture
+    } = useEditor()
 
     const [editing, setEditing] = useState<boolean>(false)
 
     const fileInputRef = useRef<HTMLInputElement>(null)
-    //const [oldTexture, setOldTexture] = useState<Texture | null>(null)
 
     const [manifest, setManifest] = useState<Partial<AvatarManifest>>({})
 
@@ -274,7 +288,7 @@ Editor.Overlay = (props: {
                     }
                 }}
             />
-        */}
+            */}
             <Box
                 sx={{
                     padding: 2,
@@ -302,7 +316,7 @@ Editor.Overlay = (props: {
                 />
 
                 <TexturePreview
-                    texture={texture}
+                    texture={texture ?? defaultTexture}
                     sx={{ width: '100px', height: '100px', border: '1px solid #ccc' }}
                     onClick={() => setEditing(true)}
                 />
@@ -536,6 +550,10 @@ Editor.Overlay = (props: {
                     <Button
                         variant="contained"
                         onClick={() => {
+                            if (!texture) {
+                                alert('テクスチャが設定されていません。ペイントを行ってください。')
+                                return
+                            }
                             handleExport(
                                 {
                                     ...manifest,
@@ -551,6 +569,10 @@ Editor.Overlay = (props: {
                     <Button
                         variant="contained"
                         onClick={() => {
+                            if (!texture) {
+                                alert('テクスチャが設定されていません。ペイントを行ってください。')
+                                return
+                            }
                             handleResoniteExport(
                                 {
                                     ...manifest,
@@ -605,7 +627,20 @@ Editor.Overlay = (props: {
                 }}
             >
                 <>
-                    <Painter width={2048} height={1024} />
+                    <Painter
+                        width={2048}
+                        height={1024}
+                        initialTexture={texture ?? undefined}
+                        onDone={(textureURL) => {
+                            const loader = new TextureLoader()
+                            loader.load(textureURL, (tex) => {
+                                tex.flipY = false
+                                tex.colorSpace = SRGBColorSpace
+                                setTexture(tex)
+                                setEditing(false)
+                            })
+                        }}
+                    />
                 </>
             </Modal>
 
@@ -716,8 +751,14 @@ ${location.origin}/${uploaded.id}`
                                 disabled={uploading || !manifest.creator}
                                 onClick={() => {
                                     setUploading(true)
+                                    if (!texture) {
+                                        alert('テクスチャが設定されていません。ペイントを行ってください。')
+                                        setUploading(false)
+                                        return
+                                    }
                                     if (!thumbnailBlob) {
                                         alert('サムネイルが生成されていません。もう一度公開を試みてください。')
+                                        setUploading(false)
                                         return
                                     }
                                     handlePublish(

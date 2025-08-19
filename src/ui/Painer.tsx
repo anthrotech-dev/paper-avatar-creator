@@ -1,4 +1,4 @@
-import { Box, IconButton } from '@mui/material'
+import { Box, Button, IconButton } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
@@ -12,12 +12,19 @@ import { PiPaintBucketFill } from 'react-icons/pi'
 import { PiPaletteFill } from 'react-icons/pi'
 import { PiEraserFill } from 'react-icons/pi'
 import { MdDelete } from 'react-icons/md'
+import { FaFileImport } from 'react-icons/fa'
+import type { Texture } from 'three'
+
+import { MdFaceRetouchingOff } from 'react-icons/md'
+import { MdFace } from 'react-icons/md'
 
 const MAX_HISTORY = 30
 
 type PainterProps = {
     width: number
     height: number
+    initialTexture?: Texture
+    onDone?: (url: string) => void
 }
 
 interface History {
@@ -28,19 +35,19 @@ interface History {
 export function Painter(props: PainterProps) {
     const [tool, setTool] = useState<'brush' | 'eraser' | 'fill'>('brush')
 
-    const [currentLayer, setCurrentLayer] = useState<number>(0)
+    const [currentLayer, setCurrentLayer] = useState<number>(2)
     const [hiddenLayers, setHiddenLayers] = useState<Array<boolean>>([false, false, false])
 
     const colorInputRef = useRef<HTMLInputElement>(null)
     const historyRef = useRef<History[]>([])
     const redoRef = useRef<History[]>([])
 
-    const [brushSize, setBrushSize] = useState<number>(32)
+    const [brushSize, setBrushSize] = useState<number>(16)
 
     const [color, setColor] = useState<string>('#000000')
     const [alpha, setAlpha] = useState<number>(1.0)
 
-    const [hardness, setHardness] = useState<number>(0.5)
+    const [hardness, setHardness] = useState<number>(0.8)
 
     const canvasRef0 = useRef<HTMLCanvasElement>(null)
     const canvasRef1 = useRef<HTMLCanvasElement>(null)
@@ -52,6 +59,25 @@ export function Painter(props: PainterProps) {
     const [drawing, setDrawing] = useState(false)
     const prevPos = useRef<[number, number] | null>(null)
     const leftoverRef = useRef(0)
+
+    const fileInputRef = useRef<HTMLInputElement>(null)
+
+    const [showFaceTemplate, setShowFaceTemplate] = useState<boolean>(false)
+
+    useEffect(() => {
+        console.log('on load!')
+        if (props.initialTexture) {
+            const ctx = canvasRef2.current!.getContext('2d')!
+            if (props.initialTexture.image instanceof HTMLImageElement) {
+                ctx.clearRect(0, 0, props.width, props.height)
+                ctx.drawImage(props.initialTexture.image, 0, 0, props.width, props.height)
+            }
+            if (props.initialTexture.image instanceof HTMLCanvasElement) {
+                ctx.clearRect(0, 0, props.width, props.height)
+                ctx.drawImage(props.initialTexture.image, 0, 0, props.width, props.height)
+            }
+        }
+    }, [props.initialTexture])
 
     const transform = useRef<{
         scale: number
@@ -278,6 +304,28 @@ export function Painter(props: PainterProps) {
                 userSelect: 'none'
             }}
         >
+            <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                multiple={false}
+                onChange={(e) => {
+                    console.log('File input changed', e.target.files)
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    const url = URL.createObjectURL(file)
+                    const img = new Image()
+                    img.onload = () => {
+                        const ctx = canvasRef.current!.getContext('2d')!
+                        ctx.clearRect(0, 0, props.width, props.height)
+                        ctx.drawImage(img, 0, 0, props.width, props.height)
+                        URL.revokeObjectURL(url) // メモリ解放
+                    }
+                    img.src = url
+                }}
+            />
+
             <TransformWrapper
                 initialScale={1}
                 initialPositionX={0}
@@ -306,6 +354,17 @@ export function Painter(props: PainterProps) {
                             position: 'relative'
                         }}
                     >
+                        <img
+                            src={showFaceTemplate ? '/tex/sample.png' : '/tex/template.png'}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: `${props.width}px`,
+                                height: `${props.height}px`
+                            }}
+                        />
+
                         <canvas
                             ref={canvasRef2}
                             width={props.width}
@@ -476,6 +535,30 @@ export function Painter(props: PainterProps) {
                     {hiddenLayers[2] ? <MdLayersClear color="white" size={24} /> : <MdLayers color="white" size={24} />}
                     3
                 </Box>
+
+                <Box
+                    onClick={() => {
+                        setShowFaceTemplate(!showFaceTemplate)
+                    }}
+                    sx={{
+                        cursor: 'pointer',
+                        backgroundColor: showFaceTemplate ? 'primary.main' : 'text.disabled',
+                        color: 'white',
+                        padding: '5px',
+                        borderRadius: '5px',
+                        border: '1px solid white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '5px'
+                    }}
+                >
+                    {showFaceTemplate ? (
+                        <MdFace color="white" size={24} />
+                    ) : (
+                        <MdFaceRetouchingOff color="white" size={24} />
+                    )}
+                </Box>
             </Box>
 
             <Box
@@ -537,7 +620,6 @@ export function Painter(props: PainterProps) {
                 >
                     <PiPaintBucketFill color="white" />
                 </IconButton>
-
                 <Box display="flex" flexDirection="row" alignItems="center" justifyContent="center" gap={2}>
                     <IconButton
                         size="large"
@@ -577,6 +659,20 @@ export function Painter(props: PainterProps) {
 
                 <IconButton
                     size="large"
+                    sx={{
+                        width: '50px',
+                        height: '50px',
+                        backgroundColor: 'primary.main'
+                    }}
+                    onClick={() => {
+                        fileInputRef.current?.click()
+                    }}
+                >
+                    <FaFileImport color="white" />
+                </IconButton>
+
+                <IconButton
+                    size="large"
                     onClick={() => {
                         const ctx = canvasRef.current!.getContext('2d')!
                         ctx.clearRect(0, 0, props.width, props.height)
@@ -590,6 +686,38 @@ export function Painter(props: PainterProps) {
                     <MdDelete color="white" />
                 </IconButton>
             </Box>
+            <Button
+                variant="contained"
+                sx={{
+                    position: 'absolute',
+                    bottom: 10,
+                    right: 10
+                }}
+                onClick={() => {
+                    const out = document.createElement('canvas')
+                    out.width = props.width
+                    out.height = props.height
+                    const outCtx = out.getContext('2d')!
+
+                    // draw Template
+                    const templateImg = new Image()
+                    templateImg.src = '/tex/template.png'
+                    templateImg.onload = () => {
+                        outCtx.drawImage(templateImg, 0, 0, props.width, props.height)
+
+                        for (let i = 0; i < canvasRefs.length; i++) {
+                            if (hiddenLayers[i]) continue
+                            const ctx = canvasRefs[i].current!.getContext('2d')!
+                            outCtx.drawImage(ctx.canvas, 0, 0)
+                        }
+
+                        const url = out.toDataURL('image/png')
+                        props.onDone?.(url)
+                    }
+                }}
+            >
+                Done
+            </Button>
         </Box>
     )
 }
