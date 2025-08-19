@@ -34,7 +34,7 @@ import {
 import { handleExport, handlePublish, handleResoniteExport } from '../util'
 import { Painter } from '../ui/Painer'
 
-import { type AvatarManifest, type AvatarParams } from '../types'
+import { symetricTextures, texturePositions, type AvatarManifest, type AvatarParams } from '../types'
 import { EditableAvatar } from '../components/EditableAvatar'
 
 type EditorState = {
@@ -260,7 +260,6 @@ Editor.Overlay = (props: {
 
     return (
         <>
-            {/*
             <input
                 type="file"
                 accept="image/*"
@@ -268,27 +267,78 @@ Editor.Overlay = (props: {
                 style={{ display: 'none' }}
                 multiple={true}
                 onChange={(e) => {
-                    for (const file of e.target.files || []) {
-                        const url = URL.createObjectURL(file)
-                        const name = file.name.split('.')[0]
-
-                        if (!(name in textures)) {
-                            continue
-                        }
-
+                    if (e.target.files?.length === 0) return
+                    if (e.target.files?.length === 1) {
+                        const file = e.target.files[0]
                         const loader = new TextureLoader()
+                        const url = URL.createObjectURL(file)
                         loader.load(url, (texture) => {
                             texture.flipY = false
                             texture.colorSpace = SRGBColorSpace
-                            setTextures((prev) => ({
-                                ...prev,
-                                [name]: texture
-                            }))
+                            setTexture(texture)
                         })
+                    } else {
+                        const out = document.createElement('canvas')
+                        out.width = 2048
+                        out.height = 1024
+                        const ctx = out.getContext('2d')
+                        if (!ctx) return
+
+                        for (const file of e.target.files || []) {
+                            const url = URL.createObjectURL(file)
+                            const name = file.name.split('.')[0]
+                            const img = new Image()
+                            const dsize = 274
+
+                            img.onload = () => {
+                                if (name in texturePositions) {
+                                    const pos = texturePositions[name]
+                                    ctx.drawImage(img, 0, 0, img.width, img.height, pos[0], pos[1], dsize, dsize)
+                                } else if (symetricTextures.includes(name)) {
+                                    console.log(`Processing symetric texture: ${name}`)
+                                    const left = 'Left-' + name
+                                    const leftPos = texturePositions[left]
+                                    ctx.drawImage(
+                                        img,
+                                        0,
+                                        0,
+                                        img.width,
+                                        img.height,
+                                        leftPos[0],
+                                        leftPos[1],
+                                        dsize,
+                                        dsize
+                                    )
+
+                                    ctx.save()
+                                    const right = 'Right-' + name
+                                    const rightPos = texturePositions[right]
+                                    //draw the right side mirrored
+                                    ctx.scale(-1, 1)
+                                    ctx.drawImage(
+                                        img,
+                                        0,
+                                        0,
+                                        img.width,
+                                        img.height,
+                                        -rightPos[0] - dsize,
+                                        rightPos[1],
+                                        dsize,
+                                        dsize
+                                    )
+                                    ctx.restore()
+                                }
+                            }
+                            img.src = url
+                        }
+
+                        const texture = new Texture(out)
+                        texture.flipY = false
+                        texture.colorSpace = SRGBColorSpace
+                        setTexture(texture)
                     }
                 }}
             />
-            */}
             <Box
                 sx={{
                     padding: 2,

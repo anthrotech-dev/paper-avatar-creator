@@ -29,6 +29,34 @@ export const textureKeyMap: Record<string, TextureKind> = {
     Tail_Back: 'Tail-Back'
 }
 
+export const texturePositions: Record<string, number[]> = {
+    'Head-Front': [375, 54],
+    'Head-Back': [1399, 54],
+    'Eyes-Closed': [717, 54],
+    'Mouth-Open': [33, 54],
+    'Body-Front': [375, 396],
+    'Body-Back': [1399, 396],
+    'Right-Hand-Front': [33, 396],
+    'Right-Hand-Back': [1740, 396],
+    'Left-Hand-Front': [717, 396],
+    'Left-Hand-Back': [1058, 396],
+    'Left-Legs-Front': [717, 738],
+    'Left-Legs-Back': [1058, 738],
+    'Right-Legs-Front': [33, 738],
+    'Right-Legs-Back': [1740, 738],
+    'Tail-Front': [375, 738],
+    'Tail-Back': [1399, 738]
+}
+
+export const symetricTextures: string[] = [
+    'Hand-Front',
+    'Hand-Back',
+    'Legs-Front',
+    'Legs-Back',
+    'Tail-Front',
+    'Tail-Back'
+]
+
 export type AvatarParams = {
     headSize: number
     neckLength: number

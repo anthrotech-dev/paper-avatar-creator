@@ -201,16 +201,6 @@ export function Painter(props: PainterProps) {
     }
 
     const handlePointerMove = (e: React.PointerEvent) => {
-        /*
-        if (tipRef.current) {
-            const rect = canvasRef.current!.getBoundingClientRect()
-            const x = (e.clientX - rect.left) / transform.current.scale
-            const y = (e.clientY - rect.top) / transform.current.scale
-            tipRef.current.style.left = `${x - brushSize / 2}px`
-            tipRef.current.style.top = `${y - brushSize / 2}px`
-        }
-        */
-
         if (!drawing) return
         // only handle left mouse button
         if (e.buttons !== 1) return
