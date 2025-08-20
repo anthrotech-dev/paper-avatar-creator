@@ -35,7 +35,7 @@ function App() {
     const theme = useTheme()
     const isMobileSize = useMediaQuery(theme.breakpoints.down('sm'))
 
-    const previewId = id ?? ''
+    const previewId = (id ?? '') === 'edit' ? '' : (id ?? '')
 
     const mode = id === 'edit' ? 'edit' : 'plaza'
 
