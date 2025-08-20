@@ -16,7 +16,7 @@ import type { Texture } from 'three'
 import { MdFaceRetouchingOff } from 'react-icons/md'
 import { MdFace } from 'react-icons/md'
 import { useTranslation } from 'react-i18next'
-import { PanZoomSurface } from './PanZoomSurface'
+import { PanZoomSurface, type PanZoomHandle } from './PanZoomSurface'
 
 const MAX_HISTORY = 30
 
@@ -67,6 +67,8 @@ export function Painter(props: PainterProps) {
     const [showFaceTemplate, setShowFaceTemplate] = useState<boolean>(false)
 
     const { t } = useTranslation('')
+
+    const surfaceRef = useRef<PanZoomHandle>(null)
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -228,6 +230,7 @@ export function Painter(props: PainterProps) {
     }
 
     const handlePointerMove = (e: React.PointerEvent) => {
+        if (surfaceRef.current?.isTransforming) return // パン・ズーム中は描画しない
         if (!drawing || e.buttons !== 1) return
 
         const rect = canvasRef.current!.getBoundingClientRect()
@@ -377,6 +380,7 @@ export function Painter(props: PainterProps) {
                 }}
             />
             <PanZoomSurface
+                ref={surfaceRef}
                 initialScale={initialScale}
                 initialPositionX={(document.body.clientWidth - props.width * initialScale) / 2}
                 initialPositionY={(document.body.clientHeight - props.height * initialScale) / 2}
