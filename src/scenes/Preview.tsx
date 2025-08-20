@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Divider, Typography } from '@mui/material'
+import { Alert, Box, Button, Divider, Link, Typography } from '@mui/material'
 import {
     createContext,
     Suspense,
@@ -12,9 +12,10 @@ import {
 import type { AvatarManifest } from '../types'
 import { Drawer } from '../ui/Drawer'
 import { Avatar } from '../components/Avatar'
-import { useNavigate } from 'react-router-dom'
+import { Link as NavLink, useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { CfmRenderer } from '../ui/CfmRenderer'
+import { useTranslation } from 'react-i18next'
 
 interface PreviewProps {
     id: string
@@ -91,6 +92,8 @@ Preview.Overlay = (props: { collection: string[]; setCollection: Dispatch<SetSta
     const { manifest } = usePreview()
     const navigate = useNavigate()
 
+    const { t } = useTranslation('')
+
     return (
         <Drawer open={!!manifest}>
             {manifest && (
@@ -109,6 +112,11 @@ Preview.Overlay = (props: { collection: string[]; setCollection: Dispatch<SetSta
                     >
                         <Typography variant="h2">{manifest.name}</Typography>
                         <Typography>Creator: {manifest.creator}</Typography>
+                        {manifest.extends && (
+                            <Link component={NavLink} to={'/' + manifest.extends}>
+                                {t('extends')}
+                            </Link>
+                        )}
                         <Divider />
                         {manifest.description && <CfmRenderer message={manifest.description} />}
                         {manifest.exportable ? (

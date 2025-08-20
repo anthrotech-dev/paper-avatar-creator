@@ -4,7 +4,7 @@ import { Object3D, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader, Vecto
 import { Avatar } from '../components/Avatar'
 import { Wanderer } from '../components/Wanderer'
 import { FollowCamera } from '../components/FollowCamera'
-import { Box, Button, Divider, Fab, Typography } from '@mui/material'
+import { Box, Button, Divider, Fab, Link, Typography } from '@mui/material'
 import { MdAdd } from 'react-icons/md'
 import { type AvatarManifest } from '../types'
 import { Drawer } from '../ui/Drawer'
@@ -12,7 +12,7 @@ import { handleResoniteExport } from '../util'
 import { useEditor } from './Editor'
 import { shaderMaterial } from '@react-three/drei'
 import { extend } from '@react-three/fiber'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link as NavLink } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { CfmRenderer } from '../ui/CfmRenderer'
 import { useTranslation } from 'react-i18next'
@@ -235,6 +235,18 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; dev
                     >
                         <Typography variant="h2">{selectedManifest.name}</Typography>
                         <Typography>Creator: {selectedManifest.creator}</Typography>
+                        {selectedManifest.extends && (
+                            <Link
+                                component={NavLink}
+                                to={'/' + selectedManifest.extends}
+                                onClick={() => {
+                                    setSelected(null)
+                                    setSelectedManifest(null)
+                                }}
+                            >
+                                {t('extends')}
+                            </Link>
+                        )}
                         <Divider />
                         {selectedManifest.description && <CfmRenderer message={selectedManifest.description} />}
                         <Box flex={1} />

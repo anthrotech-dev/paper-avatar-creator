@@ -42,5 +42,6 @@
     "confirmDiscardDescription": "All unsaved work will be lost.",
     "textureInfoTitle": "Using External Editors",
     "textureInfo": "You can create textures using external image editing software with the provided template. After creating, you can import the image using the 'Load' button.",
-    "downloadTemplate": "Download Template"
+    "downloadTemplate": "Download Template",
+    "extends": "Show Original Source"
 }
