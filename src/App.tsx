@@ -7,7 +7,7 @@ import { Canvas } from '@react-three/fiber'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { PerspectiveCamera, Vector3 } from 'three'
 import { Drawer } from './ui/Drawer'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Preview } from './scenes/Preview'
 import { usePersistent } from './usePersistent'
 import { Skybox } from './components/Skybox'
@@ -38,6 +38,8 @@ function App() {
     const previewId = id ?? ''
 
     const mode = id === 'edit' ? 'edit' : 'plaza'
+
+    const navigate = useNavigate()
 
     const setView = useCallback(
         (position: Vector3, lookAt: Vector3, duration: number) => {
@@ -97,7 +99,7 @@ function App() {
             !collection.every((e) => defaultCollection.includes(e))
         )
             return
-        setView(new Vector3(0, 10.5, 3), new Vector3(0, 10.5, 0), 1)
+        navigate('/edit')
     }, [!orbitRef.current || !camera])
 
     return (
