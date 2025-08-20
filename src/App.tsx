@@ -13,6 +13,7 @@ import { usePersistent } from './usePersistent'
 import { Skybox } from './components/Skybox'
 import { Helmet } from 'react-helmet-async'
 import { useTranslation } from 'react-i18next'
+import { cdid } from './util'
 
 const defaultCollection = ['5sn4vqpg9yame7n806cajt10nc']
 
@@ -24,6 +25,7 @@ function App() {
 
     const { id } = useParams()
     const [collection, setCollection] = usePersistent('collection', defaultCollection)
+    const [deviceID] = usePersistent('deviceID', 'U' + cdid())
 
     const theme = useTheme()
     const isMobileSize = useMediaQuery(theme.breakpoints.down('sm'))
@@ -128,11 +130,11 @@ function App() {
                                 <Skybox />
                             </Canvas>
 
-                            {mode === 'plaza' && <Plaza.Overlay setCollection={setCollection} />}
+                            {mode === 'plaza' && <Plaza.Overlay setCollection={setCollection} deviceID={deviceID} />}
                             <Preview.Overlay collection={collection} setCollection={setCollection} />
 
                             <Drawer open={mode === 'edit'}>
-                                <Editor.Overlay setCollection={setCollection} />
+                                <Editor.Overlay setCollection={setCollection} deviceID={deviceID} />
                             </Drawer>
                         </Plaza>
                     </Editor>

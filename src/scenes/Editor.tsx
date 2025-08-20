@@ -242,7 +242,7 @@ Editor.Scene = () => {
     )
 }
 
-Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) => {
+Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; deviceID: string }) => {
     const {
         init,
         parent,
@@ -733,6 +733,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                         handleResoniteExport(
                             {
                                 ...manifest,
+                                creatorID: props.deviceID,
                                 extends: parent?.id,
                                 params: avatarParams
                             },
@@ -751,6 +752,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                         handleExport(
                             {
                                 ...manifest,
+                                creatorID: props.deviceID,
                                 extends: parent?.id,
                                 params: avatarParams
                             },
@@ -910,6 +912,7 @@ ${location.origin}/${uploaded.id}`
                                         thumbnailBlob,
                                         {
                                             ...manifest,
+                                            creatorID: props.deviceID,
                                             extends: parent?.id,
                                             params: avatarParams
                                         },

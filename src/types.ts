@@ -75,6 +75,7 @@ export type AvatarParams = {
 
 export type AvatarManifest = {
     id: string
+    creatorID: string
     extends?: string
     params: AvatarParams
     textureURL: string

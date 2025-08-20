@@ -192,7 +192,7 @@ const AvatarsRenderer = memo(
     }
 )
 
-Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) => {
+Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; deviceID: string }) => {
     const { setSelected, selectedManifest, setSelectedManifest, texture } = usePlaza()
     const { setTexture, setParent } = useEditor()
     const navigate = useNavigate()
@@ -240,7 +240,7 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) =
                         <Box flex={1} />
                         <Button
                             variant="contained"
-                            disabled={!selectedManifest.exportable}
+                            disabled={!selectedManifest.exportable && selectedManifest.creatorID !== props.deviceID}
                             onClick={() => {
                                 if (!texture) {
                                     console.error('No texture available for export')
@@ -253,7 +253,7 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) =
                         </Button>
                         <Button
                             variant="contained"
-                            disabled={!selectedManifest.editable}
+                            disabled={!selectedManifest.editable && selectedManifest.creatorID !== props.deviceID}
                             onClick={() => {
                                 if (texture) setTexture(texture)
                                 setParent(selectedManifest)
