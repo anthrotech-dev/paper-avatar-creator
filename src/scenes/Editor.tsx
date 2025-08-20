@@ -608,8 +608,8 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                             <Typography variant="h6">{t('tailSize')}</Typography>
                             <Slider
                                 value={avatarParams.tailSize}
-                                min={-20}
-                                max={20}
+                                min={-1}
+                                max={1}
                                 step={0.01}
                                 onChange={(_e, newValue) =>
                                     setAvatarParams((prev) => ({
@@ -748,7 +748,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                             alert('テクスチャが設定されていません。ペイントを行ってください。')
                             return
                         }
-                        handleZipExport(
+                        handleExport(
                             {
                                 ...manifest,
                                 extends: parent?.id,

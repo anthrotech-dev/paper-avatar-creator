@@ -99,11 +99,11 @@ export const handleResoniteExport = async (manifest: Partial<AvatarManifest>, te
     slots = slots.replaceAll('::Tail-Active::', params.disableTail ? 'false' : 'true')
 
     const baseTailPosition = -0.12
-    const tailPosition = baseTailPosition + params.tailPosition * 0.2
+    const tailPosition = baseTailPosition + params.tailPosition * -0.015
     slots = slots.replaceAll('::Tail-Position::', tailPosition.toString())
 
     const baseTailSize = 1.7
-    const tailSize = baseTailSize + params.tailSize * 0.01
+    const tailSize = baseTailSize + params.tailSize * 1.7
     slots = slots.replaceAll('::Tail-Scale::', tailSize.toString())
 
     slots = slots.replaceAll('::Tail-Rotation-Z::', Math.sin(params.tailRotation / 2).toString())
@@ -314,13 +314,8 @@ export const createBaseAnimation = (params: AvatarParams) => {
         [params.bodySize, params.bodySize, params.bodySize]
     )
     // tailSize
-    const track_tailFrontScale = new VectorKeyframeTrack(
-        'Tail_Front.scale',
-        [0],
-        [params.tailSize, params.tailSize, params.tailSize]
-    )
-    const track_tailBackScale = new VectorKeyframeTrack(
-        'Tail_Back.scale',
+    const track_tailScale = new VectorKeyframeTrack(
+        'Tail.scale',
         [0],
         [params.tailSize, params.tailSize, params.tailSize]
     )
@@ -353,8 +348,7 @@ export const createBaseAnimation = (params: AvatarParams) => {
         track_rightHandScale,
         track_bodyFrontScale,
         track_bodyBackScale,
-        track_tailFrontScale,
-        track_tailBackScale,
+        track_tailScale,
         track_tailPosition,
         track_tailRotation,
         track_legsScale,
