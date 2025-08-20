@@ -6,9 +6,13 @@ function clamp(n: number, min: number, max: number) {
     return Math.max(min, Math.min(max, n))
 }
 
-function zoomAround(tx: number, ty: number, s: number, sNext: number, p: Point): { tx: number; ty: number } {
+/** 画面座標 p を不変に保つズーム時の tx,ty 補正 */
+function zoomAround(tx: number, ty: number, s: number, sNext: number, p: Point) {
     const k = sNext / s
-    return { tx: tx + (1 - k) * (p.x - tx), ty: ty + (1 - k) * (p.y - ty) }
+    return {
+        tx: tx + (1 - k) * (p.x - tx),
+        ty: ty + (1 - k) * (p.y - ty)
+    }
 }
 
 export interface PanZoomSurfaceProps {
@@ -20,6 +24,8 @@ export interface PanZoomSurfaceProps {
     initialScale?: number
     initialPositionX?: number
     initialPositionY?: number
+    /** 比率変化がこのしきい値未満ならズームしない（デッドゾーン） */
+    pinchThreshold?: number // 0.015 = 1.5%
     children?: React.ReactNode
 }
 
@@ -42,35 +48,66 @@ export const PanZoomSurface = forwardRef<PanZoomHandle, PanZoomSurfaceProps>(fun
         initialScale = 1,
         initialPositionX = 0,
         initialPositionY = 0,
+        pinchThreshold = 0.015,
         children
     },
     ref
 ) {
-    const [scale, setScale] = useState(initialScale)
-    const [tx, setTx] = useState(initialPositionX)
-    const [ty, setTy] = useState(initialPositionY)
+    // 表示のための state
+    const [scale, _setScale] = useState(initialScale)
+    const [tx, _setTx] = useState(initialPositionX)
+    const [ty, _setTy] = useState(initialPositionY)
     const [isTransforming, setIsTransforming] = useState(false)
 
+    // 実計算のための現在値を保持（クロージャの古い値対策）
+    const transformRef = useRef({ scale: initialScale, tx: initialPositionX, ty: initialPositionY })
+    const setScale = (v: number) => {
+        const vv = clamp(v, minScale, maxScale)
+        transformRef.current.scale = vv
+        _setScale(vv)
+    }
+    const setTx = (v: number) => {
+        transformRef.current.tx = v
+        _setTx(v)
+    }
+    const setTy = (v: number) => {
+        transformRef.current.ty = v
+        _setTy(v)
+    }
+
     const containerRef = useRef<HTMLDivElement | null>(null)
+
+    // --- mouse (MMB) ---
     const isMMBPan = useRef(false)
     const lastMouse = useRef<Point | null>(null)
 
+    // --- touch pointers ---
     const activePointers = useRef<Map<number, Point>>(new Map())
-    const pinchLastMid = useRef<Point | null>(null)
-    const pinchLastDist = useRef<number | null>(null)
+    const pinch = useRef<{
+        idA: number | null
+        idB: number | null
+        lastMid: Point | null
+        lastSpan: number | null
+    }>({ idA: null, idB: null, lastMid: null, lastSpan: null })
 
     const getRect = () => containerRef.current!.getBoundingClientRect()
 
-    // ref API（最新の値を常に参照できるよう依存に state を含める）
+    // ref API（常に最新値）
     useImperativeHandle(
         ref,
         () => ({
-            scale,
-            positionX: tx,
-            positionY: ty,
+            get scale() {
+                return transformRef.current.scale
+            },
+            get positionX() {
+                return transformRef.current.tx
+            },
+            get positionY() {
+                return transformRef.current.ty
+            },
             isTransforming,
             setTransform(next) {
-                if (next.scale !== undefined) setScale(clamp(next.scale, minScale, maxScale))
+                if (next.scale !== undefined) setScale(next.scale)
                 if (next.positionX !== undefined) setTx(next.positionX)
                 if (next.positionY !== undefined) setTy(next.positionY)
             },
@@ -81,48 +118,57 @@ export const PanZoomSurface = forwardRef<PanZoomHandle, PanZoomSurfaceProps>(fun
                 setIsTransforming(false)
             }
         }),
-        [scale, tx, ty, isTransforming, minScale, maxScale, initialScale, initialPositionX, initialPositionY]
+        [isTransforming, minScale, maxScale, initialScale, initialPositionX, initialPositionY]
     )
 
-    // Wheel: isTransforming は触らない（要求どおり）
+    // -------- wheel zoom（isTransforming は触らない） --------
     const onWheel = useCallback(
         (e: React.WheelEvent) => {
             e.preventDefault()
             if (!containerRef.current) return
             const rect = getRect()
             const p: Point = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+            const s0 = transformRef.current.scale
+            const t0x = transformRef.current.tx
+            const t0y = transformRef.current.ty
+
             const zoomStep = Math.exp(-e.deltaY * 0.0015)
-            const nextScale = clamp(scale * zoomStep, minScale, maxScale)
-            if (nextScale !== scale) {
-                const { tx: ntx, ty: nty } = zoomAround(tx, ty, scale, nextScale, p)
-                setScale(nextScale)
+            const s1 = clamp(s0 * zoomStep, minScale, maxScale)
+            if (s1 !== s0) {
+                const { tx: ntx, ty: nty } = zoomAround(t0x, t0y, s0, s1, p)
+                setScale(s1)
                 setTx(ntx)
                 setTy(nty)
             }
         },
-        [scale, tx, ty, minScale, maxScale]
+        [minScale, maxScale]
     )
 
-    // 中ボタンパン開始/終了
-    const beginMMBPan = (e: React.PointerEvent) => {
-        isMMBPan.current = true
-        setIsTransforming(true)
-        lastMouse.current = { x: e.clientX, y: e.clientY }
-    }
-    const endMMBPan = (e?: React.PointerEvent) => {
-        isMMBPan.current = false
-        lastMouse.current = null
-        setIsTransforming(false)
-        if (e) (e.target as Element).releasePointerCapture?.(e.pointerId)
+    // -------- pinch helpers --------
+    function initPinchPair() {
+        if (activePointers.current.size !== 2) return false
+        const ids = Array.from(activePointers.current.keys()).sort((a, b) => a - b)
+        pinch.current.idA = ids[0]
+        pinch.current.idB = ids[1]
+        const A = activePointers.current.get(ids[0])!
+        const B = activePointers.current.get(ids[1])!
+        const mid = { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 }
+        const span = Math.hypot(A.x - B.x, A.y - B.y)
+        pinch.current.lastMid = mid
+        pinch.current.lastSpan = Math.max(span, 0.0001)
+        return true
     }
 
-    // Pointer down
+    // -------- pointer handlers --------
     const onPointerDown = useCallback((e: React.PointerEvent) => {
         ;(e.target as Element).setPointerCapture?.(e.pointerId)
 
         if (e.pointerType === 'mouse') {
+            // 中ボタンのみパン開始
             if (e.button === 1) {
-                beginMMBPan(e)
+                isMMBPan.current = true
+                setIsTransforming(true)
+                lastMouse.current = { x: e.clientX, y: e.clientY }
                 e.preventDefault()
             }
             return
@@ -135,40 +181,39 @@ export const PanZoomSurface = forwardRef<PanZoomHandle, PanZoomSurfaceProps>(fun
                 y: e.clientY - rect.top
             })
             if (activePointers.current.size === 2) {
-                const pts = [...activePointers.current.values()]
-                const mid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
-                const dx = pts[0].x - pts[1].x
-                const dy = pts[0].y - pts[1].y
-                pinchLastMid.current = mid
-                pinchLastDist.current = Math.hypot(dx, dy)
+                initPinchPair()
                 setIsTransforming(true)
                 e.preventDefault()
             }
+            // 3本目以降は無視（既存ペアは維持）
         }
     }, [])
 
-    // Pointer move
     const onPointerMove = useCallback(
         (e: React.PointerEvent) => {
             if (!containerRef.current) return
 
+            // --- mouse MMB pan ---
             if (e.pointerType === 'mouse') {
                 if (isMMBPan.current && lastMouse.current) {
-                    // 途中で中ボタンが離れたのに up が来ないケース
                     if (e.buttons === 0) {
-                        endMMBPan(e)
+                        // 離れたのに up が来ない保険
+                        isMMBPan.current = false
+                        setIsTransforming(false)
+                        ;(e.target as Element).releasePointerCapture?.(e.pointerId)
                         return
                     }
                     const dx = e.clientX - lastMouse.current.x
                     const dy = e.clientY - lastMouse.current.y
-                    setTx((t) => t + dx)
-                    setTy((t) => t + dy)
+                    setTx(transformRef.current.tx + dx)
+                    setTy(transformRef.current.ty + dy)
                     lastMouse.current = { x: e.clientX, y: e.clientY }
                     e.preventDefault()
                 }
                 return
             }
 
+            // --- touch (2本指) ---
             if (e.pointerType === 'touch') {
                 const rect = getRect()
                 if (!activePointers.current.has(e.pointerId)) return
@@ -177,49 +222,72 @@ export const PanZoomSurface = forwardRef<PanZoomHandle, PanZoomSurfaceProps>(fun
                     y: e.clientY - rect.top
                 })
 
-                if (activePointers.current.size === 2 && pinchLastMid.current && pinchLastDist.current) {
-                    const pts = [...activePointers.current.values()]
-                    const mid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
-                    const dx = pts[0].x - pts[1].x
-                    const dy = pts[0].y - pts[1].y
-                    const dist = Math.hypot(dx, dy)
+                if (activePointers.current.size < 2) return
 
-                    // パン
-                    const mdx = mid.x - pinchLastMid.current.x
-                    const mdy = mid.y - pinchLastMid.current.y
-                    if (mdx || mdy) {
-                        setTx((t) => t + mdx)
-                        setTy((t) => t + mdy)
-                    }
+                // 現在の2本ID
+                const idsNow = Array.from(activePointers.current.keys()).sort((a, b) => a - b)
+                const { idA, idB, lastMid, lastSpan } = pinch.current
 
-                    // ズーム
-                    const ratio = dist / pinchLastDist.current
-                    if (ratio !== 1) {
-                        setScale((s) => {
-                            const next = clamp(s * ratio, minScale, maxScale)
-                            if (next === s) return s
-                            const { tx: ntx, ty: nty } = zoomAround(tx, ty, s, next, mid)
-                            setTx(ntx)
-                            setTy(nty)
-                            return next
-                        })
-                    }
-
-                    pinchLastMid.current = mid
-                    pinchLastDist.current = dist
-                    e.preventDefault()
+                // ペア未確定 or 変化 → 再初期化（基準リセット）
+                if (idA === null || idB === null || idA !== idsNow[0] || idB !== idsNow[1] || !lastMid || !lastSpan) {
+                    initPinchPair()
+                    return
                 }
+
+                const A = activePointers.current.get(idA)!
+                const B = activePointers.current.get(idB)!
+                const mid = { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 }
+                const span = Math.max(Math.hypot(A.x - B.x, A.y - B.y), 0.0001)
+
+                // --- パン（mid 移動量）
+                const mdx = mid.x - lastMid.x
+                const mdy = mid.y - lastMid.y
+                if (mdx || mdy) {
+                    setTx(transformRef.current.tx + mdx)
+                    setTy(transformRef.current.ty + mdy)
+                }
+
+                // --- ズーム（デッドゾーンあり）
+                const ratioRaw = span / lastSpan
+                const ratioDelta = Math.abs(ratioRaw - 1)
+                if (ratioDelta > pinchThreshold) {
+                    // 1イベントの暴れ抑制（上限/下限）
+                    const ratio = clamp(ratioRaw, 0.5, 2.0)
+                    const s0 = transformRef.current.scale
+                    const s1 = clamp(s0 * ratio, minScale, maxScale)
+                    if (s1 !== s0) {
+                        const { tx: ntx, ty: nty } = zoomAround(
+                            transformRef.current.tx,
+                            transformRef.current.ty,
+                            s0,
+                            s1,
+                            mid
+                        )
+                        setScale(s1)
+                        setTx(ntx)
+                        setTy(nty)
+                    }
+                }
+
+                // 次回基準を更新
+                pinch.current.lastMid = mid
+                pinch.current.lastSpan = span
+
+                e.preventDefault()
             }
         },
-        [minScale, maxScale, tx, ty]
+        [minScale, maxScale, pinchThreshold]
     )
 
-    // Pointer up/cancel/leave（終了時のみ state 更新）
     const endTouchMaybe = useCallback((pointerId: number) => {
         activePointers.current.delete(pointerId)
+        const { idA, idB } = pinch.current
+        if (pointerId === idA || pointerId === idB) {
+            // アクティブペアが崩れたらクリア
+            pinch.current.idA = pinch.current.idB = null
+            pinch.current.lastMid = pinch.current.lastSpan = null
+        }
         if (activePointers.current.size < 2) {
-            pinchLastMid.current = null
-            pinchLastDist.current = null
             setIsTransforming(false)
         }
     }, [])
@@ -228,7 +296,10 @@ export const PanZoomSurface = forwardRef<PanZoomHandle, PanZoomSurfaceProps>(fun
         (e: React.PointerEvent) => {
             if (e.pointerType === 'mouse') {
                 if (isMMBPan.current && (e.button === 1 || e.buttons === 0)) {
-                    endMMBPan(e)
+                    isMMBPan.current = false
+                    lastMouse.current = null
+                    setIsTransforming(false)
+                    ;(e.target as Element).releasePointerCapture?.(e.pointerId)
                 }
                 return
             }
@@ -242,7 +313,12 @@ export const PanZoomSurface = forwardRef<PanZoomHandle, PanZoomSurfaceProps>(fun
     const onPointerCancel = useCallback(
         (e: React.PointerEvent) => {
             if (e.pointerType === 'mouse') {
-                if (isMMBPan.current) endMMBPan(e)
+                if (isMMBPan.current) {
+                    isMMBPan.current = false
+                    lastMouse.current = null
+                    setIsTransforming(false)
+                    ;(e.target as Element).releasePointerCapture?.(e.pointerId)
+                }
                 return
             }
             if (e.pointerType === 'touch') {
@@ -254,17 +330,21 @@ export const PanZoomSurface = forwardRef<PanZoomHandle, PanZoomSurfaceProps>(fun
 
     const onPointerLeave = useCallback((e: React.PointerEvent) => {
         if (e.pointerType === 'mouse' && isMMBPan.current) {
-            endMMBPan(e)
+            isMMBPan.current = false
+            lastMouse.current = null
+            setIsTransforming(false)
+            ;(e.target as Element).releasePointerCapture?.(e.pointerId)
         }
     }, [])
 
-    // Window blur で強制終了
+    // blur 保険
     useEffect(() => {
         const onBlur = () => {
-            if (isMMBPan.current) {
-                isMMBPan.current = false
-            }
+            isMMBPan.current = false
             lastMouse.current = null
+            pinch.current.idA = pinch.current.idB = null
+            pinch.current.lastMid = pinch.current.lastSpan = null
+            activePointers.current.clear()
             setIsTransforming(false)
         }
         window.addEventListener('blur', onBlur)
