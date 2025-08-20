@@ -1,8 +1,6 @@
 import { Box, Button, IconButton, Slider, Typography } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 
-import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
-
 import { IoIosUndo } from 'react-icons/io'
 import { IoIosRedo } from 'react-icons/io'
 import { MdLayers } from 'react-icons/md'
@@ -18,6 +16,7 @@ import type { Texture } from 'three'
 import { MdFaceRetouchingOff } from 'react-icons/md'
 import { MdFace } from 'react-icons/md'
 import { useTranslation } from 'react-i18next'
+import { PanZoomSurface } from './PanZoomSurface'
 
 const MAX_HISTORY = 30
 
@@ -377,22 +376,12 @@ export function Painter(props: PainterProps) {
                     img.src = url
                 }}
             />
-
-            <TransformWrapper
+            <PanZoomSurface
                 initialScale={initialScale}
                 initialPositionX={(document.body.clientWidth - props.width * initialScale) / 2}
                 initialPositionY={(document.body.clientHeight - props.height * initialScale) / 2}
                 minScale={0.1}
                 maxScale={10}
-                wheel={{ step: 50 }}
-                limitToBounds={false}
-                //disabled={!enablePanning}
-                panning={{
-                    allowLeftClickPan: false
-                }}
-                doubleClick={{
-                    disabled: true
-                }}
                 onTransformed={(_, { scale, positionX, positionY }) => {
                     setTransform({
                         scale,
@@ -401,81 +390,73 @@ export function Painter(props: PainterProps) {
                     })
                 }}
             >
-                <TransformComponent
-                    wrapperStyle={{
-                        width: '100%',
-                        height: '100%'
+                <Box
+                    sx={{
+                        backgroundColor: '#fff',
+                        width: `${props.width}px`,
+                        height: `${props.height}px`,
+                        position: 'relative',
+                        cursor: 'none'
                     }}
                 >
-                    <Box
-                        sx={{
-                            backgroundColor: '#fff',
+                    <img
+                        src={showFaceTemplate ? '/tex/sample.png' : '/tex/template.png'}
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
                             width: `${props.width}px`,
-                            height: `${props.height}px`,
-                            position: 'relative',
-                            cursor: 'none'
+                            height: `${props.height}px`
                         }}
-                    >
-                        <img
-                            src={showFaceTemplate ? '/tex/sample.png' : '/tex/template.png'}
-                            style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: `${props.width}px`,
-                                height: `${props.height}px`
-                            }}
-                        />
+                    />
 
-                        <canvas
-                            ref={canvasRef2}
-                            width={props.width}
-                            height={props.height}
-                            style={{
-                                touchAction: 'none',
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                visibility: hiddenLayers[2] ? 'hidden' : 'visible'
-                            }}
-                            onPointerDown={onPointerDown}
-                            onPointerMove={handlePointerMove}
-                            onPointerUp={onPointerUp}
-                        />
-                        <canvas
-                            ref={canvasRef1}
-                            width={props.width}
-                            height={props.height}
-                            style={{
-                                touchAction: 'none',
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                visibility: hiddenLayers[1] ? 'hidden' : 'visible'
-                            }}
-                            onPointerDown={onPointerDown}
-                            onPointerMove={handlePointerMove}
-                            onPointerUp={onPointerUp}
-                        />
-                        <canvas
-                            ref={canvasRef0}
-                            width={props.width}
-                            height={props.height}
-                            style={{
-                                touchAction: 'none',
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                visibility: hiddenLayers[0] ? 'hidden' : 'visible'
-                            }}
-                            onPointerDown={onPointerDown}
-                            onPointerMove={handlePointerMove}
-                            onPointerUp={onPointerUp}
-                        />
-                    </Box>
-                </TransformComponent>
-            </TransformWrapper>
-
+                    <canvas
+                        ref={canvasRef2}
+                        width={props.width}
+                        height={props.height}
+                        style={{
+                            touchAction: 'none',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            visibility: hiddenLayers[2] ? 'hidden' : 'visible'
+                        }}
+                        onPointerDown={onPointerDown}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={onPointerUp}
+                    />
+                    <canvas
+                        ref={canvasRef1}
+                        width={props.width}
+                        height={props.height}
+                        style={{
+                            touchAction: 'none',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            visibility: hiddenLayers[1] ? 'hidden' : 'visible'
+                        }}
+                        onPointerDown={onPointerDown}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={onPointerUp}
+                    />
+                    <canvas
+                        ref={canvasRef0}
+                        width={props.width}
+                        height={props.height}
+                        style={{
+                            touchAction: 'none',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            visibility: hiddenLayers[0] ? 'hidden' : 'visible'
+                        }}
+                        onPointerDown={onPointerDown}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={onPointerUp}
+                    />
+                </Box>
+            </PanZoomSurface>
             <Box
                 sx={{
                     display: 'flex',
