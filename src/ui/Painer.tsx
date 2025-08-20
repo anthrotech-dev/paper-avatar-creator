@@ -13,7 +13,6 @@ import { PiPaletteFill } from 'react-icons/pi'
 import { PiEraserFill } from 'react-icons/pi'
 import { MdDelete } from 'react-icons/md'
 import { FaFileImport } from 'react-icons/fa'
-import { GrPan } from 'react-icons/gr'
 import type { Texture } from 'three'
 
 import { MdFaceRetouchingOff } from 'react-icons/md'
@@ -68,8 +67,6 @@ export function Painter(props: PainterProps) {
 
     const [showFaceTemplate, setShowFaceTemplate] = useState<boolean>(false)
 
-    const [enablePanning, setEnablePanning] = useState<boolean>(false)
-
     const { t } = useTranslation('')
 
     useEffect(() => {
@@ -89,9 +86,6 @@ export function Painter(props: PainterProps) {
             } else if (e.key === 'g') {
                 e.preventDefault()
                 setTool('fill')
-            } else if (e.key === 'h' || e.key === ' ') {
-                e.preventDefault()
-                setEnablePanning((prev) => !prev)
             }
         }
         document.addEventListener('keydown', handleKeyDown)
@@ -235,7 +229,6 @@ export function Painter(props: PainterProps) {
     }
 
     const handlePointerMove = (e: React.PointerEvent) => {
-        if (enablePanning && e.pointerType === 'touch') return
         if (!drawing || e.buttons !== 1) return
 
         const rect = canvasRef.current!.getBoundingClientRect()
@@ -393,7 +386,7 @@ export function Painter(props: PainterProps) {
                 maxScale={10}
                 wheel={{ step: 50 }}
                 limitToBounds={false}
-                disabled={!enablePanning}
+                //disabled={!enablePanning}
                 panning={{
                     allowLeftClickPan: false
                 }}
@@ -802,25 +795,6 @@ export function Painter(props: PainterProps) {
                     />
                 </Box>
             </Box>
-            <IconButton
-                sx={{
-                    position: 'absolute',
-                    bottom: 10,
-                    left: 10,
-                    backgroundColor: enablePanning ? 'primary.main' : 'text.disabled',
-                    width: 50,
-                    height: 50,
-                    '&:hover': {
-                        backgroundColor: enablePanning ? 'primary.dark' : 'text.disabled'
-                    }
-                }}
-                onClick={() => {
-                    setEnablePanning(!enablePanning)
-                }}
-            >
-                <GrPan color="white" size={24} />
-            </IconButton>
-
             <Button
                 variant="contained"
                 size="large"
