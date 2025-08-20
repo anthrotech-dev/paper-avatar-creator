@@ -150,10 +150,16 @@ export function Painter(props: PainterProps) {
         brushRef.current = b
     }, [brushSize, color, hardness, alpha])
 
-    const stamp = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+    const stamp = (
+        ctx: CanvasRenderingContext2D,
+        x: number,
+        y: number,
+        operation: 'source-over' | 'destination-out'
+    ) => {
         const r = brushSize / 2
         ctx.save()
-        ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over'
+        //ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over'
+        ctx.globalCompositeOperation = operation
         ctx.drawImage(brushRef.current!, x - r, y - r)
         ctx.restore()
     }
@@ -291,7 +297,7 @@ export function Painter(props: PainterProps) {
 
     const handlePointerMove = (e: React.PointerEvent) => {
         if (surfaceRef.current?.isTransforming) return // パン・ズーム中は描画しない
-        if (!drawing || e.buttons !== 1) return
+        if (!drawing || (e.buttons !== 1 && e.buttons !== 32)) return
         if (drawingTouchID.current === null) return // タッチ ID が未設定なら無視
         if (e.pointerType === 'touch' && e.pointerId !== drawingTouchID.current) {
             return // 他のタッチ ID なら無視
@@ -312,6 +318,15 @@ export function Painter(props: PainterProps) {
                 })
             }
             return
+        }
+
+        let operation: 'source-over' | 'destination-out' = 'source-over'
+        if (tool === 'eraser') {
+            operation = 'destination-out'
+        }
+
+        if (e.buttons === 32) {
+            operation = 'destination-out'
         }
 
         const rect = canvasRef.current!.getBoundingClientRect()
@@ -338,7 +353,7 @@ export function Painter(props: PainterProps) {
             while (dist >= spacing) {
                 px += ux * spacing
                 py += uy * spacing
-                stamp(ctx, px, py)
+                stamp(ctx, px, py, operation)
                 dist -= spacing
             }
 
@@ -346,7 +361,7 @@ export function Painter(props: PainterProps) {
             leftoverRef.current = dist
             prevPos.current = [px, py]
         } else {
-            stamp(ctx, x, y)
+            stamp(ctx, x, y, operation)
             leftoverRef.current = 0
             prevPos.current = [x, y]
         }
