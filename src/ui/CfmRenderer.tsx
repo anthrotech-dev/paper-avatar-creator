@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Box, Typography } from '@mui/material'
+import { Box, Link, Typography } from '@mui/material'
 import cfm from '@concrnt/cfm'
 import { keyframes } from '@emotion/react'
 
@@ -124,14 +124,9 @@ const RenderAst = ({ ast }: RenderAstProps): ReactNode => {
             )
         case 'URL':
             return (
-                <a
-                    href={ast.body}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: 'inherit', textDecoration: 'none' }}
-                >
+                <Link href={ast.body} target="_blank" rel="noopener noreferrer">
                     {ast.alt || ast.body}
-                </a>
+                </Link>
             )
         case 'Timeline':
             return <span>#{ast.body}</span>
