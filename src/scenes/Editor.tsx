@@ -92,7 +92,7 @@ export function Editor({ children }: { children?: React.ReactNode }) {
 
     const thumbSceneRef = useRef<Object3D>(null)
 
-    const [defaultTexture, setDefaultTexture] = useState<Texture | null>(null)
+    const [defaultTexture, setDefaultTexture] = useState<Texture>(new Texture())
 
     useEffect(() => {
         const loader = new TextureLoader()
