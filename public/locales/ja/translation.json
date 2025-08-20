@@ -1,6 +1,8 @@
 {
     "title": "おえかきアバター",
     "exportResonite": "Resonite用にエクスポート",
+    "resoniteAvatar": "Resoniteアバター",
+    "zipFile": "zipファイル",
     "modify": "改変する",
     "copyURL": "URLをコピー",
     "shareToX": "Xに共有",
@@ -35,5 +37,7 @@
     "sending": "送信中...",
     "brushSize": "ブラシサイズ",
     "hardness": "硬さ",
-    "opacity": "不透明度"
+    "opacity": "不透明度",
+    "confirmDiscard": "変更を破棄しますか？",
+    "confirmDiscardDescription": "編集中の作業内容は全て失われます。"
 }

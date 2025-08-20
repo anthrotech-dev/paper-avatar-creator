@@ -1,6 +1,8 @@
 {
     "title": "Oekaki Avatar",
     "exportResonite": "Export for Resonite",
+    "resoniteAvatar": "Resonite Avatar",
+    "zipFile": "zip File",
     "modify": "Modify",
     "copyURL": "Copy URL",
     "shareToX": "Share to X",
@@ -35,5 +37,7 @@
     "sending": "Sending...",
     "brushSize": "Brush Size",
     "hardness": "Hardness",
-    "opacity": "Opacity"
+    "opacity": "Opacity",
+    "confirmDiscard": "Discard Changes?",
+    "confirmDiscardDescription": "All unsaved work will be lost."
 }

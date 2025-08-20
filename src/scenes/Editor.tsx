@@ -25,6 +25,8 @@ import {
     Divider,
     FormControlLabel,
     FormGroup,
+    Menu,
+    MenuItem,
     Modal,
     Slider,
     TextField,
@@ -39,6 +41,8 @@ import { EditableAvatar } from '../components/EditableAvatar'
 import { useNavigate } from 'react-router-dom'
 import { ThumbnailAvatar } from '../components/ThumbnailAvatar'
 import { useTranslation } from 'react-i18next'
+import { FaCaretDown } from 'react-icons/fa'
+import { useConfirm } from '../useConfirm'
 
 type EditorState = {
     init: () => Promise<void>
@@ -263,6 +267,10 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
 
     const [thumbnail, setThumbnail] = useState<string | null>(null)
     const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null)
+
+    const [exportAnchorEl, setExportAnchorEl] = useState<null | HTMLElement>(null)
+
+    const confirm = useConfirm()
 
     return (
         <>
@@ -611,11 +619,18 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                 <Divider />
                 <Box display="flex" gap="10px">
                     <Button
-                        variant="contained"
-                        color="secondary"
+                        color="error"
                         onClick={() => {
-                            init()
-                            navigate('/')
+                            confirm.open(
+                                t('confirmDiscard'),
+                                () => {
+                                    init()
+                                    navigate('/')
+                                },
+                                {
+                                    description: t('confirmDiscardDescription')
+                                }
+                            )
                         }}
                     >
                         {t('cancel')}
@@ -632,41 +647,13 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                     </Button>
                     <Button
                         variant="contained"
-                        onClick={() => {
-                            if (!texture) {
-                                alert('テクスチャが設定されていません。ペイントを行ってください。')
-                                return
-                            }
-                            handleExport(
-                                {
-                                    ...manifest,
-                                    extends: parent?.id,
-                                    params: avatarParams
-                                },
-                                texture
-                            )
+                        disabled={!texture}
+                        endIcon={<FaCaretDown />}
+                        onClick={(e) => {
+                            setExportAnchorEl(e.currentTarget)
                         }}
                     >
-                        エクスポート
-                    </Button>
-                    <Button
-                        variant="contained"
-                        onClick={() => {
-                            if (!texture) {
-                                alert('テクスチャが設定されていません。ペイントを行ってください。')
-                                return
-                            }
-                            handleResoniteExport(
-                                {
-                                    ...manifest,
-                                    extends: parent?.id,
-                                    params: avatarParams
-                                },
-                                texture
-                            )
-                        }}
-                    >
-                        Resonite用に書き出し
+                        {t('export')}
                     </Button>
                     <Button
                         variant="contained"
@@ -702,7 +689,44 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                     </Button>
                 </Box>
             </Box>
-
+            <Menu open={Boolean(exportAnchorEl)} anchorEl={exportAnchorEl} onClose={() => setExportAnchorEl(null)}>
+                <MenuItem
+                    onClick={() => {
+                        if (!texture) {
+                            alert('テクスチャが設定されていません。ペイントを行ってください。')
+                            return
+                        }
+                        handleExport(
+                            {
+                                ...manifest,
+                                extends: parent?.id,
+                                params: avatarParams
+                            },
+                            texture
+                        )
+                    }}
+                >
+                    {t('resoniteAvatar')}
+                </MenuItem>
+                <MenuItem
+                    onClick={() => {
+                        if (!texture) {
+                            alert('テクスチャが設定されていません。ペイントを行ってください。')
+                            return
+                        }
+                        handleResoniteExport(
+                            {
+                                ...manifest,
+                                extends: parent?.id,
+                                params: avatarParams
+                            },
+                            texture
+                        )
+                    }}
+                >
+                    {t('zipFile')}
+                </MenuItem>
+            </Menu>
             <Modal
                 open={!!editing}
                 onClose={() => {

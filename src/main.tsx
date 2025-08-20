@@ -7,6 +7,7 @@ import { HelmetProvider } from 'react-helmet-async'
 import { ThemeProvider, createTheme } from '@mui/material'
 
 import './i18n'
+import { ConfirmProvider } from './useConfirm.tsx'
 
 const tag = 'G-8LB2TBRTP5'
 
@@ -71,27 +72,29 @@ const theme = createTheme({
 
 createRoot(document.getElementById('root')!).render(
     <ThemeProvider theme={theme}>
-        <HelmetProvider>
-            <BrowserRouter>
-                <Routes>
-                    <Route
-                        path="/"
-                        element={
-                            <GA4Provider tag={tag}>
-                                <App />
-                            </GA4Provider>
-                        }
-                    />
-                    <Route
-                        path="/:id"
-                        element={
-                            <GA4Provider tag={tag}>
-                                <App />
-                            </GA4Provider>
-                        }
-                    />
-                </Routes>
-            </BrowserRouter>
-        </HelmetProvider>
+        <ConfirmProvider>
+            <HelmetProvider>
+                <BrowserRouter>
+                    <Routes>
+                        <Route
+                            path="/"
+                            element={
+                                <GA4Provider tag={tag}>
+                                    <App />
+                                </GA4Provider>
+                            }
+                        />
+                        <Route
+                            path="/:id"
+                            element={
+                                <GA4Provider tag={tag}>
+                                    <App />
+                                </GA4Provider>
+                            }
+                        />
+                    </Routes>
+                </BrowserRouter>
+            </HelmetProvider>
+        </ConfirmProvider>
     </ThemeProvider>
 )
