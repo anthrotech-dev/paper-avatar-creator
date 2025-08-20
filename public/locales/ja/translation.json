@@ -43,5 +43,13 @@
     "textureInfoTitle": "外部エディターの利用方法",
     "textureInfo": "テンプレートを利用して、外部の画像編集ソフトウェアでテクスチャを作成できます。作成後は、画像を「読み込む」ボタンで取り込むことができます。",
     "downloadTemplate": "テンプレートをダウンロード",
-    "extends": "改変元を表示"
+    "extends": "改変元を表示",
+    "flipHorizontal": "左右反転",
+    "flipVertical": "上下反転",
+    "copySelection": "選択範囲をコピー",
+    "moveSelection": "選択範囲を移動",
+    "deleteSelection": "選択範囲を削除",
+    "selectAllLayers": "全てのレイヤーを選択中",
+    "selectSingleLayer": "現在のレイヤーのみを選択中",
+    "deselect": "選択を解除"
 }

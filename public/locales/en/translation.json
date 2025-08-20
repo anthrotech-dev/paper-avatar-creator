@@ -43,5 +43,13 @@
     "textureInfoTitle": "Using External Editors",
     "textureInfo": "You can create textures using external image editing software with the provided template. After creating, you can import the image using the 'Load' button.",
     "downloadTemplate": "Download Template",
-    "extends": "Show Original Source"
+    "extends": "Show Original Source",
+    "flipHorizontal": "Flip Horizontal",
+    "flipVertical": "Flip Vertical",
+    "copySelection": "Copy Selection",
+    "moveSelection": "Move Selection",
+    "deleteSelection": "Delete Selection",
+    "selectAllLayers": "Selecting All Layers",
+    "selectSingleLayer": "Selecting Current Layer Only",
+    "deselect": "Deselect"
 }

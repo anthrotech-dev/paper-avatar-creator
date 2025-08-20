@@ -1,4 +1,4 @@
-import { Box, Button, ButtonGroup, IconButton, Slider, Typography } from '@mui/material'
+import { Box, Button, ButtonGroup, IconButton, Slider, Tooltip, Typography } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 
 import { IoIosUndo } from 'react-icons/io'
@@ -71,7 +71,7 @@ export function Painter(props: PainterProps) {
 
     const fileInputRef = useRef<HTMLInputElement>(null)
 
-    const [showFaceTemplate, setShowFaceTemplate] = useState<boolean>(false)
+    const [showFaceTemplate, setShowFaceTemplate] = useState<boolean>(true)
 
     const { t } = useTranslation('')
 
@@ -927,26 +927,59 @@ export function Painter(props: PainterProps) {
                     }}
                 >
                     <ButtonGroup variant="contained" size="large">
-                        <Button
-                            onClick={() => {
-                                if (!selection) return
-                                const selectionCanvas = selectionCanvasRef.current!
-                                const selectionCtx = selectionCanvas.getContext('2d')!
-                                selectionCanvas.width = selection.width
-                                selectionCanvas.height = selection.height
-                                selectionCtx.clearRect(0, 0, selection.width, selection.height)
-                                if (selectAllLayers) {
-                                    for (let i = 0; i < canvasRefs.length; i++) {
-                                        if (hiddenLayers[i]) continue
-                                        const ctx = canvasRefs[i].current!.getContext('2d')!
+                        <Tooltip title={t('flipHorizontal')} placement="top">
+                            <Button
+                                onClick={() => {
+                                    if (!selection) return
+                                    const selectionCanvas = selectionCanvasRef.current!
+                                    const selectionCtx = selectionCanvas.getContext('2d')!
+                                    selectionCanvas.width = selection.width
+                                    selectionCanvas.height = selection.height
+                                    selectionCtx.clearRect(0, 0, selection.width, selection.height)
+                                    if (selectAllLayers) {
+                                        for (let i = 0; i < canvasRefs.length; i++) {
+                                            if (hiddenLayers[i]) continue
+                                            const ctx = canvasRefs[i].current!.getContext('2d')!
+                                            const imgData = ctx.getImageData(
+                                                selection.startX,
+                                                selection.startY,
+                                                selection.width,
+                                                selection.height
+                                            )
+                                            selectionCtx.clearRect(0, 0, selection.width, selection.height)
+                                            selectionCtx.putImageData(imgData, 0, 0)
+                                            ctx.save()
+                                            ctx.scale(-1, 1)
+                                            ctx.clearRect(
+                                                -(selection.startX + selection.width),
+                                                selection.startY,
+                                                selection.width,
+                                                selection.height
+                                            )
+                                            ctx.drawImage(
+                                                selectionCanvas,
+                                                0,
+                                                0,
+                                                selection.width,
+                                                selection.height,
+                                                -(selection.startX + selection.width),
+                                                selection.startY,
+                                                selection.width,
+                                                selection.height
+                                            )
+                                            ctx.restore()
+                                            selectionCtx.clearRect(0, 0, selection.width, selection.height)
+                                        }
+                                    } else {
+                                        const ctx = canvasRef.current!.getContext('2d')!
                                         const imgData = ctx.getImageData(
                                             selection.startX,
                                             selection.startY,
                                             selection.width,
                                             selection.height
                                         )
-                                        selectionCtx.clearRect(0, 0, selection.width, selection.height)
                                         selectionCtx.putImageData(imgData, 0, 0)
+
                                         ctx.save()
                                         ctx.scale(-1, 1)
                                         ctx.clearRect(
@@ -966,66 +999,68 @@ export function Painter(props: PainterProps) {
                                             selection.width,
                                             selection.height
                                         )
+
                                         ctx.restore()
                                         selectionCtx.clearRect(0, 0, selection.width, selection.height)
                                     }
-                                } else {
-                                    const ctx = canvasRef.current!.getContext('2d')!
-                                    const imgData = ctx.getImageData(
-                                        selection.startX,
-                                        selection.startY,
-                                        selection.width,
-                                        selection.height
-                                    )
-                                    selectionCtx.putImageData(imgData, 0, 0)
-
-                                    ctx.save()
-                                    ctx.scale(-1, 1)
-                                    ctx.clearRect(
-                                        -(selection.startX + selection.width),
-                                        selection.startY,
-                                        selection.width,
-                                        selection.height
-                                    )
-                                    ctx.drawImage(
-                                        selectionCanvas,
-                                        0,
-                                        0,
-                                        selection.width,
-                                        selection.height,
-                                        -(selection.startX + selection.width),
-                                        selection.startY,
-                                        selection.width,
-                                        selection.height
-                                    )
-
-                                    ctx.restore()
+                                }}
+                            >
+                                <LuFlipHorizontal2 />
+                            </Button>
+                        </Tooltip>
+                        <Tooltip title={t('flipVertical')} placement="top">
+                            <Button
+                                onClick={() => {
+                                    if (!selection) return
+                                    const selectionCanvas = selectionCanvasRef.current!
+                                    const selectionCtx = selectionCanvas.getContext('2d')!
+                                    selectionCanvas.width = selection.width
+                                    selectionCanvas.height = selection.height
                                     selectionCtx.clearRect(0, 0, selection.width, selection.height)
-                                }
-                            }}
-                        >
-                            <LuFlipHorizontal2 />
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                if (!selection) return
-                                const selectionCanvas = selectionCanvasRef.current!
-                                const selectionCtx = selectionCanvas.getContext('2d')!
-                                selectionCanvas.width = selection.width
-                                selectionCanvas.height = selection.height
-                                selectionCtx.clearRect(0, 0, selection.width, selection.height)
-                                if (selectAllLayers) {
-                                    for (let i = 0; i < canvasRefs.length; i++) {
-                                        if (hiddenLayers[i]) continue
-                                        const ctx = canvasRefs[i].current!.getContext('2d')!
+                                    if (selectAllLayers) {
+                                        for (let i = 0; i < canvasRefs.length; i++) {
+                                            if (hiddenLayers[i]) continue
+                                            const ctx = canvasRefs[i].current!.getContext('2d')!
+                                            const imgData = ctx.getImageData(
+                                                selection.startX,
+                                                selection.startY,
+                                                selection.width,
+                                                selection.height
+                                            )
+                                            selectionCtx.clearRect(0, 0, selection.width, selection.height)
+                                            selectionCtx.putImageData(imgData, 0, 0)
+                                            ctx.save()
+                                            ctx.scale(1, -1)
+                                            ctx.clearRect(
+                                                selection.startX,
+                                                -(selection.startY + selection.height),
+                                                selection.width,
+                                                selection.height
+                                            )
+                                            ctx.drawImage(
+                                                selectionCanvas,
+                                                0,
+                                                0,
+                                                selection.width,
+                                                selection.height,
+                                                selection.startX,
+                                                -(selection.startY + selection.height),
+                                                selection.width,
+                                                selection.height
+                                            )
+                                            ctx.restore()
+                                            selectionCtx.clearRect(0, 0, selection.width, selection.height)
+                                        }
+                                    } else {
+                                        const ctx = canvasRef.current!.getContext('2d')!
                                         const imgData = ctx.getImageData(
                                             selection.startX,
                                             selection.startY,
                                             selection.width,
                                             selection.height
                                         )
-                                        selectionCtx.clearRect(0, 0, selection.width, selection.height)
                                         selectionCtx.putImageData(imgData, 0, 0)
+
                                         ctx.save()
                                         ctx.scale(1, -1)
                                         ctx.clearRect(
@@ -1045,167 +1080,108 @@ export function Painter(props: PainterProps) {
                                             selection.width,
                                             selection.height
                                         )
+
                                         ctx.restore()
                                         selectionCtx.clearRect(0, 0, selection.width, selection.height)
                                     }
-                                } else {
-                                    const ctx = canvasRef.current!.getContext('2d')!
-                                    const imgData = ctx.getImageData(
-                                        selection.startX,
-                                        selection.startY,
-                                        selection.width,
-                                        selection.height
-                                    )
-                                    selectionCtx.putImageData(imgData, 0, 0)
+                                }}
+                            >
+                                <LuFlipVertical2 />
+                            </Button>
+                        </Tooltip>
+                        <Tooltip title={t('copySelection')} placement="top">
+                            <Button
+                                onClick={() => {
+                                    if (!selection) return
+                                    const selectionCanvas = selectionCanvasRef.current!
+                                    const selectionCtx = selectionCanvas.getContext('2d')!
+                                    selectionCanvas.width = selection.width
+                                    selectionCanvas.height = selection.height
 
-                                    ctx.save()
-                                    ctx.scale(1, -1)
-                                    ctx.clearRect(
-                                        selection.startX,
-                                        -(selection.startY + selection.height),
-                                        selection.width,
-                                        selection.height
-                                    )
-                                    ctx.drawImage(
-                                        selectionCanvas,
-                                        0,
-                                        0,
-                                        selection.width,
-                                        selection.height,
-                                        selection.startX,
-                                        -(selection.startY + selection.height),
-                                        selection.width,
-                                        selection.height
-                                    )
-
-                                    ctx.restore()
-                                    selectionCtx.clearRect(0, 0, selection.width, selection.height)
-                                }
-                            }}
-                        >
-                            <LuFlipVertical2 />
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                if (!selection) return
-                                const selectionCanvas = selectionCanvasRef.current!
-                                const selectionCtx = selectionCanvas.getContext('2d')!
-                                selectionCanvas.width = selection.width
-                                selectionCanvas.height = selection.height
-
-                                if (selectAllLayers) {
-                                    const tmpCanvas = document.createElement('canvas')
-                                    tmpCanvas.width = selection.width
-                                    tmpCanvas.height = selection.height
-                                    const tmpCtx = tmpCanvas.getContext('2d')!
-
-                                    for (let i = 0; i < canvasRefs.length; i++) {
-                                        if (hiddenLayers[i]) continue
-                                        const ctx = canvasRefs[i].current!.getContext('2d')!
-                                        const imgData = ctx.getImageData(
-                                            selection.startX,
-                                            selection.startY,
-                                            selection.width,
-                                            selection.height
-                                        )
-                                        tmpCtx.putImageData(imgData, 0, 0)
-
-                                        selectionCtx.drawImage(
-                                            tmpCanvas,
-                                            0,
-                                            0,
-                                            selection.width,
-                                            selection.height,
-                                            0,
-                                            0,
-                                            selection.width,
-                                            selection.height
-                                        )
-                                    }
-                                } else {
-                                    const ctx = canvasRef.current!.getContext('2d')!
-                                    const imgData = ctx.getImageData(
-                                        selection.startX,
-                                        selection.startY,
-                                        selection.width,
-                                        selection.height
-                                    )
-                                    selectionCtx.putImageData(imgData, 0, 0)
-                                }
-
-                                setCopying(true)
-                            }}
-                        >
-                            <LuCopy />
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                if (!selection) return
-                                const selectionCanvas = selectionCanvasRef.current!
-                                const selectionCtx = selectionCanvas.getContext('2d')!
-                                selectionCanvas.width = selection.width
-                                selectionCanvas.height = selection.height
-
-                                if (selectAllLayers) {
-                                    const tmpCanvas = document.createElement('canvas')
-                                    tmpCanvas.width = selection.width
-                                    tmpCanvas.height = selection.height
-                                    const tmpCtx = tmpCanvas.getContext('2d')!
-
-                                    for (let i = 0; i < canvasRefs.length; i++) {
-                                        if (hiddenLayers[i]) continue
-                                        const ctx = canvasRefs[i].current!.getContext('2d')!
-                                        const imgData = ctx.getImageData(
-                                            selection.startX,
-                                            selection.startY,
-                                            selection.width,
-                                            selection.height
-                                        )
-
-                                        tmpCtx.putImageData(imgData, 0, 0)
-                                        selectionCtx.drawImage(
-                                            tmpCanvas,
-                                            0,
-                                            0,
-                                            selection.width,
-                                            selection.height,
-                                            0,
-                                            0,
-                                            selection.width,
-                                            selection.height
-                                        )
-
-                                        ctx.clearRect(
-                                            selection.startX,
-                                            selection.startY,
-                                            selection.width,
-                                            selection.height
-                                        )
-                                    }
-                                } else {
-                                    const ctx = canvasRef.current!.getContext('2d')!
-                                    const imgData = ctx.getImageData(
-                                        selection.startX,
-                                        selection.startY,
-                                        selection.width,
-                                        selection.height
-                                    )
-                                    selectionCtx.putImageData(imgData, 0, 0)
-                                    ctx.clearRect(selection.startX, selection.startY, selection.width, selection.height)
-                                }
-
-                                setCopying(true)
-                            }}
-                        >
-                            <GrPan />
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                if (selection) {
                                     if (selectAllLayers) {
+                                        const tmpCanvas = document.createElement('canvas')
+                                        tmpCanvas.width = selection.width
+                                        tmpCanvas.height = selection.height
+                                        const tmpCtx = tmpCanvas.getContext('2d')!
+
                                         for (let i = 0; i < canvasRefs.length; i++) {
                                             if (hiddenLayers[i]) continue
                                             const ctx = canvasRefs[i].current!.getContext('2d')!
+                                            const imgData = ctx.getImageData(
+                                                selection.startX,
+                                                selection.startY,
+                                                selection.width,
+                                                selection.height
+                                            )
+                                            tmpCtx.putImageData(imgData, 0, 0)
+
+                                            selectionCtx.drawImage(
+                                                tmpCanvas,
+                                                0,
+                                                0,
+                                                selection.width,
+                                                selection.height,
+                                                0,
+                                                0,
+                                                selection.width,
+                                                selection.height
+                                            )
+                                        }
+                                    } else {
+                                        const ctx = canvasRef.current!.getContext('2d')!
+                                        const imgData = ctx.getImageData(
+                                            selection.startX,
+                                            selection.startY,
+                                            selection.width,
+                                            selection.height
+                                        )
+                                        selectionCtx.putImageData(imgData, 0, 0)
+                                    }
+
+                                    setCopying(true)
+                                }}
+                            >
+                                <LuCopy />
+                            </Button>
+                        </Tooltip>
+                        <Tooltip title={t('moveSelection')} placement="top">
+                            <Button
+                                onClick={() => {
+                                    if (!selection) return
+                                    const selectionCanvas = selectionCanvasRef.current!
+                                    const selectionCtx = selectionCanvas.getContext('2d')!
+                                    selectionCanvas.width = selection.width
+                                    selectionCanvas.height = selection.height
+
+                                    if (selectAllLayers) {
+                                        const tmpCanvas = document.createElement('canvas')
+                                        tmpCanvas.width = selection.width
+                                        tmpCanvas.height = selection.height
+                                        const tmpCtx = tmpCanvas.getContext('2d')!
+
+                                        for (let i = 0; i < canvasRefs.length; i++) {
+                                            if (hiddenLayers[i]) continue
+                                            const ctx = canvasRefs[i].current!.getContext('2d')!
+                                            const imgData = ctx.getImageData(
+                                                selection.startX,
+                                                selection.startY,
+                                                selection.width,
+                                                selection.height
+                                            )
+
+                                            tmpCtx.putImageData(imgData, 0, 0)
+                                            selectionCtx.drawImage(
+                                                tmpCanvas,
+                                                0,
+                                                0,
+                                                selection.width,
+                                                selection.height,
+                                                0,
+                                                0,
+                                                selection.width,
+                                                selection.height
+                                            )
+
                                             ctx.clearRect(
                                                 selection.startX,
                                                 selection.startY,
@@ -1215,6 +1191,13 @@ export function Painter(props: PainterProps) {
                                         }
                                     } else {
                                         const ctx = canvasRef.current!.getContext('2d')!
+                                        const imgData = ctx.getImageData(
+                                            selection.startX,
+                                            selection.startY,
+                                            selection.width,
+                                            selection.height
+                                        )
+                                        selectionCtx.putImageData(imgData, 0, 0)
                                         ctx.clearRect(
                                             selection.startX,
                                             selection.startY,
@@ -1223,28 +1206,68 @@ export function Painter(props: PainterProps) {
                                         )
                                     }
 
+                                    setCopying(true)
+                                }}
+                            >
+                                <GrPan />
+                            </Button>
+                        </Tooltip>
+
+                        <Tooltip title={t('deleteSelection')} placement="top">
+                            <Button
+                                onClick={() => {
+                                    if (selection) {
+                                        if (selectAllLayers) {
+                                            for (let i = 0; i < canvasRefs.length; i++) {
+                                                if (hiddenLayers[i]) continue
+                                                const ctx = canvasRefs[i].current!.getContext('2d')!
+                                                ctx.clearRect(
+                                                    selection.startX,
+                                                    selection.startY,
+                                                    selection.width,
+                                                    selection.height
+                                                )
+                                            }
+                                        } else {
+                                            const ctx = canvasRef.current!.getContext('2d')!
+                                            ctx.clearRect(
+                                                selection.startX,
+                                                selection.startY,
+                                                selection.width,
+                                                selection.height
+                                            )
+                                        }
+
+                                        setSelection(null)
+                                        setSelecting(false)
+                                    }
+                                }}
+                            >
+                                <MdDelete />
+                            </Button>
+                        </Tooltip>
+                        <Tooltip
+                            title={selectAllLayers ? t('selectAllLayers') : t('selectSingleLayer')}
+                            placement="top"
+                        >
+                            <Button
+                                onClick={() => {
+                                    setSelectAllLayers(!selectAllLayers)
+                                }}
+                            >
+                                {selectAllLayers ? <MdLayers /> : <MdLayersClear />}
+                            </Button>
+                        </Tooltip>
+                        <Tooltip title={t('deselect')} placement="top">
+                            <Button
+                                onClick={() => {
                                     setSelection(null)
                                     setSelecting(false)
-                                }
-                            }}
-                        >
-                            <MdDelete />
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                setSelectAllLayers(!selectAllLayers)
-                            }}
-                        >
-                            {selectAllLayers ? <MdLayers /> : <MdLayersClear />}
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                setSelection(null)
-                                setSelecting(false)
-                            }}
-                        >
-                            <PiSelectionSlashBold />
-                        </Button>
+                                }}
+                            >
+                                <PiSelectionSlashBold />
+                            </Button>
+                        </Tooltip>
                     </ButtonGroup>
                 </Box>
             )}
