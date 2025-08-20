@@ -101,11 +101,13 @@ export const handleResoniteExport = async (manifest: Partial<AvatarManifest>, te
     const baseTailPosition = -0.12
     const tailPosition = baseTailPosition + params.tailPosition * 0.2
     slots = slots.replaceAll('::Tail-Position::', tailPosition.toString())
-    slots = slots.replaceAll('::Tail-Rotation::', params.tailRotation.toString())
 
     const baseTailSize = 1.7
-    const tailSize = baseTailSize + params.tailSize * 0.2
+    const tailSize = baseTailSize + params.tailSize * 0.01
     slots = slots.replaceAll('::Tail-Scale::', tailSize.toString())
+
+    slots = slots.replaceAll('::Tail-Rotation-Z::', Math.sin(params.tailRotation / 2).toString())
+    slots = slots.replaceAll('::Tail-Rotation-W::', Math.cos(params.tailRotation / 2).toString())
 
     slots = slots.replaceAll('::Legs-In-Front::', params.legsInFront ? '0.001' : '-0.001')
 
@@ -117,11 +119,11 @@ export const handleResoniteExport = async (manifest: Partial<AvatarManifest>, te
     const feetSize = baseFeetSize + params.legsSize * 0.5
     slots = slots.replaceAll('::Feet-Size::', feetSize.toString())
 
-    const baseLegsDistance = 0.38
+    const baseLegsDistance = 0
     const legsDistance = baseLegsDistance + params.legsDistance * 0.03
     slots = slots.replaceAll('::Legs-Distance::', legsDistance.toString())
 
-    const baseHandSize = 0.3
+    const baseHandSize = 0.35
     const handSize = baseHandSize + params.handSize * 0.3
     slots = slots.replaceAll('::Hand-Scale::', handSize.toString())
 
