@@ -15,9 +15,12 @@ import { Texture, TextureLoader, SRGBColorSpace, OrthographicCamera, WebGLRender
 
 import { TexturePreview } from '../ui/TexturePreview'
 import {
+    Alert,
     Box,
     Button,
     Checkbox,
+    Chip,
+    Collapse,
     Dialog,
     DialogActions,
     DialogContent,
@@ -43,6 +46,7 @@ import { ThumbnailAvatar } from '../components/ThumbnailAvatar'
 import { useTranslation } from 'react-i18next'
 import { FaCaretDown } from 'react-icons/fa'
 import { useConfirm } from '../useConfirm'
+import { FaInfoCircle } from 'react-icons/fa'
 
 type EditorState = {
     init: () => Promise<void>
@@ -270,6 +274,8 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
 
     const [exportAnchorEl, setExportAnchorEl] = useState<null | HTMLElement>(null)
 
+    const [showEditorHint, setShowEditorHint] = useState<boolean>(false)
+
     const confirm = useConfirm()
 
     return (
@@ -406,7 +412,35 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                     sx={{ marginBottom: '20px' }}
                 />
 
-                <Typography variant="h6">{t('texture')}</Typography>
+                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '10px' }}>
+                    {t('texture')}
+                    <Chip
+                        icon={<FaInfoCircle />}
+                        color="primary"
+                        variant="outlined"
+                        size="small"
+                        label={t('textureInfoTitle')}
+                        onClick={() => setShowEditorHint((prev) => !prev)}
+                    />
+                </Typography>
+                <Collapse in={showEditorHint}>
+                    <Alert
+                        severity="info"
+                        action={
+                            <Button
+                                component="a"
+                                variant="contained"
+                                href="https://oekaki-avatar-files.anthrotech.dev/oekakiavatar-template_v1.0.1.psd"
+                                download="oekakiavatar-template_v1.0.1.psd"
+                            >
+                                {t('downloadTemplate')}
+                            </Button>
+                        }
+                    >
+                        {t('textureInfo')}
+                    </Alert>
+                </Collapse>
+
                 <TexturePreview
                     texture={texture ?? defaultTexture}
                     sx={{ width: '300px', height: '150px', border: '1px solid #ccc' }}

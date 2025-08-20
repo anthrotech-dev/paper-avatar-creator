@@ -70,14 +70,14 @@ export const handleResoniteExport = async (manifest: Partial<AvatarManifest>, te
     const hash = await sha256SumBlob(blob)
     zip.file(`Assets/${hash}`, blob)
     assets.push({
-        part: 'texture',
+        part: 'Texture',
         hash: hash,
         bytes: blob.size
     })
 
     let slots = await fetch('/package/slots.json').then((res) => res.text())
     for (const elem of assets) {
-        slots = slots.replace(`[::${elem.part}::]`, elem.hash)
+        slots = slots.replace(`::${elem.part}::`, elem.hash)
     }
 
     const params = manifest.params!
