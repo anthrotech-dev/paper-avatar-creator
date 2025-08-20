@@ -730,7 +730,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                             alert('テクスチャが設定されていません。ペイントを行ってください。')
                             return
                         }
-                        handleExport(
+                        handleResoniteExport(
                             {
                                 ...manifest,
                                 extends: parent?.id,
@@ -748,7 +748,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                             alert('テクスチャが設定されていません。ペイントを行ってください。')
                             return
                         }
-                        handleResoniteExport(
+                        handleZipExport(
                             {
                                 ...manifest,
                                 extends: parent?.id,
