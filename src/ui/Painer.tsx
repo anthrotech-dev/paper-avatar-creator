@@ -13,6 +13,7 @@ import { PiSelectionBold } from 'react-icons/pi'
 import { PiSelectionSlashBold } from 'react-icons/pi'
 import { MdDelete } from 'react-icons/md'
 import { FaFileImport } from 'react-icons/fa'
+import { GrPan } from 'react-icons/gr'
 import type { Texture } from 'three'
 
 import { MdFaceRetouchingOff } from 'react-icons/md'
@@ -88,6 +89,12 @@ export function Painter(props: PainterProps) {
     const [selectAllLayers, setSelectAllLayers] = useState<boolean>(false)
     const [copying, setCopying] = useState<boolean>(false)
     const selectionCanvasRef = useRef<HTMLCanvasElement>(null)
+
+    useEffect(() => {
+        setSelection(null)
+        setSelecting(false)
+        setCopying(false)
+    }, [tool])
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -1087,6 +1094,11 @@ export function Painter(props: PainterProps) {
                                 selectionCanvas.height = selection.height
 
                                 if (selectAllLayers) {
+                                    const tmpCanvas = document.createElement('canvas')
+                                    tmpCanvas.width = selection.width
+                                    tmpCanvas.height = selection.height
+                                    const tmpCtx = tmpCanvas.getContext('2d')!
+
                                     for (let i = 0; i < canvasRefs.length; i++) {
                                         if (hiddenLayers[i]) continue
                                         const ctx = canvasRefs[i].current!.getContext('2d')!
@@ -1096,7 +1108,19 @@ export function Painter(props: PainterProps) {
                                             selection.width,
                                             selection.height
                                         )
-                                        selectionCtx.putImageData(imgData, 0, 0)
+                                        tmpCtx.putImageData(imgData, 0, 0)
+
+                                        selectionCtx.drawImage(
+                                            tmpCanvas,
+                                            0,
+                                            0,
+                                            selection.width,
+                                            selection.height,
+                                            0,
+                                            0,
+                                            selection.width,
+                                            selection.height
+                                        )
                                     }
                                 } else {
                                     const ctx = canvasRef.current!.getContext('2d')!
@@ -1113,6 +1137,67 @@ export function Painter(props: PainterProps) {
                             }}
                         >
                             <LuCopy />
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                if (!selection) return
+                                const selectionCanvas = selectionCanvasRef.current!
+                                const selectionCtx = selectionCanvas.getContext('2d')!
+                                selectionCanvas.width = selection.width
+                                selectionCanvas.height = selection.height
+
+                                if (selectAllLayers) {
+                                    const tmpCanvas = document.createElement('canvas')
+                                    tmpCanvas.width = selection.width
+                                    tmpCanvas.height = selection.height
+                                    const tmpCtx = tmpCanvas.getContext('2d')!
+
+                                    for (let i = 0; i < canvasRefs.length; i++) {
+                                        if (hiddenLayers[i]) continue
+                                        const ctx = canvasRefs[i].current!.getContext('2d')!
+                                        const imgData = ctx.getImageData(
+                                            selection.startX,
+                                            selection.startY,
+                                            selection.width,
+                                            selection.height
+                                        )
+
+                                        tmpCtx.putImageData(imgData, 0, 0)
+                                        selectionCtx.drawImage(
+                                            tmpCanvas,
+                                            0,
+                                            0,
+                                            selection.width,
+                                            selection.height,
+                                            0,
+                                            0,
+                                            selection.width,
+                                            selection.height
+                                        )
+
+                                        ctx.clearRect(
+                                            selection.startX,
+                                            selection.startY,
+                                            selection.width,
+                                            selection.height
+                                        )
+                                    }
+                                } else {
+                                    const ctx = canvasRef.current!.getContext('2d')!
+                                    const imgData = ctx.getImageData(
+                                        selection.startX,
+                                        selection.startY,
+                                        selection.width,
+                                        selection.height
+                                    )
+                                    selectionCtx.putImageData(imgData, 0, 0)
+                                    ctx.clearRect(selection.startX, selection.startY, selection.width, selection.height)
+                                }
+
+                                setCopying(true)
+                            }}
+                        >
+                            <GrPan />
                         </Button>
                         <Button
                             onClick={() => {
