@@ -110,16 +110,6 @@ export function Painter(props: PainterProps) {
         }
     }, [props.initialTexture])
 
-    const [transform, setTransform] = useState<{
-        scale: number
-        positionX: number
-        positionY: number
-    }>({
-        scale: 1,
-        positionX: 0,
-        positionY: 0
-    })
-
     useEffect(() => {
         let b = brushRef.current
         if (!b) {
@@ -159,8 +149,12 @@ export function Painter(props: PainterProps) {
         fill.push(Math.round(alpha * 255)) // アルファ値を追加
         console.log('fill', color, alpha, fill)
 
-        const sx = Math.floor((e.clientX - e.currentTarget.getBoundingClientRect().left) / transform.scale)
-        const sy = Math.floor((e.clientY - e.currentTarget.getBoundingClientRect().top) / transform.scale)
+        const sx = Math.floor(
+            (e.clientX - e.currentTarget.getBoundingClientRect().left) / (surfaceRef.current?.scale ?? 1)
+        )
+        const sy = Math.floor(
+            (e.clientY - e.currentTarget.getBoundingClientRect().top) / (surfaceRef.current?.scale ?? 1)
+        )
 
         const { width: W, height: H } = ctx.canvas
 
@@ -234,8 +228,8 @@ export function Painter(props: PainterProps) {
         if (!drawing || e.buttons !== 1) return
 
         const rect = canvasRef.current!.getBoundingClientRect()
-        const x = (e.clientX - rect.left) / transform.scale
-        const y = (e.clientY - rect.top) / transform.scale
+        const x = (e.clientX - rect.left) / (surfaceRef.current?.scale ?? 1)
+        const y = (e.clientY - rect.top) / (surfaceRef.current?.scale ?? 1)
 
         const ctx = canvasRef.current!.getContext('2d')!
         const spacing = brushSize * 0.1
@@ -339,16 +333,16 @@ export function Painter(props: PainterProps) {
                 if (tipRef.current) {
                     const x = e.clientX
                     const y = e.clientY
-                    tipRef.current.style.left = `${x - (brushSize * transform.scale) / 2}px`
-                    tipRef.current.style.top = `${y - (brushSize * transform.scale) / 2}px`
+                    tipRef.current.style.left = `${x - (brushSize * (surfaceRef.current?.scale ?? 1)) / 2}px`
+                    tipRef.current.style.top = `${y - (brushSize * (surfaceRef.current?.scale ?? 1)) / 2}px`
                 }
             }}
         >
             <Box
                 ref={tipRef}
                 sx={{
-                    width: `${brushSize * transform.scale}px`,
-                    height: `${brushSize * transform.scale}px`,
+                    width: `${brushSize * (surfaceRef.current?.scale ?? 1)}px`,
+                    height: `${brushSize * (surfaceRef.current?.scale ?? 1)}px`,
                     position: 'absolute',
                     borderRadius: '50%',
                     border: '1px dashed black',
@@ -386,13 +380,6 @@ export function Painter(props: PainterProps) {
                 initialPositionY={(document.body.clientHeight - props.height * initialScale) / 2}
                 minScale={0.1}
                 maxScale={10}
-                onTransformed={(_, { scale, positionX, positionY }) => {
-                    setTransform({
-                        scale,
-                        positionX,
-                        positionY
-                    })
-                }}
             >
                 <Box
                     sx={{
