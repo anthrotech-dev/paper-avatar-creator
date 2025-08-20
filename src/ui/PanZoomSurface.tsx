@@ -124,7 +124,6 @@ export const PanZoomSurface = forwardRef<PanZoomHandle, PanZoomSurfaceProps>(fun
     // -------- wheel zoom（isTransforming は触らない） --------
     const onWheel = useCallback(
         (e: React.WheelEvent) => {
-            e.preventDefault()
             if (!containerRef.current) return
             const rect = getRect()
             const p: Point = { x: e.clientX - rect.left, y: e.clientY - rect.top }
