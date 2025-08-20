@@ -227,8 +227,11 @@ export function Painter(props: PainterProps) {
     const handlePointerMove = (e: React.PointerEvent) => {
         if (surfaceRef.current?.isTransforming) return // パン・ズーム中は描画しない
         if (!drawing || e.buttons !== 1) return
-        if (e.pointerType === 'touch' && drawingTouchID.current !== e.pointerId) {
+        if (drawingTouchID.current === null) return // タッチ ID が未設定なら無視
+        if (e.pointerType === 'touch' && e.pointerId !== drawingTouchID.current) {
             return // 他のタッチ ID なら無視
+        } else if (e.pointerType !== 'touch' && drawingTouchID.current !== 9999) {
+            return // マウス用を使っているなら、マウス以外のポインターイベントは無視
         }
 
         const rect = canvasRef.current!.getBoundingClientRect()
@@ -313,6 +316,8 @@ export function Painter(props: PainterProps) {
             } else if (drawingTouchID.current !== e.pointerId) {
                 return // 他のタッチ ID なら無視
             }
+        } else {
+            drawingTouchID.current = 9999 // マウス用の仮の ID
         }
 
         pushHistory()
@@ -358,7 +363,7 @@ export function Painter(props: PainterProps) {
                     height: `${brushSize * (surfaceRef.current?.scale ?? 1)}px`,
                     position: 'absolute',
                     borderRadius: '50%',
-                    border: '1px dashed black',
+                    border: '1px dashed #777',
                     zIndex: 1000,
                     pointerEvents: 'none',
                     display: { xs: 'none', sm: 'none', md: 'block' }
