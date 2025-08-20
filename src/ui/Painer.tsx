@@ -69,6 +69,7 @@ export function Painter(props: PainterProps) {
     const { t } = useTranslation('')
 
     const surfaceRef = useRef<PanZoomHandle>(null)
+    const drawingTouchID = useRef<number | null>(null)
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -226,6 +227,9 @@ export function Painter(props: PainterProps) {
     const handlePointerMove = (e: React.PointerEvent) => {
         if (surfaceRef.current?.isTransforming) return // パン・ズーム中は描画しない
         if (!drawing || e.buttons !== 1) return
+        if (e.pointerType === 'touch' && drawingTouchID.current !== e.pointerId) {
+            return // 他のタッチ ID なら無視
+        }
 
         const rect = canvasRef.current!.getBoundingClientRect()
         const x = (e.clientX - rect.left) / (surfaceRef.current?.scale ?? 1)
@@ -303,6 +307,14 @@ export function Painter(props: PainterProps) {
     }
 
     const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        if (e.pointerType === 'touch') {
+            if (drawingTouchID.current === null) {
+                drawingTouchID.current = e.pointerId // タッチ ID を保存
+            } else if (drawingTouchID.current !== e.pointerId) {
+                return // 他のタッチ ID なら無視
+            }
+        }
+
         pushHistory()
 
         if (tool === 'fill') {
@@ -315,6 +327,7 @@ export function Painter(props: PainterProps) {
     }
 
     const onPointerUp = () => {
+        drawingTouchID.current = null // タッチ ID をリセット
         setDrawing(false)
         prevPos.current = null // 描画終了時に前の位置をリセット
     }
@@ -329,7 +342,7 @@ export function Painter(props: PainterProps) {
             sx={{
                 userSelect: 'none'
             }}
-            onMouseMove={(e) => {
+            onPointerMove={(e) => {
                 if (tipRef.current) {
                     const x = e.clientX
                     const y = e.clientY
