@@ -12,10 +12,13 @@ import { Preview } from './scenes/Preview'
 import { usePersistent } from './usePersistent'
 import { Skybox } from './components/Skybox'
 import { Helmet } from 'react-helmet-async'
+import { useTranslation } from 'react-i18next'
 
 const defaultCollection = ['5sn4vqpg9yame7n806cajt10nc']
 
 function App() {
+    const { t } = useTranslation('')
+
     const [camera, setCamera] = useState<PerspectiveCamera>()
     const orbitRef = useRef<OrbitControlsImpl>(null)
 
@@ -93,7 +96,7 @@ function App() {
     return (
         <>
             <Helmet>
-                <title>おえかきアバター</title>
+                <title>{t('title')}</title>
             </Helmet>
             <Box
                 sx={{

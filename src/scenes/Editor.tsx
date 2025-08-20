@@ -38,6 +38,7 @@ import { symetricTextures, texturePositions, type AvatarManifest, type AvatarPar
 import { EditableAvatar } from '../components/EditableAvatar'
 import { useNavigate } from 'react-router-dom'
 import { ThumbnailAvatar } from '../components/ThumbnailAvatar'
+import { useTranslation } from 'react-i18next'
 
 type EditorState = {
     init: () => Promise<void>
@@ -246,6 +247,8 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
         defaultTexture
     } = useEditor()
 
+    const { t } = useTranslation('')
+
     const navigate = useNavigate()
 
     const [editing, setEditing] = useState<boolean>(false)
@@ -379,14 +382,14 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                 <h2>Avatar Editor</h2>
                 <TextField
                     required
-                    label="名前"
+                    label={t('name')}
                     variant="outlined"
                     value={manifest.name || ''}
                     onChange={(e) => setManifest((prev) => ({ ...prev, name: e.target.value }))}
                     sx={{ marginBottom: '20px' }}
                 />
                 <TextField
-                    label="説明"
+                    label={t('description')}
                     variant="outlined"
                     value={manifest.description || ''}
                     onChange={(e) => setManifest((prev) => ({ ...prev, description: e.target.value }))}
@@ -395,7 +398,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                     sx={{ marginBottom: '20px' }}
                 />
 
-                <Typography variant="h6">テクスチャ</Typography>
+                <Typography variant="h6">{t('texture')}</Typography>
                 <TexturePreview
                     texture={texture ?? defaultTexture}
                     sx={{ width: '300px', height: '150px', border: '1px solid #ccc' }}
@@ -403,7 +406,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                 />
 
                 <Box>
-                    <Typography variant="h6">Head Size</Typography>
+                    <Typography variant="h6">{t('headSize')}</Typography>
                     <Slider
                         value={avatarParams.headSize}
                         min={-20}
@@ -417,7 +420,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                         }
                         sx={{ width: '200px', padding: '20px' }}
                     />
-                    <Typography variant="h6">Neck Length</Typography>
+                    <Typography variant="h6">{t('neckLength')}</Typography>
                     <Slider
                         value={avatarParams.neckLength}
                         min={-10}
@@ -445,12 +448,12 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                                     }
                                 />
                             }
-                            label="あたまを体の前に出す"
+                            label={t('headInFront')}
                         />
                     </FormGroup>
                 </Box>
                 <Box>
-                    <Typography variant="h6">Body Size</Typography>
+                    <Typography variant="h6">{t('bodySize')}</Typography>
                     <Slider
                         value={avatarParams.bodySize}
                         min={-20}
@@ -466,7 +469,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                     />
                 </Box>
                 <Box>
-                    <Typography variant="h6">Hand Size</Typography>
+                    <Typography variant="h6">{t('handSize')}</Typography>
                     <Slider
                         value={avatarParams.handSize}
                         min={-1}
@@ -482,7 +485,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                     />
                 </Box>
                 <Box>
-                    <Typography variant="h6">Legs Size</Typography>
+                    <Typography variant="h6">{t('legsSize')}</Typography>
                     <Slider
                         value={avatarParams.legsSize}
                         min={-1}
@@ -496,7 +499,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                         }
                         sx={{ width: '200px', padding: '20px' }}
                     />
-                    <Typography variant="h6">Legs Distance</Typography>
+                    <Typography variant="h6">{t('legsDistance')}</Typography>
                     <Slider
                         value={avatarParams.legsDistance}
                         min={-5}
@@ -510,7 +513,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                         }
                         sx={{ width: '200px', padding: '20px' }}
                     />
-                    <Typography variant="h6">Legs Distance from Body</Typography>
+                    <Typography variant="h6">{t('legsDistanceFromBody')}</Typography>
                     <Slider
                         value={avatarParams.legsDistanceFromBody}
                         min={-10}
@@ -537,7 +540,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                                     }
                                 />
                             }
-                            label="足を体の前に出す"
+                            label={t('legsInFront')}
                         />
                     </FormGroup>
                 </Box>
@@ -554,13 +557,13 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                                 }
                             />
                         }
-                        label="しっぽを無効化"
+                        label={t('disableTail')}
                     />
                 </FormGroup>
                 {!avatarParams.disableTail && (
                     <>
                         <Box>
-                            <Typography variant="h6">Tail Size</Typography>
+                            <Typography variant="h6">{t('tailSize')}</Typography>
                             <Slider
                                 value={avatarParams.tailSize}
                                 min={-20}
@@ -574,7 +577,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                                 }
                                 sx={{ width: '200px', padding: '20px' }}
                             />
-                            <Typography variant="h6">Tail Position</Typography>
+                            <Typography variant="h6">{t('tailPosition')}</Typography>
                             <Slider
                                 value={avatarParams.tailPosition}
                                 min={-10}
@@ -588,7 +591,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                                 }
                                 sx={{ width: '200px', padding: '20px' }}
                             />
-                            <Typography variant="h6">Tail Rotation</Typography>
+                            <Typography variant="h6">{t('tailRotation')}</Typography>
                             <Slider
                                 value={avatarParams.tailRotation}
                                 min={0}
@@ -615,7 +618,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                             navigate('/')
                         }}
                     >
-                        キャンセル
+                        {t('cancel')}
                     </Button>
                     <Button
                         variant="contained"
@@ -625,7 +628,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                             }
                         }}
                     >
-                        ロード
+                        {t('load')}
                     </Button>
                     <Button
                         variant="contained"
@@ -695,7 +698,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
                             }, 'image/png')
                         }}
                     >
-                        公開
+                        {t('done')}
                     </Button>
                 </Box>
             </Box>
@@ -727,15 +730,15 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) 
             <Dialog open={open} onClose={() => setOpen(false)}>
                 {uploaded ? (
                     <>
-                        <DialogTitle>公開完了</DialogTitle>
+                        <DialogTitle>{t('published')}</DialogTitle>
                         <DialogContent>
-                            アバターの公開が完了しました！
+                            {t('publishedMessage')}
                             <Button
                                 onClick={() => {
                                     navigator.clipboard.writeText(location.origin + '/' + uploaded.id)
                                 }}
                             >
-                                URLをコピー
+                                {t('copyURL')}
                             </Button>
                             <Button
                                 variant="contained"
@@ -749,7 +752,7 @@ ${location.origin}/${uploaded.id}`
                                     )
                                 }}
                             >
-                                Xでシェア
+                                {t('shareToX')}
                             </Button>
                         </DialogContent>
                         <DialogActions>
@@ -760,13 +763,15 @@ ${location.origin}/${uploaded.id}`
                                     navigate('/')
                                 }}
                             >
-                                閉じる
+                                {t('close')}
                             </Button>
                         </DialogActions>
                     </>
                 ) : (
                     <>
-                        <DialogTitle>投稿: {manifest.name}</DialogTitle>
+                        <DialogTitle>
+                            {t('publish')}: {manifest.name}
+                        </DialogTitle>
                         <DialogContent
                             sx={{
                                 display: 'flex',
@@ -792,7 +797,7 @@ ${location.origin}/${uploaded.id}`
                                 }}
                             >
                                 <TextField
-                                    label="クリエイター名"
+                                    label={t('creatorName')}
                                     variant="outlined"
                                     required
                                     value={manifest.creator || ''}
@@ -810,7 +815,7 @@ ${location.origin}/${uploaded.id}`
                                                 }
                                             />
                                         }
-                                        label="アバター出力を許可"
+                                        label={t('allowExport')}
                                     />
                                     <FormControlLabel
                                         control={
@@ -821,13 +826,13 @@ ${location.origin}/${uploaded.id}`
                                                 }
                                             />
                                         }
-                                        label="改変を許可"
+                                        label={t('allowModify')}
                                     />
                                 </FormGroup>
                             </Box>
                         </DialogContent>
                         <DialogActions>
-                            <Button onClick={() => setOpen(false)}>キャンセル</Button>
+                            <Button onClick={() => setOpen(false)}>{t('cancel')}</Button>
                             <Button
                                 variant="contained"
                                 disabled={uploading || !manifest.creator}
@@ -853,7 +858,6 @@ ${location.origin}/${uploaded.id}`
                                         texture
                                     )
                                         .then((data) => {
-                                            console.log('Published successfully:', data)
                                             props.setCollection((prev) => [...prev, data.id])
                                             setUploaded(data)
                                         })
@@ -862,7 +866,7 @@ ${location.origin}/${uploaded.id}`
                                         })
                                 }}
                             >
-                                {uploading ? '送信中...' : '公開'}
+                                {uploading ? t('sending') : t('publish')}
                             </Button>
                         </DialogActions>
                     </>

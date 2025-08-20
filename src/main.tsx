@@ -6,6 +6,8 @@ import { GA4Provider } from './GA4.tsx'
 import { HelmetProvider } from 'react-helmet-async'
 import { ThemeProvider, createTheme } from '@mui/material'
 
+import './i18n'
+
 const tag = 'G-8LB2TBRTP5'
 
 const theme = createTheme({

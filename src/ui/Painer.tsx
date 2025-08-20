@@ -18,6 +18,7 @@ import type { Texture } from 'three'
 
 import { MdFaceRetouchingOff } from 'react-icons/md'
 import { MdFace } from 'react-icons/md'
+import { useTranslation } from 'react-i18next'
 
 const MAX_HISTORY = 30
 
@@ -68,6 +69,8 @@ export function Painter(props: PainterProps) {
     const [showFaceTemplate, setShowFaceTemplate] = useState<boolean>(false)
 
     const [enablePanning, setEnablePanning] = useState<boolean>(false)
+
+    const { t } = useTranslation('')
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -346,21 +349,6 @@ export function Painter(props: PainterProps) {
                 }
             }}
         >
-            <Box
-                sx={{
-                    position: 'absolute',
-                    top: '50px',
-                    left: '50%',
-                    transform: 'translateX(-50%)'
-                }}
-            >
-                <Typography textAlign="center">
-                    パンツールを有効(スペースキー)にすると、マウスホイールでズーム、ドラッグで移動できます。
-                    <br />
-                    パンツールが有効の場合、タッチでの描画が無効になります。
-                </Typography>
-            </Box>
-
             <Box
                 ref={tipRef}
                 sx={{
@@ -783,7 +771,7 @@ export function Painter(props: PainterProps) {
                         maxWidth: '20vw'
                     }}
                 >
-                    <Typography variant="h6">ブラシサイズ</Typography>
+                    <Typography variant="h6">{t('brushSize')}</Typography>
                     <Slider
                         value={brushSize}
                         onChange={(_e, value) => setBrushSize(value as number)}
@@ -793,7 +781,7 @@ export function Painter(props: PainterProps) {
                         valueLabelDisplay="auto"
                     />
 
-                    <Typography variant="h6">固さ</Typography>
+                    <Typography variant="h6">{t('hardness')}</Typography>
                     <Slider
                         value={hardness}
                         onChange={(_e, value) => setHardness(value as number)}
@@ -803,7 +791,7 @@ export function Painter(props: PainterProps) {
                         valueLabelDisplay="auto"
                     />
 
-                    <Typography variant="h6">濃度</Typography>
+                    <Typography variant="h6">{t('opacity')}</Typography>
                     <Slider
                         value={alpha}
                         onChange={(_e, value) => setAlpha(value as number)}

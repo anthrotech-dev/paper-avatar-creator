@@ -15,6 +15,7 @@ import { extend } from '@react-three/fiber'
 import { useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { CfmRenderer } from '../ui/CfmRenderer'
+import { useTranslation } from 'react-i18next'
 
 type PlazaState = {
     selected: Object3D | null
@@ -196,11 +197,15 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) =
     const { setTexture, setParent } = useEditor()
     const navigate = useNavigate()
 
+    const { t } = useTranslation('')
+
     return (
         <>
             {selectedManifest && (
                 <Helmet>
-                    <title>おえかきアバター | {selectedManifest.name}</title>
+                    <title>
+                        {t('title')} | {selectedManifest.name}
+                    </title>
                     <meta name="description" content={selectedManifest.description} />
                 </Helmet>
             )}
@@ -244,7 +249,7 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) =
                                 handleResoniteExport(selectedManifest, texture)
                             }}
                         >
-                            Resonite用に書き出し
+                            {t('exportResonite')}
                         </Button>
                         <Button
                             variant="contained"
@@ -257,7 +262,7 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) =
                                 navigate('/edit')
                             }}
                         >
-                            改変する
+                            {t('modify')}
                         </Button>
                         <Button
                             color="primary"
@@ -266,7 +271,7 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) =
                                 navigator.clipboard.writeText(location.origin + '/' + selectedManifest.id)
                             }}
                         >
-                            URLをコピー
+                            {t('copyURL')}
                         </Button>
                         <Button
                             color="error"
@@ -277,7 +282,7 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) =
                                 setSelectedManifest(null)
                             }}
                         >
-                            コレクションから削除
+                            {t('removeFromCollection')}
                         </Button>
                     </Box>
                 )}
