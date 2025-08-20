@@ -92,12 +92,15 @@ export function Editor({ children }: { children?: React.ReactNode }) {
 
     const thumbSceneRef = useRef<Object3D>(null)
 
-    const defaultTexture = useMemo(() => {
+    const [defaultTexture, setDefaultTexture] = useState<Texture | null>(null)
+
+    useEffect(() => {
         const loader = new TextureLoader()
-        const texture = loader.load('/tex/sample.png')
-        texture.flipY = false
-        texture.colorSpace = SRGBColorSpace
-        return texture
+        loader.loadAsync('/tex/sample.png').then((tex) => {
+            tex.flipY = false
+            tex.colorSpace = SRGBColorSpace
+            setDefaultTexture(tex)
+        })
     }, [])
 
     const [avatarParams, setAvatarParams] = useState<AvatarParams>({
