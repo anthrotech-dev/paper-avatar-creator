@@ -194,7 +194,7 @@ const AvatarsRenderer = memo(
 
 Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; deviceID: string }) => {
     const { setSelected, selectedManifest, setSelectedManifest, texture } = usePlaza()
-    const { setTexture, setParent } = useEditor()
+    const { setTexture, setParent, setAvatarParams } = useEditor()
     const navigate = useNavigate()
 
     const { t } = useTranslation('')
@@ -257,6 +257,7 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; dev
                             onClick={() => {
                                 if (texture) setTexture(texture)
                                 setParent(selectedManifest)
+                                setAvatarParams(selectedManifest.params)
                                 setSelected(null)
                                 setSelectedManifest(null)
                                 navigate('/edit')
