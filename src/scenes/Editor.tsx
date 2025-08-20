@@ -59,6 +59,7 @@ type EditorState = {
     setTexture: Dispatch<SetStateAction<Texture | null>>
     texture: Texture | null
     defaultTexture: Texture
+    session: number
 }
 
 const EditorContext = createContext<EditorState | null>(null)
@@ -88,7 +89,8 @@ export const useEditor = (): EditorState => {
                 legsInFront: true
             },
             setAvatarParams: () => {},
-            defaultTexture: new Texture()
+            defaultTexture: new Texture(),
+            session: 0
         }
     }
     return ctx
@@ -98,6 +100,7 @@ export function Editor({ children }: { children?: React.ReactNode }) {
     const thumbnailCameraRef = useRef<OrthographicCamera>(null)
     const [parent, setParent] = useState<AvatarManifest | null>(null)
     const [texture, setTexture] = useState<Texture | null>(null)
+    const [session, setSession] = useState<number>(0)
 
     const thumbSceneRef = useRef<Object3D>(null)
 
@@ -146,6 +149,7 @@ export function Editor({ children }: { children?: React.ReactNode }) {
             legsDistanceFromBody: 0,
             legsInFront: true
         })
+        setSession((prev) => prev + 1)
     }, [])
 
     useEffect(() => {
@@ -164,7 +168,8 @@ export function Editor({ children }: { children?: React.ReactNode }) {
                 thumbnailCameraRef,
                 thumbSceneRef,
                 setTexture,
-                defaultTexture
+                defaultTexture,
+                session
             }}
         >
             {children}
@@ -252,7 +257,8 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; de
         thumbnailCameraRef,
         thumbSceneRef,
         setTexture,
-        defaultTexture
+        defaultTexture,
+        session
     } = useEditor()
 
     const { t } = useTranslation('')
@@ -275,6 +281,14 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; de
     const [exportAnchorEl, setExportAnchorEl] = useState<null | HTMLElement>(null)
 
     const [showEditorHint, setShowEditorHint] = useState<boolean>(false)
+
+    useEffect(() => {
+        setManifest({})
+        setThumbnail(null)
+        setUploading(false)
+        setUploaded(null)
+        setThumbnailBlob(null)
+    }, [session])
 
     const confirm = useConfirm()
 
