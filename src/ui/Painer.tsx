@@ -1,4 +1,4 @@
-import { Box, Button, IconButton, Slider, Typography } from '@mui/material'
+import { Box, Button, ButtonGroup, IconButton, Slider, Typography } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 
 import { IoIosUndo } from 'react-icons/io'
@@ -9,6 +9,8 @@ import { PiPaintBrushFill } from 'react-icons/pi'
 import { PiPaintBucketFill } from 'react-icons/pi'
 import { PiPaletteFill } from 'react-icons/pi'
 import { PiEraserFill } from 'react-icons/pi'
+import { PiSelectionBold } from 'react-icons/pi'
+import { PiSelectionSlashBold } from 'react-icons/pi'
 import { MdDelete } from 'react-icons/md'
 import { FaFileImport } from 'react-icons/fa'
 import type { Texture } from 'three'
@@ -17,6 +19,10 @@ import { MdFaceRetouchingOff } from 'react-icons/md'
 import { MdFace } from 'react-icons/md'
 import { useTranslation } from 'react-i18next'
 import { PanZoomSurface, type PanZoomHandle } from './PanZoomSurface'
+
+import { LuFlipHorizontal2 } from 'react-icons/lu'
+import { LuFlipVertical2 } from 'react-icons/lu'
+import { LuCopy } from 'react-icons/lu'
 
 const MAX_HISTORY = 30
 
@@ -35,7 +41,7 @@ interface History {
 export function Painter(props: PainterProps) {
     const tipRef = useRef<HTMLDivElement>(null)
 
-    const [tool, setTool] = useState<'brush' | 'eraser' | 'fill'>('brush')
+    const [tool, setTool] = useState<'brush' | 'eraser' | 'fill' | 'selection'>('brush')
 
     const [currentLayer, setCurrentLayer] = useState<number>(2)
     const [hiddenLayers, setHiddenLayers] = useState<Array<boolean>>([false, false, false])
@@ -71,6 +77,18 @@ export function Painter(props: PainterProps) {
     const surfaceRef = useRef<PanZoomHandle>(null)
     const drawingTouchID = useRef<number | null>(null)
 
+    const [selection, setSelection] = useState<{
+        startX: number
+        startY: number
+        width: number
+        height: number
+    } | null>(null)
+
+    const [selecting, setSelecting] = useState<boolean>(false)
+    const [selectAllLayers, setSelectAllLayers] = useState<boolean>(false)
+    const [copying, setCopying] = useState<boolean>(false)
+    const selectionCanvasRef = useRef<HTMLCanvasElement>(null)
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'z' && e.ctrlKey && !e.shiftKey) {
@@ -97,7 +115,6 @@ export function Painter(props: PainterProps) {
     }, [])
 
     useEffect(() => {
-        console.log('on load!')
         if (props.initialTexture) {
             const ctx = canvasRef2.current!.getContext('2d')!
             if (props.initialTexture.image instanceof HTMLImageElement) {
@@ -224,6 +241,54 @@ export function Painter(props: PainterProps) {
         ctx.putImageData(img, 0, 0)
     }
 
+    const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        if (e.pointerType === 'touch') {
+            if (drawingTouchID.current === null) {
+                drawingTouchID.current = e.pointerId // タッチ ID を保存
+            } else if (drawingTouchID.current !== e.pointerId) {
+                return // 他のタッチ ID なら無視
+            }
+        } else {
+            drawingTouchID.current = 9999 // マウス用の仮の ID
+        }
+
+        pushHistory()
+
+        if (copying) {
+            const selectionCanvas = selectionCanvasRef.current!
+            const ctx = canvasRef.current!.getContext('2d')!
+
+            ctx.drawImage(
+                selectionCanvas,
+                e.nativeEvent.offsetX - selectionCanvas.width / 2,
+                e.nativeEvent.offsetY - selectionCanvas.height / 2
+            )
+
+            setCopying(false)
+            return
+        }
+
+        if (tool === 'fill') {
+            bucketFill(e)
+        } else if (tool === 'selection') {
+            const rect = canvasRef.current!.getBoundingClientRect()
+            const x = (e.clientX - rect.left) / (surfaceRef.current?.scale ?? 1)
+            const y = (e.clientY - rect.top) / (surfaceRef.current?.scale ?? 1)
+
+            setSelection({
+                startX: x,
+                startY: y,
+                width: 0,
+                height: 0
+            })
+            setDrawing(true)
+        } else {
+            setDrawing(true)
+            prevPos.current = null // 前の位置をリセット
+            handlePointerMove(e)
+        }
+    }
+
     const handlePointerMove = (e: React.PointerEvent) => {
         if (surfaceRef.current?.isTransforming) return // パン・ズーム中は描画しない
         if (!drawing || e.buttons !== 1) return
@@ -232,6 +297,21 @@ export function Painter(props: PainterProps) {
             return // 他のタッチ ID なら無視
         } else if (e.pointerType !== 'touch' && drawingTouchID.current !== 9999) {
             return // マウス用を使っているなら、マウス以外のポインターイベントは無視
+        }
+
+        if (tool === 'selection') {
+            const rect = canvasRef.current!.getBoundingClientRect()
+            const x = (e.clientX - rect.left) / (surfaceRef.current?.scale ?? 1)
+            const y = (e.clientY - rect.top) / (surfaceRef.current?.scale ?? 1)
+
+            if (selection) {
+                setSelection({
+                    ...selection,
+                    width: x - selection.startX,
+                    height: y - selection.startY
+                })
+            }
+            return
         }
 
         const rect = canvasRef.current!.getBoundingClientRect()
@@ -272,6 +352,16 @@ export function Painter(props: PainterProps) {
         }
     }
 
+    const onPointerUp = () => {
+        drawingTouchID.current = null // タッチ ID をリセット
+        setDrawing(false)
+        prevPos.current = null // 描画終了時に前の位置をリセット
+
+        if (tool === 'selection') {
+            setSelecting(!!selection)
+        }
+    }
+
     const pushHistory = () => {
         const ctx = canvasRefs[currentLayer].current!.getContext('2d')!
         historyRef.current.push({
@@ -309,34 +399,6 @@ export function Painter(props: PainterProps) {
         ctx.putImageData(img, 0, 0)
     }
 
-    const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-        if (e.pointerType === 'touch') {
-            if (drawingTouchID.current === null) {
-                drawingTouchID.current = e.pointerId // タッチ ID を保存
-            } else if (drawingTouchID.current !== e.pointerId) {
-                return // 他のタッチ ID なら無視
-            }
-        } else {
-            drawingTouchID.current = 9999 // マウス用の仮の ID
-        }
-
-        pushHistory()
-
-        if (tool === 'fill') {
-            bucketFill(e)
-        } else {
-            setDrawing(true)
-            prevPos.current = null // 前の位置をリセット
-            handlePointerMove(e)
-        }
-    }
-
-    const onPointerUp = () => {
-        drawingTouchID.current = null // タッチ ID をリセット
-        setDrawing(false)
-        prevPos.current = null // 描画終了時に前の位置をリセット
-    }
-
     const initialScale = Math.min(document.body.clientWidth / props.width, document.body.clientHeight / props.height, 1)
 
     return (
@@ -347,29 +409,7 @@ export function Painter(props: PainterProps) {
             sx={{
                 userSelect: 'none'
             }}
-            onPointerMove={(e) => {
-                if (tipRef.current) {
-                    const x = e.clientX
-                    const y = e.clientY
-                    tipRef.current.style.left = `${x - (brushSize * (surfaceRef.current?.scale ?? 1)) / 2}px`
-                    tipRef.current.style.top = `${y - (brushSize * (surfaceRef.current?.scale ?? 1)) / 2}px`
-                }
-            }}
         >
-            <Box
-                ref={tipRef}
-                sx={{
-                    width: `${brushSize * (surfaceRef.current?.scale ?? 1)}px`,
-                    height: `${brushSize * (surfaceRef.current?.scale ?? 1)}px`,
-                    position: 'absolute',
-                    borderRadius: '50%',
-                    border: '1px dashed #777',
-                    zIndex: 1000,
-                    pointerEvents: 'none',
-                    display: { xs: 'none', sm: 'none', md: 'block' }
-                }}
-            />
-
             <input
                 type="file"
                 accept="image/*"
@@ -404,8 +444,16 @@ export function Painter(props: PainterProps) {
                         backgroundColor: '#fff',
                         width: `${props.width}px`,
                         height: `${props.height}px`,
-                        position: 'relative',
-                        cursor: 'none'
+                        position: 'absolute',
+                        cursor: tool === 'selection' ? 'crosshair' : 'none'
+                    }}
+                    onPointerMove={(e) => {
+                        if (tipRef.current) {
+                            const x = e.nativeEvent.offsetX
+                            const y = e.nativeEvent.offsetY
+                            tipRef.current.style.left = `${x}px`
+                            tipRef.current.style.top = `${y}px`
+                        }
                     }}
                 >
                     <img
@@ -464,6 +512,49 @@ export function Painter(props: PainterProps) {
                         onPointerMove={handlePointerMove}
                         onPointerUp={onPointerUp}
                     />
+                    {selection && (
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                left: `${selection.startX}px`,
+                                top: `${selection.startY}px`,
+                                width: `${selection.width}px`,
+                                height: `${selection.height}px`,
+                                border: '2px dashed #777'
+                            }}
+                        />
+                    )}
+                    <Box
+                        ref={tipRef}
+                        sx={{
+                            position: 'absolute',
+                            pointerEvents: 'none',
+                            zIndex: 1000,
+                            width: 0,
+                            height: 0
+                        }}
+                    >
+                        <canvas
+                            ref={selectionCanvasRef}
+                            style={{
+                                visibility: copying ? 'visible' : 'hidden',
+                                transform: 'translate(-50%, -50%)'
+                            }}
+                        />
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                left: 0,
+                                top: 0,
+                                visibility: tool === 'selection' ? 'hidden' : 'visible',
+                                borderRadius: '50%',
+                                border: '1px dashed #777',
+                                width: `${brushSize}px`,
+                                height: `${brushSize}px`,
+                                transform: 'translate(-50%, -50%)'
+                            }}
+                        />
+                    </Box>
                 </Box>
             </PanZoomSurface>
             <Box
@@ -685,6 +776,21 @@ export function Painter(props: PainterProps) {
                         sx={{
                             width: '50px',
                             height: '50px',
+                            backgroundColor: tool === 'selection' ? 'primary.main' : 'text.disabled',
+                            '&:hover': {
+                                backgroundColor: 'primary.dark'
+                            }
+                        }}
+                        onClick={() => setTool('selection')}
+                    >
+                        <PiSelectionBold color="white" />
+                    </IconButton>
+
+                    <IconButton
+                        size="large"
+                        sx={{
+                            width: '50px',
+                            height: '50px',
                             backgroundColor: color,
                             '&:hover': {
                                 backgroundColor: 'primary.dark'
@@ -785,6 +891,264 @@ export function Painter(props: PainterProps) {
                     />
                 </Box>
             </Box>
+
+            {selecting && (
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        bottom: 70,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        display: 'flex',
+                        flexDirection: 'row',
+                        gap: 1
+                    }}
+                >
+                    <ButtonGroup variant="contained" size="large">
+                        <Button
+                            onClick={() => {
+                                if (!selection) return
+                                const selectionCanvas = selectionCanvasRef.current!
+                                const selectionCtx = selectionCanvas.getContext('2d')!
+                                selectionCanvas.width = selection.width
+                                selectionCanvas.height = selection.height
+                                selectionCtx.clearRect(0, 0, selection.width, selection.height)
+                                if (selectAllLayers) {
+                                    for (let i = 0; i < canvasRefs.length; i++) {
+                                        if (hiddenLayers[i]) continue
+                                        const ctx = canvasRefs[i].current!.getContext('2d')!
+                                        const imgData = ctx.getImageData(
+                                            selection.startX,
+                                            selection.startY,
+                                            selection.width,
+                                            selection.height
+                                        )
+                                        selectionCtx.clearRect(0, 0, selection.width, selection.height)
+                                        selectionCtx.putImageData(imgData, 0, 0)
+                                        ctx.save()
+                                        ctx.scale(-1, 1)
+                                        ctx.clearRect(
+                                            -(selection.startX + selection.width),
+                                            selection.startY,
+                                            selection.width,
+                                            selection.height
+                                        )
+                                        ctx.drawImage(
+                                            selectionCanvas,
+                                            0,
+                                            0,
+                                            selection.width,
+                                            selection.height,
+                                            -(selection.startX + selection.width),
+                                            selection.startY,
+                                            selection.width,
+                                            selection.height
+                                        )
+                                        ctx.restore()
+                                        selectionCtx.clearRect(0, 0, selection.width, selection.height)
+                                    }
+                                } else {
+                                    const ctx = canvasRef.current!.getContext('2d')!
+                                    const imgData = ctx.getImageData(
+                                        selection.startX,
+                                        selection.startY,
+                                        selection.width,
+                                        selection.height
+                                    )
+                                    selectionCtx.putImageData(imgData, 0, 0)
+
+                                    ctx.save()
+                                    ctx.scale(-1, 1)
+                                    ctx.clearRect(
+                                        -(selection.startX + selection.width),
+                                        selection.startY,
+                                        selection.width,
+                                        selection.height
+                                    )
+                                    ctx.drawImage(
+                                        selectionCanvas,
+                                        0,
+                                        0,
+                                        selection.width,
+                                        selection.height,
+                                        -(selection.startX + selection.width),
+                                        selection.startY,
+                                        selection.width,
+                                        selection.height
+                                    )
+
+                                    ctx.restore()
+                                    selectionCtx.clearRect(0, 0, selection.width, selection.height)
+                                }
+                            }}
+                        >
+                            <LuFlipHorizontal2 />
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                if (!selection) return
+                                const selectionCanvas = selectionCanvasRef.current!
+                                const selectionCtx = selectionCanvas.getContext('2d')!
+                                selectionCanvas.width = selection.width
+                                selectionCanvas.height = selection.height
+                                selectionCtx.clearRect(0, 0, selection.width, selection.height)
+                                if (selectAllLayers) {
+                                    for (let i = 0; i < canvasRefs.length; i++) {
+                                        if (hiddenLayers[i]) continue
+                                        const ctx = canvasRefs[i].current!.getContext('2d')!
+                                        const imgData = ctx.getImageData(
+                                            selection.startX,
+                                            selection.startY,
+                                            selection.width,
+                                            selection.height
+                                        )
+                                        selectionCtx.clearRect(0, 0, selection.width, selection.height)
+                                        selectionCtx.putImageData(imgData, 0, 0)
+                                        ctx.save()
+                                        ctx.scale(1, -1)
+                                        ctx.clearRect(
+                                            selection.startX,
+                                            -(selection.startY + selection.height),
+                                            selection.width,
+                                            selection.height
+                                        )
+                                        ctx.drawImage(
+                                            selectionCanvas,
+                                            0,
+                                            0,
+                                            selection.width,
+                                            selection.height,
+                                            selection.startX,
+                                            -(selection.startY + selection.height),
+                                            selection.width,
+                                            selection.height
+                                        )
+                                        ctx.restore()
+                                        selectionCtx.clearRect(0, 0, selection.width, selection.height)
+                                    }
+                                } else {
+                                    const ctx = canvasRef.current!.getContext('2d')!
+                                    const imgData = ctx.getImageData(
+                                        selection.startX,
+                                        selection.startY,
+                                        selection.width,
+                                        selection.height
+                                    )
+                                    selectionCtx.putImageData(imgData, 0, 0)
+
+                                    ctx.save()
+                                    ctx.scale(1, -1)
+                                    ctx.clearRect(
+                                        selection.startX,
+                                        -(selection.startY + selection.height),
+                                        selection.width,
+                                        selection.height
+                                    )
+                                    ctx.drawImage(
+                                        selectionCanvas,
+                                        0,
+                                        0,
+                                        selection.width,
+                                        selection.height,
+                                        selection.startX,
+                                        -(selection.startY + selection.height),
+                                        selection.width,
+                                        selection.height
+                                    )
+
+                                    ctx.restore()
+                                    selectionCtx.clearRect(0, 0, selection.width, selection.height)
+                                }
+                            }}
+                        >
+                            <LuFlipVertical2 />
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                if (!selection) return
+                                const selectionCanvas = selectionCanvasRef.current!
+                                const selectionCtx = selectionCanvas.getContext('2d')!
+                                selectionCanvas.width = selection.width
+                                selectionCanvas.height = selection.height
+
+                                if (selectAllLayers) {
+                                    for (let i = 0; i < canvasRefs.length; i++) {
+                                        if (hiddenLayers[i]) continue
+                                        const ctx = canvasRefs[i].current!.getContext('2d')!
+                                        const imgData = ctx.getImageData(
+                                            selection.startX,
+                                            selection.startY,
+                                            selection.width,
+                                            selection.height
+                                        )
+                                        selectionCtx.putImageData(imgData, 0, 0)
+                                    }
+                                } else {
+                                    const ctx = canvasRef.current!.getContext('2d')!
+                                    const imgData = ctx.getImageData(
+                                        selection.startX,
+                                        selection.startY,
+                                        selection.width,
+                                        selection.height
+                                    )
+                                    selectionCtx.putImageData(imgData, 0, 0)
+                                }
+
+                                setCopying(true)
+                            }}
+                        >
+                            <LuCopy />
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                if (selection) {
+                                    if (selectAllLayers) {
+                                        for (let i = 0; i < canvasRefs.length; i++) {
+                                            if (hiddenLayers[i]) continue
+                                            const ctx = canvasRefs[i].current!.getContext('2d')!
+                                            ctx.clearRect(
+                                                selection.startX,
+                                                selection.startY,
+                                                selection.width,
+                                                selection.height
+                                            )
+                                        }
+                                    } else {
+                                        const ctx = canvasRef.current!.getContext('2d')!
+                                        ctx.clearRect(
+                                            selection.startX,
+                                            selection.startY,
+                                            selection.width,
+                                            selection.height
+                                        )
+                                    }
+
+                                    setSelection(null)
+                                    setSelecting(false)
+                                }
+                            }}
+                        >
+                            <MdDelete />
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                setSelectAllLayers(!selectAllLayers)
+                            }}
+                        >
+                            {selectAllLayers ? <MdLayers /> : <MdLayersClear />}
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                setSelection(null)
+                                setSelecting(false)
+                            }}
+                        >
+                            <PiSelectionSlashBold />
+                        </Button>
+                    </ButtonGroup>
+                </Box>
+            )}
+
             <Button
                 variant="contained"
                 size="large"
