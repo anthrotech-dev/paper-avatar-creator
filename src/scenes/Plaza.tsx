@@ -14,6 +14,7 @@ import { shaderMaterial } from '@react-three/drei'
 import { extend } from '@react-three/fiber'
 import { useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
+import { CfmRenderer } from '../ui/CfmRenderer'
 
 type PlazaState = {
     selected: Object3D | null
@@ -230,7 +231,7 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) =
                         <Typography variant="h2">{selectedManifest.name}</Typography>
                         <Typography>Creator: {selectedManifest.creator}</Typography>
                         <Divider />
-                        {manifest.description && <CfmRenderer message={manifest.description} />}
+                        {selectedManifest.description && <CfmRenderer message={selectedManifest.description} />}
                         <Box flex={1} />
                         <Button
                             variant="contained"
