@@ -278,6 +278,20 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; dev
                             {t('modify')}
                         </Button>
                         <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => {
+                                window.open(
+                                    `https://x.com/intent/tweet?text=${encodeURIComponent(
+                                        `#OekakiAvatar
+${location.origin}/${selectedManifest.id}`
+                                    )}`
+                                )
+                            }}
+                        >
+                            {t('shareToX')}
+                        </Button>
+                        <Button
                             color="primary"
                             variant="contained"
                             onClick={() => {

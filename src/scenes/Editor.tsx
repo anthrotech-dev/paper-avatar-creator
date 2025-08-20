@@ -820,7 +820,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; de
                                 onClick={() => {
                                     window.open(
                                         `https://x.com/intent/tweet?text=${encodeURIComponent(
-                                            `#oekakiavatar
+                                            `#OekakiAvatar
 ${location.origin}/${uploaded.id}`
                                         )}`
                                     )
