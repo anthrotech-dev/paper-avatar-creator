@@ -853,7 +853,7 @@ export function Painter(props: PainterProps) {
                     }
                 }}
             >
-                完了
+                {t('done')}
             </Button>
         </Box>
     )
