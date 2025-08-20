@@ -230,7 +230,7 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>> }) =
                         <Typography variant="h2">{selectedManifest.name}</Typography>
                         <Typography>Creator: {selectedManifest.creator}</Typography>
                         <Divider />
-                        <Typography>{selectedManifest.description}</Typography>
+                        {manifest.description && <CfmRenderer message={manifest.description} />}
                         <Box flex={1} />
                         <Button
                             variant="contained"
