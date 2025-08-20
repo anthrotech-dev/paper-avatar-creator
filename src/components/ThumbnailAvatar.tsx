@@ -4,7 +4,7 @@ import { Texture, Group, AnimationMixer, Mesh, AdditiveAnimationBlendMode, Objec
 import { textureKeyMap, type AvatarParams } from '../types'
 import { useGLTF } from '@react-three/drei'
 
-import { useGraph } from '@react-three/fiber'
+import { useFrame, useGraph } from '@react-three/fiber'
 import { FakeShadow } from './FakeShadow'
 import { createBaseAnimation } from '../util'
 
@@ -76,6 +76,10 @@ export const ThumbnailAvatar = ({ params, texture, setSelected }: AvatarProps) =
             action.stop()
         }
     }, [params, mixer])
+
+    useFrame((_state, delta) => {
+        mixer.current?.update(delta)
+    })
 
     return (
         <group
