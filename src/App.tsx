@@ -15,7 +15,7 @@ import { Helmet } from 'react-helmet-async'
 import { useTranslation } from 'react-i18next'
 import { cdid } from './util'
 
-const defaultCollection = ['5sn4vqpg9yame7n806cajt10nc']
+const defaultCollection = ['kna5gn7kjex5awnt06cchj52cc', '58e9fqqexv1xpape06cchjr7h0', 'fat5f37e26tgqp9006cchnzg84']
 
 function App() {
     const { t } = useTranslation('')
