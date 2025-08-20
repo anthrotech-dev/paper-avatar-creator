@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@concrnt/cfm':
+        specifier: ^0.0.0
+        version: 0.0.0
       '@emotion/react':
         specifier: ^11.14.0
         version: 11.14.0(@types/react@19.1.8)(react@19.1.0)
@@ -207,6 +210,9 @@ packages:
   '@babel/types@7.28.1':
     resolution: {integrity: sha512-x0LvFTekgSX+83TI28Y9wYPUfzrnl2aT5+5QLnO6v7mSJYtEEevuDRN0F0uSHRk1G1IWZC43o00Y0xDDrpBGPQ==}
     engines: {node: '>=6.9.0'}
+
+  '@concrnt/cfm@0.0.0':
+    resolution: {integrity: sha512-MvLqxM7KU8P7X7rw72iEiP8dk9GOzYzXKNtKNa1OZGGJqeIbXDnar6gKtv/OV1rlaZqzZDc+1qW0iDaeM1Adnw==}
 
   '@dimforge/rapier3d-compat@0.12.0':
     resolution: {integrity: sha512-uekIGetywIgopfD97oDL5PfeezkFpNhwlzlaEYNOA0N6ghdsOvh/HYjSMek5Q2O1PYvRSDFcqFVJl4r4ZBwOow==}
@@ -2489,6 +2495,8 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.27.1
+
+  '@concrnt/cfm@0.0.0': {}
 
   '@dimforge/rapier3d-compat@0.12.0': {}
 

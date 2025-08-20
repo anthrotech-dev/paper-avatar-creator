@@ -14,6 +14,7 @@ import { Drawer } from '../ui/Drawer'
 import { Avatar } from '../components/Avatar'
 import { useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
+import { CfmRenderer } from '../ui/CfmRenderer'
 
 interface PreviewProps {
     id: string
@@ -109,8 +110,7 @@ Preview.Overlay = (props: { collection: string[]; setCollection: Dispatch<SetSta
                         <Typography variant="h2">{manifest.name}</Typography>
                         <Typography>Creator: {manifest.creator}</Typography>
                         <Divider />
-                        <Typography>{manifest.description}</Typography>
-
+                        {manifest.description && <CfmRenderer message={manifest.description} />}
                         {manifest.exportable ? (
                             <Alert severity="success">
                                 このアバターはエクスポート可能です。
