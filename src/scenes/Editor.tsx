@@ -39,6 +39,8 @@ import {
 import { handleExport, handlePublish, handleResoniteExport } from '../util'
 import { Painter } from '../ui/Painer'
 
+import { Turnstile } from '@marsidev/react-turnstile'
+
 import { symetricTextures, texturePositions, type AvatarManifest, type AvatarParams } from '../types'
 import { EditableAvatar } from '../components/EditableAvatar'
 import { useNavigate } from 'react-router-dom'
@@ -291,6 +293,8 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; de
     }, [session])
 
     const confirm = useConfirm()
+
+    const [token, setToken] = useState<string | null>(null)
 
     return (
         <>
@@ -801,7 +805,13 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; de
                 </>
             </Modal>
 
-            <Dialog open={open} onClose={() => setOpen(false)}>
+            <Dialog
+                open={open}
+                onClose={() => setOpen(false)}
+                sx={{
+                    maxWidth: '90vw'
+                }}
+            >
                 {uploaded ? (
                     <>
                         <DialogTitle>{t('published')}</DialogTitle>
@@ -903,13 +913,22 @@ ${location.origin}/${uploaded.id}`
                                         label={t('allowModify')}
                                     />
                                 </FormGroup>
+                                <Turnstile
+                                    siteKey={'0x4AAAAAABtwtFZj5wbp5rqD'}
+                                    onSuccess={(token) => {
+                                        setToken(token)
+                                    }}
+                                    onExpire={() => {
+                                        setToken(null)
+                                    }}
+                                />
                             </Box>
                         </DialogContent>
                         <DialogActions>
                             <Button onClick={() => setOpen(false)}>{t('cancel')}</Button>
                             <Button
                                 variant="contained"
-                                disabled={uploading || !manifest.creator}
+                                disabled={uploading || !manifest.creator || !token}
                                 onClick={() => {
                                     setUploading(true)
                                     if (!texture) {
@@ -922,6 +941,11 @@ ${location.origin}/${uploaded.id}`
                                         setUploading(false)
                                         return
                                     }
+                                    if (!token) {
+                                        alert('Turnstileの認証が完了していません。もう一度公開を試みてください。')
+                                        setUploading(false)
+                                        return
+                                    }
                                     handlePublish(
                                         thumbnailBlob,
                                         {
@@ -930,7 +954,8 @@ ${location.origin}/${uploaded.id}`
                                             extends: parent?.id,
                                             params: avatarParams
                                         },
-                                        texture
+                                        texture,
+                                        token
                                     )
                                         .then((data) => {
                                             props.setCollection((prev) => [...prev, data.id])

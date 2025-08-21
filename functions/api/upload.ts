@@ -13,6 +13,25 @@ export const onRequest: PagesFunction<{ BUCKET: R2Bucket }> = async (context) =>
     const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('x-forwarded-for') || 'unknown'
     const form = await request.formData()
 
+    const token = form.get('cf-turnstile-response')
+
+    const body = new URLSearchParams({
+        secret: env.site_secret,
+        response: String(token ?? ''),
+        remoteip: request.headers.get('CF-Connecting-IP') ?? ''
+    })
+
+    const verify = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body
+    })
+
+    const outcome = await verify.json<any>()
+    if (!outcome.success) {
+        return new Response(JSON.stringify({ error: 'turnstile_failed', detail: outcome }), { status: 403 })
+    }
+
     const manifestFile = form.get('manifest')
     if (!manifestFile || !(manifestFile instanceof File)) {
         return new Response('Manifest file is required', { status: 400 })

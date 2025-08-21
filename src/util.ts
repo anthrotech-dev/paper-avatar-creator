@@ -12,7 +12,12 @@ import {
 import brotliPromise from 'brotli-wasm'
 import type { AvatarManifest, AvatarParams } from './types'
 
-export const handlePublish = async (thumbnail: Blob, manifest: Partial<AvatarManifest>, texture: Texture) => {
+export const handlePublish = async (
+    thumbnail: Blob,
+    manifest: Partial<AvatarManifest>,
+    texture: Texture,
+    token: string
+) => {
     const endpoint = '/api/upload'
 
     const form = new FormData()
@@ -22,6 +27,8 @@ export const handlePublish = async (thumbnail: Blob, manifest: Partial<AvatarMan
 
     const { blob } = await textureToPng(texture)
     form.append('texture', blob, 'texture.png')
+
+    form.append('cf-turnstile-response', token)
 
     const res = await fetch(endpoint, {
         method: 'POST',
