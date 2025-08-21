@@ -44,7 +44,7 @@ export function Painter(props: PainterProps) {
 
     const [tool, setTool] = useState<'brush' | 'eraser' | 'fill' | 'selection'>('brush')
 
-    const [currentLayer, setCurrentLayer] = useState<number>(2)
+    const [currentLayer, setCurrentLayer] = useState<number>(1)
     const [hiddenLayers, setHiddenLayers] = useState<Array<boolean>>([false, false, false])
 
     const colorInputRef = useRef<HTMLInputElement>(null)
@@ -123,7 +123,7 @@ export function Painter(props: PainterProps) {
 
     useEffect(() => {
         if (props.initialTexture) {
-            const ctx = canvasRef2.current!.getContext('2d')!
+            const ctx = canvasRef1.current!.getContext('2d')!
             if (props.initialTexture.image instanceof HTMLImageElement) {
                 ctx.clearRect(0, 0, props.width, props.height)
                 ctx.drawImage(props.initialTexture.image, 0, 0, props.width, props.height)
@@ -1104,7 +1104,7 @@ export function Painter(props: PainterProps) {
                                         tmpCanvas.height = selection.height
                                         const tmpCtx = tmpCanvas.getContext('2d')!
 
-                                        for (let i = 0; i < canvasRefs.length; i++) {
+                                        for (let i = canvasRefs.length - 1; i >= 0; i--) {
                                             if (hiddenLayers[i]) continue
                                             const ctx = canvasRefs[i].current!.getContext('2d')!
                                             const imgData = ctx.getImageData(
@@ -1159,7 +1159,7 @@ export function Painter(props: PainterProps) {
                                         tmpCanvas.height = selection.height
                                         const tmpCtx = tmpCanvas.getContext('2d')!
 
-                                        for (let i = 0; i < canvasRefs.length; i++) {
+                                        for (let i = canvasRefs.length - 1; i >= 0; i--) {
                                             if (hiddenLayers[i]) continue
                                             const ctx = canvasRefs[i].current!.getContext('2d')!
                                             const imgData = ctx.getImageData(
@@ -1293,7 +1293,7 @@ export function Painter(props: PainterProps) {
                     templateImg.onload = () => {
                         outCtx.drawImage(templateImg, 0, 0, props.width, props.height)
 
-                        for (let i = 0; i < canvasRefs.length; i++) {
+                        for (let i = canvasRefs.length - 1; i >= 0; i--) {
                             if (hiddenLayers[i]) continue
                             const ctx = canvasRefs[i].current!.getContext('2d')!
                             outCtx.drawImage(ctx.canvas, 0, 0)
