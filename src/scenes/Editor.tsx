@@ -805,13 +805,7 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; de
                 </>
             </Modal>
 
-            <Dialog
-                open={open}
-                onClose={() => setOpen(false)}
-                sx={{
-                    maxWidth: '90vw'
-                }}
-            >
+            <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md">
                 {uploaded ? (
                     <>
                         <DialogTitle>{t('published')}</DialogTitle>
@@ -859,7 +853,7 @@ ${location.origin}/${uploaded.id}`
                         <DialogContent
                             sx={{
                                 display: 'flex',
-                                flexDirection: 'row',
+                                flexDirection: { xs: 'column', sm: 'row' },
                                 gap: '20px',
                                 alignItems: 'center'
                             }}
