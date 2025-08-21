@@ -16,10 +16,11 @@ import { useTranslation } from 'react-i18next'
 import { cdid } from './util'
 
 const defaultCollection = [
-    'kna5gn7kjex5awnt06cchj52cc',
-    '58e9fqqexv1xpape06cchjr7h0',
-    'fat5f37e26tgqp9006cchnzg84',
-    'dp32dv0dgn8cgr5706cch6xyv0'
+    'ntngw0xw6rcmppnh06ccmvqtqr', // テンプレートくん
+    'kna5gn7kjex5awnt06cchj52cc', // ととがんま
+    'dp32dv0dgn8cgr5706cch6xyv0', // あむ
+    'fat5f37e26tgqp9006cchnzg84', // ろくろもち
+    '58e9fqqexv1xpape06cchjr7h0' // えごえごペンギン
 ]
 
 function App() {
