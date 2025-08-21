@@ -94,16 +94,6 @@ function App() {
         camera.setViewOffset(fullW, fullH, xOffset, yOffset, fullW, fullH)
     }, [camera, isMobileSize])
 
-    useEffect(() => {
-        if (
-            id ||
-            collection.length !== defaultCollection.length ||
-            !collection.every((e) => defaultCollection.includes(e))
-        )
-            return
-        navigate('/edit')
-    }, [!orbitRef.current || !camera])
-
     return (
         <>
             <Helmet>
