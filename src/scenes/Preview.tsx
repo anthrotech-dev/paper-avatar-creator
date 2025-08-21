@@ -16,6 +16,7 @@ import { Link as NavLink, useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { CfmRenderer } from '../ui/CfmRenderer'
 import { useTranslation } from 'react-i18next'
+import { FaStar } from 'react-icons/fa'
 
 interface PreviewProps {
     id: string
@@ -120,27 +121,15 @@ Preview.Overlay = (props: { collection: string[]; setCollection: Dispatch<SetSta
                         <Divider />
                         {manifest.description && <CfmRenderer message={manifest.description} />}
                         {manifest.exportable ? (
-                            <Alert severity="success">
-                                このアバターはエクスポート可能です。
-                                <br />
-                                エクスポートするには、コレクションに追加してください。
-                            </Alert>
+                            <Alert severity="success">{t('exportable')}</Alert>
                         ) : (
-                            <Alert severity="info">
-                                このアバターはエクスポートできません。
-                                <br />
-                                コレクションに追加のみ可能です。
-                            </Alert>
+                            <Alert severity="info">{t('notExportable')}</Alert>
                         )}
 
                         {manifest.editable ? (
-                            <Alert severity="success">
-                                このアバターは改変可能です。
-                                <br />
-                                改変するには、コレクションに追加してください。
-                            </Alert>
+                            <Alert severity="success">{t('modifiable')}</Alert>
                         ) : (
-                            <Alert severity="info">このアバターは編集が許可されていません。</Alert>
+                            <Alert severity="info">{t('notModifiable')}</Alert>
                         )}
                     </Box>
                     <Button
@@ -150,9 +139,10 @@ Preview.Overlay = (props: { collection: string[]; setCollection: Dispatch<SetSta
                             navigate('/')
                         }}
                     >
-                        とじる
+                        {t('close')}
                     </Button>
                     <Button
+                        startIcon={<FaStar />}
                         variant="contained"
                         sx={{ margin: '1rem' }}
                         disabled={props.collection.includes(manifest.id)}
@@ -161,7 +151,7 @@ Preview.Overlay = (props: { collection: string[]; setCollection: Dispatch<SetSta
                             navigate('/')
                         }}
                     >
-                        {props.collection.includes(manifest.id) ? 'コレクションに追加済み' : 'コレクションに追加'}
+                        {props.collection.includes(manifest.id) ? t('alreadyInCollection') : t('addToCollection')}
                     </Button>
                 </>
             )}

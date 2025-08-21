@@ -6,7 +6,7 @@
     "modify": "改変する",
     "copyURL": "URLをコピー",
     "shareToX": "Xに共有",
-    "removeFromCollection": "コレクションから削除",
+    "removeFromCollection": "お気に入りから削除",
     "name": "名前",
     "description": "説明",
     "texture": "テクスチャ",
@@ -51,5 +51,11 @@
     "deleteSelection": "選択範囲を削除",
     "selectAllLayers": "全てのレイヤーを選択中",
     "selectSingleLayer": "現在のレイヤーのみを選択中",
-    "deselect": "選択を解除"
+    "deselect": "選択を解除",
+    "addToCollection": "お気に入りに追加",
+    "alreadyInCollection": "お気に入り済み",
+    "exportable": "このアバターはエクスポート可能です。エクスポートするには、お気に入りに追加してください。",
+    "notExportable": "このアバターはエクスポートできません。お気に入り追加のみ可能です。",
+    "modifiable": "このアバターは改変可能です。改変するには、お気に入りに追加してください。",
+    "notModifiable": "このアバターは編集が許可されていません。"
 }

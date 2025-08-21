@@ -6,7 +6,7 @@
     "modify": "Modify",
     "copyURL": "Copy URL",
     "shareToX": "Share to X",
-    "removeFromCollection": "Remove from Collection",
+    "removeFromCollection": "Remove from Favorites",
     "name": "Name",
     "description": "Description",
     "texture": "Texture",
@@ -51,5 +51,11 @@
     "deleteSelection": "Delete Selection",
     "selectAllLayers": "Selecting All Layers",
     "selectSingleLayer": "Selecting Current Layer Only",
-    "deselect": "Deselect"
+    "deselect": "Deselect",
+    "addToCollection": "Add to Favorites",
+    "alreadyInCollection": "Already in Favorites",
+    "exportable": "This avatar is exportable. To export, please add it to your favorites.",
+    "notExportable": "This avatar cannot be exported. Only adding to favorites is allowed.",
+    "modifiable": "This avatar is modifiable. To modify, please add it to your favorites.",
+    "notModifiable": "This avatar is not permitted for editing."
 }
