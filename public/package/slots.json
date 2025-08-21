@@ -4007,7 +4007,7 @@
                                         "Position": {
                                           "ID": "00000349-0000-0000-0000-000000000000",
                                           "Data": [
-                                            -::Legs-Distance::,
+                                            ::Legs-Distance::,
                                             0,
                                             0
                                           ]
