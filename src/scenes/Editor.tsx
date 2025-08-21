@@ -448,8 +448,8 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; de
                             <Button
                                 component="a"
                                 variant="contained"
-                                href="https://oekaki-avatar-files.anthrotech.dev/oekakiavatar-template_v1.0.1.psd"
-                                download="oekakiavatar-template_v1.0.1.psd"
+                                href="https://oekaki-avatar-files.anthrotech.dev/oekakiavatar-template_v1.1.0.psd"
+                                download="oekakiavatar-template_v1.1.0.psd"
                             >
                                 {t('downloadTemplate')}
                             </Button>
