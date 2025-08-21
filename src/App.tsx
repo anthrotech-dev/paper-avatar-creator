@@ -1,6 +1,6 @@
 import { Editor } from './scenes/Editor'
 import { Plaza } from './scenes/Plaza'
-import { Box, useMediaQuery, useTheme } from '@mui/material'
+import { Box, Fab, Modal, Paper, useMediaQuery, useTheme } from '@mui/material'
 import { OrbitControls } from '@react-three/drei'
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { Canvas } from '@react-three/fiber'
@@ -14,6 +14,7 @@ import { Skybox } from './components/Skybox'
 import { Helmet } from 'react-helmet-async'
 import { useTranslation } from 'react-i18next'
 import { cdid } from './util'
+import { IoHelpCircleOutline } from 'react-icons/io5'
 
 const defaultCollection = [
     'ntngw0xw6rcmppnh06ccmvqtqr', // テンプレートくん
@@ -40,6 +41,8 @@ function App() {
     const previewId = (id ?? '') === 'edit' ? '' : (id ?? '')
 
     const mode = id === 'edit' ? 'edit' : 'plaza'
+
+    const [openHelp, setOpenHelp] = useState(false)
 
     const setView = useCallback(
         (position: Vector3, lookAt: Vector3, duration: number) => {
@@ -104,6 +107,45 @@ function App() {
                     position: 'relative'
                 }}
             >
+                <Fab
+                    sx={{
+                        position: 'absolute',
+                        bottom: 'calc(3rem + 60px)',
+                        right: '2rem',
+                        zIndex: 1000
+                    }}
+                    onClick={() => {
+                        setOpenHelp(true)
+                    }}
+                >
+                    <IoHelpCircleOutline style={{ width: '2rem', height: '2rem', color: theme.palette.primary.main }} />
+                </Fab>
+
+                <Modal open={openHelp} onClose={() => setOpenHelp(false)}>
+                    <Paper
+                        sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            padding: 2
+                        }}
+                    >
+                        <iframe
+                            width="560"
+                            height="315"
+                            src="https://www.youtube.com/embed/IyU04A2Xbf4?si=FFnYW-Y03FcvnV-G"
+                            title="YouTube video player"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            referrerPolicy="strict-origin-when-cross-origin"
+                            allowFullScreen
+                            style={{
+                                border: 'none',
+                                borderRadius: '8px'
+                            }}
+                        ></iframe>
+                    </Paper>
+                </Modal>
                 <Preview id={previewId}>
                     <Editor>
                         <Plaza>
