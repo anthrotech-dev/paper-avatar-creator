@@ -20,7 +20,8 @@ const defaultCollection = [
     'kna5gn7kjex5awnt06cchj52cc', // ととがんま
     'dp32dv0dgn8cgr5706cch6xyv0', // あむ
     'fat5f37e26tgqp9006cchnzg84', // ろくろもち
-    '58e9fqqexv1xpape06cchjr7h0' // えごえごペンギン
+    '58e9fqqexv1xpape06cchjr7h0', // えごえごペンギン
+    '6t8e8t4p5b2mw7t706ccnddhsw' // あむ with color
 ]
 
 function App() {
