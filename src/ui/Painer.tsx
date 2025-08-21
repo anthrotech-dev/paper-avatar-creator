@@ -71,7 +71,7 @@ export function Painter(props: PainterProps) {
 
     const fileInputRef = useRef<HTMLInputElement>(null)
 
-    const [showFaceTemplate, setShowFaceTemplate] = useState<boolean>(true)
+    const [showFaceTemplate, setShowFaceTemplate] = useState<boolean>(!props.initialTexture)
 
     const { t } = useTranslation('')
 
