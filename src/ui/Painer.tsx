@@ -542,7 +542,8 @@ export function Painter(props: PainterProps) {
                                 top: `${selection.startY}px`,
                                 width: `${selection.width}px`,
                                 height: `${selection.height}px`,
-                                border: '2px dashed #777'
+                                border: '2px dashed #777',
+                                pointerEvents: 'none'
                             }}
                         />
                     )}
@@ -879,7 +880,8 @@ export function Painter(props: PainterProps) {
                         gap: 1,
                         marginLeft: 2,
                         width: '200px',
-                        maxWidth: '20vw'
+                        maxWidth: '20vw',
+                        height: 'fit-content'
                     }}
                 >
                     <Typography variant="h6">{t('brushSize')}</Typography>
