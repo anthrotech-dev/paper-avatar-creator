@@ -41,8 +41,6 @@ function App() {
 
     const mode = id === 'edit' ? 'edit' : 'plaza'
 
-    const navigate = useNavigate()
-
     const setView = useCallback(
         (position: Vector3, lookAt: Vector3, duration: number) => {
             if (!orbitRef.current || !camera) return
