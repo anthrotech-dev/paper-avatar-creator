@@ -893,7 +893,7 @@ ${location.origin}/${uploaded.id}`
                                                 }
                                             />
                                         }
-                                        label={t('allowExport')}
+                                        label={t('allowModify')}
                                     />
                                     <FormControlLabel
                                         control={
@@ -904,7 +904,7 @@ ${location.origin}/${uploaded.id}`
                                                 }
                                             />
                                         }
-                                        label={t('allowModify')}
+                                        label={t('allowExport')}
                                     />
                                 </FormGroup>
                                 <Turnstile
