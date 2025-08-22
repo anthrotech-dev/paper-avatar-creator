@@ -116,7 +116,7 @@ export const handleResoniteExport = async (manifest: Partial<AvatarManifest>, te
     slots = slots.replaceAll('::Tail-Rotation-Z::', Math.sin(params.tailRotation / 2).toString())
     slots = slots.replaceAll('::Tail-Rotation-W::', Math.cos(params.tailRotation / 2).toString())
 
-    slots = slots.replaceAll('::Legs-In-Front::', params.legsInFront ? '0.001' : '-0.001')
+    slots = slots.replaceAll('::Legs-In-Front::', params.legsInFront ? '-0.001' : '0.001')
 
     const baseFeetDistance = 0.13
     const feetDistance = baseFeetDistance + params.legsDistanceFromBody * -0.015
