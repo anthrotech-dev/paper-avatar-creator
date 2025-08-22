@@ -127,8 +127,9 @@ export const handleResoniteExport = async (manifest: Partial<AvatarManifest>, te
     slots = slots.replaceAll('::Feet-Size::', feetSize.toString())
 
     const baseLegsDistance = 0
-    const legsDistance = baseLegsDistance + params.legsDistance * -0.03
-    slots = slots.replaceAll('::Legs-Distance::', legsDistance.toString())
+    const legsDistance = baseLegsDistance + params.legsDistance * 0.03
+    slots = slots.replaceAll('::Legs-Distance-L::', legsDistance.toString())
+    slots = slots.replaceAll('::Legs-Distance-R::', (-legsDistance).toString())
 
     const baseHandSize = 0.35
     const handSize = baseHandSize + params.handSize * 0.3
