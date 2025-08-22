@@ -340,7 +340,7 @@ export const createBaseAnimation = (params: AvatarParams) => {
     )
     // legsDistance
     const track_legsLeftDistance = new VectorKeyframeTrack('LeftFoot.position', [0], [params.legsDistance, 0, 0])
-    const track_legsRightDistance = new VectorKeyframeTrack('RightFoot.position', [0], [-params.legsDistance, 0, 0])
+    const track_legsRightDistance = new VectorKeyframeTrack('RightFoot.position', [0], [-params.legsDistance, 0, 0.001])
     // legsDistanceFromBody
     const track_legsPosition = new VectorKeyframeTrack(
         'Feet.position',
