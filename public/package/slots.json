@@ -4009,7 +4009,7 @@
                                           "Data": [
                                             ::Legs-Distance-R::,
                                             0,
-                                            0
+                                            0.001
                                           ]
                                         },
                                         "Rotation": {
