@@ -4,7 +4,7 @@ import { Object3D, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader, Vecto
 import { Avatar } from '../components/Avatar'
 import { Wanderer } from '../components/Wanderer'
 import { FollowCamera } from '../components/FollowCamera'
-import { Box, Button, Divider, Fab, Link, Typography } from '@mui/material'
+import { Alert, Box, Button, Divider, Fab, Link, Typography } from '@mui/material'
 import { MdAdd } from 'react-icons/md'
 import { type AvatarManifest } from '../types'
 import { Drawer } from '../ui/Drawer'
@@ -235,6 +235,9 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; dev
                     >
                         <Typography variant="h2">{selectedManifest.name}</Typography>
                         <Typography>Creator: {selectedManifest.creator}</Typography>
+                        {selectedManifest.creatorID === props.deviceID && (
+                            <Alert severity="success">{t('yourcreation')}</Alert>
+                        )}
                         {selectedManifest.extends && (
                             <Link
                                 component={NavLink}

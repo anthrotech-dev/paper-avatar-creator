@@ -89,7 +89,11 @@ Preview.Scene = () => {
     )
 }
 
-Preview.Overlay = (props: { collection: string[]; setCollection: Dispatch<SetStateAction<string[]>> }) => {
+Preview.Overlay = (props: {
+    collection: string[]
+    setCollection: Dispatch<SetStateAction<string[]>>
+    deviceID: string
+}) => {
     const { manifest } = usePreview()
     const navigate = useNavigate()
 
@@ -113,6 +117,7 @@ Preview.Overlay = (props: { collection: string[]; setCollection: Dispatch<SetSta
                     >
                         <Typography variant="h2">{manifest.name}</Typography>
                         <Typography>Creator: {manifest.creator}</Typography>
+                        {manifest.creatorID === props.deviceID && <Alert severity="success">{t('yourcreation')}</Alert>}
                         {manifest.extends && (
                             <Link component={NavLink} to={'/' + manifest.extends}>
                                 {t('extends')}

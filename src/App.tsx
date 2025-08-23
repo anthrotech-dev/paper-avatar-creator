@@ -170,7 +170,11 @@ function App() {
                             </Canvas>
 
                             {mode === 'plaza' && <Plaza.Overlay setCollection={setCollection} deviceID={deviceID} />}
-                            <Preview.Overlay collection={collection} setCollection={setCollection} />
+                            <Preview.Overlay
+                                collection={collection}
+                                setCollection={setCollection}
+                                deviceID={deviceID}
+                            />
 
                             <Drawer open={mode === 'edit'}>
                                 <Editor.Overlay setCollection={setCollection} deviceID={deviceID} />

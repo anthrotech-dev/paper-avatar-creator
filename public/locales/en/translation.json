@@ -57,5 +57,6 @@
     "exportable": "This avatar is exportable. To export, please add it to your favorites.",
     "notExportable": "This avatar cannot be exported. Only adding to favorites is allowed.",
     "modifiable": "This avatar is modifiable. To modify, please add it to your favorites.",
-    "notModifiable": "This avatar is not permitted for editing."
+    "notModifiable": "This avatar is not permitted for editing.",
+    "yourCreation": "This avatar is created by you."
 }
