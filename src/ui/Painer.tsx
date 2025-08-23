@@ -1,6 +1,6 @@
-import { Box, Button, ButtonGroup, IconButton, Slider, Tooltip, Typography } from '@mui/material'
+import { Box, Button, ButtonGroup, IconButton, Tooltip, useMediaQuery } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
-import { alpha as muiAlpha } from '@mui/material/styles'
+import { alpha as muiAlpha, useTheme } from '@mui/material/styles'
 
 import { IoIosUndo } from 'react-icons/io'
 import { IoIosRedo } from 'react-icons/io'
@@ -25,6 +25,7 @@ import { PanZoomSurface, type PanZoomHandle } from './PanZoomSurface'
 import { LuFlipHorizontal2 } from 'react-icons/lu'
 import { LuFlipVertical2 } from 'react-icons/lu'
 import { LuCopy } from 'react-icons/lu'
+import InputSlider from './InputSlider'
 
 const MAX_HISTORY = 30
 
@@ -41,6 +42,9 @@ interface History {
 }
 
 export function Painter(props: PainterProps) {
+    const theme = useTheme()
+    const isMobileSize = useMediaQuery(theme.breakpoints.down('md'))
+
     const tipRef = useRef<HTMLDivElement>(null)
 
     const [tool, setTool] = useState<'brush' | 'eraser' | 'fill' | 'selection'>('brush')
@@ -73,6 +77,8 @@ export function Painter(props: PainterProps) {
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const [showFaceTemplate, setShowFaceTemplate] = useState<boolean>(!props.initialTexture)
+
+    const colorRef = useRef<string>(color)
 
     const { t } = useTranslation('')
 
@@ -737,186 +743,183 @@ export function Painter(props: PainterProps) {
             <Box
                 sx={{
                     display: 'flex',
-                    flexDirection: 'row',
+                    flexDirection: 'column',
+                    gap: 1,
                     position: 'absolute',
                     top: 0,
                     left: 0,
-                    padding: 1,
-                    gap: 1
+                    padding: 1
                 }}
             >
-                <Box
+                <IconButton
+                    size="large"
                     sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 1
+                        width: '50px',
+                        height: '50px',
+                        backgroundColor: tool === 'brush' ? 'primary.main' : 'text.disabled',
+                        '&:hover': {
+                            backgroundColor: 'primary.dark'
+                        }
+                    }}
+                    onClick={() => setTool('brush')}
+                >
+                    <PiPaintBrushFill color="white" />
+                </IconButton>
+                <IconButton
+                    size="large"
+                    sx={{
+                        width: '50px',
+                        height: '50px',
+                        backgroundColor: tool === 'eraser' ? 'primary.main' : 'text.disabled',
+                        '&:hover': {
+                            backgroundColor: 'primary.dark'
+                        }
+                    }}
+                    onClick={() => setTool('eraser')}
+                >
+                    <PiEraserFill color="white" />
+                </IconButton>
+                <IconButton
+                    size="large"
+                    sx={{
+                        width: '50px',
+                        height: '50px',
+                        backgroundColor: tool === 'fill' ? 'primary.main' : 'text.disabled',
+                        '&:hover': {
+                            backgroundColor: 'primary.dark'
+                        }
+                    }}
+                    onClick={() => setTool('fill')}
+                >
+                    <PiPaintBucketFill color="white" />
+                </IconButton>
+
+                <IconButton
+                    size="large"
+                    sx={{
+                        width: '50px',
+                        height: '50px',
+                        backgroundColor: tool === 'selection' ? 'primary.main' : 'text.disabled',
+                        '&:hover': {
+                            backgroundColor: 'primary.dark'
+                        }
+                    }}
+                    onClick={() => setTool('selection')}
+                >
+                    <PiSelectionBold color="white" />
+                </IconButton>
+
+                <IconButton
+                    size="large"
+                    sx={{
+                        width: '50px',
+                        height: '50px',
+                        backgroundColor: color,
+                        '&:hover': {
+                            backgroundColor: muiAlpha(color, 0.5)
+                        }
+                    }}
+                    onPointerDown={() => {
+                        if (colorInputRef.current) {
+                            colorInputRef.current.click()
+                        }
                     }}
                 >
-                    <IconButton
-                        size="large"
-                        sx={{
+                    <PiPaletteFill color="white" />
+                    <input
+                        ref={colorInputRef}
+                        type="color"
+                        value={color}
+                        style={{
+                            position: 'absolute',
                             width: '50px',
                             height: '50px',
-                            backgroundColor: tool === 'brush' ? 'primary.main' : 'text.disabled',
-                            '&:hover': {
-                                backgroundColor: 'primary.dark'
-                            }
+                            opacity: 0
                         }}
-                        onClick={() => setTool('brush')}
-                    >
-                        <PiPaintBrushFill color="white" />
-                    </IconButton>
-                    <IconButton
-                        size="large"
-                        sx={{
-                            width: '50px',
-                            height: '50px',
-                            backgroundColor: tool === 'eraser' ? 'primary.main' : 'text.disabled',
-                            '&:hover': {
-                                backgroundColor: 'primary.dark'
-                            }
+                        onChange={(e) => {
+                            colorRef.current = e.target.value
+                            requestAnimationFrame(() => {
+                                colorRef.current && setColor(colorRef.current)
+                            })
                         }}
-                        onClick={() => setTool('eraser')}
-                    >
-                        <PiEraserFill color="white" />
-                    </IconButton>
-                    <IconButton
-                        size="large"
-                        sx={{
-                            width: '50px',
-                            height: '50px',
-                            backgroundColor: tool === 'fill' ? 'primary.main' : 'text.disabled',
-                            '&:hover': {
-                                backgroundColor: 'primary.dark'
-                            }
-                        }}
-                        onClick={() => setTool('fill')}
-                    >
-                        <PiPaintBucketFill color="white" />
-                    </IconButton>
+                    />
+                </IconButton>
 
-                    <IconButton
-                        size="large"
-                        sx={{
-                            width: '50px',
-                            height: '50px',
-                            backgroundColor: tool === 'selection' ? 'primary.main' : 'text.disabled',
-                            '&:hover': {
-                                backgroundColor: 'primary.dark'
-                            }
-                        }}
-                        onClick={() => setTool('selection')}
-                    >
-                        <PiSelectionBold color="white" />
-                    </IconButton>
-
-                    <IconButton
-                        size="large"
-                        sx={{
-                            width: '50px',
-                            height: '50px',
-                            backgroundColor: color,
-                            '&:hover': {
-                                backgroundColor: muiAlpha(color, 0.5)
-                            }
-                        }}
-                        onPointerDown={() => {
-                            if (colorInputRef.current) {
-                                colorInputRef.current.click()
-                            }
-                        }}
-                    >
-                        <PiPaletteFill color="white" />
-                        <input
-                            ref={colorInputRef}
-                            type="color"
-                            value={color}
-                            style={{
-                                position: 'absolute',
-                                width: '50px',
-                                height: '50px',
-                                opacity: 0
-                            }}
-                            onChange={(e) => setColor(e.target.value)}
-                        />
-                    </IconButton>
-
-                    <IconButton
-                        size="large"
-                        sx={{
-                            width: '50px',
-                            height: '50px',
-                            backgroundColor: 'primary.main',
-                            '&:hover': {
-                                backgroundColor: 'primary.dark'
-                            }
-                        }}
-                        onClick={() => {
-                            fileInputRef.current?.click()
-                        }}
-                    >
-                        <FaFileImport color="white" />
-                    </IconButton>
-
-                    <IconButton
-                        size="large"
-                        onClick={() => {
-                            const ctx = canvasRef.current!.getContext('2d')!
-                            ctx.clearRect(0, 0, props.width, props.height)
-                        }}
-                        sx={{
-                            width: '50px',
-                            height: '50px',
-                            backgroundColor: 'error.main',
-                            '&:hover': {
-                                backgroundColor: 'error.dark'
-                            }
-                        }}
-                    >
-                        <MdDelete color="white" />
-                    </IconButton>
-                </Box>
-                <Box
+                <IconButton
+                    size="large"
                     sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 1,
-                        marginLeft: 2,
-                        width: '200px',
-                        maxWidth: '20vw',
-                        height: 'fit-content'
+                        width: '50px',
+                        height: '50px',
+                        backgroundColor: 'primary.main',
+                        '&:hover': {
+                            backgroundColor: 'primary.dark'
+                        }
+                    }}
+                    onClick={() => {
+                        fileInputRef.current?.click()
                     }}
                 >
-                    <Typography variant="h6">{t('brushSize')}</Typography>
-                    <Slider
-                        value={brushSize}
-                        onChange={(_e, value) => setBrushSize(value as number)}
-                        min={1}
-                        max={64}
-                        step={1}
-                        valueLabelDisplay="auto"
-                    />
+                    <FaFileImport color="white" />
+                </IconButton>
 
-                    <Typography variant="h6">{t('hardness')}</Typography>
-                    <Slider
-                        value={hardness}
-                        onChange={(_e, value) => setHardness(value as number)}
-                        min={0.1}
-                        max={1}
-                        step={0.01}
-                        valueLabelDisplay="auto"
-                    />
+                <IconButton
+                    size="large"
+                    onClick={() => {
+                        const ctx = canvasRef.current!.getContext('2d')!
+                        ctx.clearRect(0, 0, props.width, props.height)
+                    }}
+                    sx={{
+                        width: '50px',
+                        height: '50px',
+                        backgroundColor: 'error.main',
+                        '&:hover': {
+                            backgroundColor: 'error.dark'
+                        }
+                    }}
+                >
+                    <MdDelete color="white" />
+                </IconButton>
+            </Box>
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: isMobileSize ? 'column' : 'row',
+                    alignItems: 'center',
+                    gap: 1,
+                    height: '50px',
+                    position: 'absolute',
+                    top: 0,
+                    left: '80px'
+                }}
+            >
+                <InputSlider
+                    label={t('brushSize')}
+                    value={brushSize}
+                    onChange={(value) => setBrushSize(value)}
+                    min={1}
+                    max={64}
+                    step={1}
+                    singleColumn={!isMobileSize}
+                />
 
-                    <Typography variant="h6">{t('opacity')}</Typography>
-                    <Slider
-                        value={alpha}
-                        onChange={(_e, value) => setAlpha(value as number)}
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        valueLabelDisplay="auto"
-                    />
-                </Box>
+                <InputSlider
+                    label={t('hardness')}
+                    value={hardness}
+                    onChange={(value) => setHardness(value)}
+                    min={0.1}
+                    max={1}
+                    step={0.05}
+                    singleColumn={!isMobileSize}
+                />
+                <InputSlider
+                    label={t('opacity')}
+                    value={alpha}
+                    onChange={(value) => setAlpha(value)}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    singleColumn={!isMobileSize}
+                />
             </Box>
 
             {selecting && (
