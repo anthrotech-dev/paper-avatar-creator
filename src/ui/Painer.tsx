@@ -1,5 +1,6 @@
 import { Box, Button, ButtonGroup, IconButton, Slider, Tooltip, Typography } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
+import { alpha as muiAlpha } from '@mui/material/styles'
 
 import { IoIosUndo } from 'react-icons/io'
 import { IoIosRedo } from 'react-icons/io'
@@ -816,10 +817,10 @@ export function Painter(props: PainterProps) {
                             height: '50px',
                             backgroundColor: color,
                             '&:hover': {
-                                backgroundColor: 'primary.dark'
+                                backgroundColor: muiAlpha(color, 0.5)
                             }
                         }}
-                        onClick={() => {
+                        onPointerDown={() => {
                             if (colorInputRef.current) {
                                 colorInputRef.current.click()
                             }
@@ -831,8 +832,10 @@ export function Painter(props: PainterProps) {
                             type="color"
                             value={color}
                             style={{
-                                visibility: 'hidden',
-                                position: 'absolute'
+                                position: 'absolute',
+                                width: '1px',
+                                height: '1px',
+                                opacity: 0
                             }}
                             onChange={(e) => setColor(e.target.value)}
                         />
