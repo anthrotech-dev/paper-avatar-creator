@@ -438,6 +438,9 @@ export function Painter(props: PainterProps) {
             sx={{
                 userSelect: 'none'
             }}
+            onContextMenu={(e) => {
+                return e.preventDefault()
+            }}
         >
             <input
                 type="file"
