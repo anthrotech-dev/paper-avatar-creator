@@ -833,8 +833,8 @@ export function Painter(props: PainterProps) {
                             value={color}
                             style={{
                                 position: 'absolute',
-                                width: '1px',
-                                height: '1px',
+                                width: '50px',
+                                height: '50px',
                                 opacity: 0
                             }}
                             onChange={(e) => setColor(e.target.value)}
