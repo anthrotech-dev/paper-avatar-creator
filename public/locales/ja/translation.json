@@ -1,6 +1,7 @@
 {
     "title": "おえかきアバター",
     "exportResonite": "Resonite用にエクスポート",
+    "exportZip": "Zipでエクスポート",
     "resoniteAvatar": "Resoniteアバター",
     "zipFile": "zipファイル",
     "modify": "改変する",

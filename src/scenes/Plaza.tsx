@@ -8,7 +8,7 @@ import { Alert, Box, Button, Divider, Fab, Link, Typography } from '@mui/materia
 import { MdAdd } from 'react-icons/md'
 import { type AvatarManifest } from '../types'
 import { Drawer } from '../ui/Drawer'
-import { handleResoniteExport } from '../util'
+import { handleExport, handleResoniteExport } from '../util'
 import { useEditor } from './Editor'
 import { shaderMaterial } from '@react-three/drei'
 import { extend } from '@react-three/fiber'
@@ -266,6 +266,19 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; dev
                         >
                             {t('exportResonite')}
                         </Button>
+                        {selectedManifest.creatorID === props.deviceID && (
+                            <Button
+                                variant="contained"
+                                onClick={() => {
+                                    if (!texture) {
+                                        return
+                                    }
+                                    handleExport(selectedManifest, texture)
+                                }}
+                            >
+                                {t('exportZip')}
+                            </Button>
+                        )}
                         <Button
                             variant="contained"
                             disabled={!selectedManifest.editable && selectedManifest.creatorID !== props.deviceID}
