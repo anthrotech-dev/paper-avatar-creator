@@ -38,7 +38,7 @@ import {
 
 import { handleExport, handlePublish, handleResoniteExport } from '../util'
 import { Painter } from '../ui/Painer'
-
+import JSZip from 'jszip'
 import { Turnstile } from '@marsidev/react-turnstile'
 
 import { symetricTextures, texturePositions, type AvatarManifest, type AvatarParams } from '../types'
@@ -300,108 +300,132 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; de
         <>
             <input
                 type="file"
-                accept="image/*,application/json"
+                accept="image/*,application/json,application/zip"
                 ref={fileInputRef}
                 style={{ display: 'none' }}
                 multiple={true}
-                onChange={(e) => {
-                    // Check if the file is a manifest.json
+                onChange={async (e) => {
+                    const images: File[] = []
+
                     for (const file of e.target.files || []) {
+                        console.log('Processing file:', file.name, file.type)
                         if (file.name === 'manifest.json') {
-                            const reader = new FileReader()
-                            reader.onload = (event) => {
-                                console.log('Reading manifest.json:', event.target?.result)
-                                try {
-                                    const data = JSON.parse(event.target?.result as string) as AvatarManifest
-                                    setAvatarParams((prev) => ({
-                                        ...prev,
-                                        ...data.params
-                                    }))
-                                    setManifest((prev) => ({
-                                        ...prev,
-                                        name: data.name,
-                                        description: data.description
-                                    }))
-                                } catch (error) {
-                                    console.error('Error parsing manifest.json:', error)
-                                }
+                            const text = await file.text()
+                            try {
+                                const data = JSON.parse(text) as AvatarManifest
+                                setAvatarParams((prev) => ({
+                                    ...prev,
+                                    ...data.params
+                                }))
+                                setManifest((prev) => ({
+                                    ...prev,
+                                    name: data.name,
+                                    description: data.description
+                                }))
+                            } catch (error) {
+                                console.error('Error parsing manifest.json:', error)
                             }
-                            reader.readAsText(file)
+
                             return
-                        }
-                    }
-
-                    // load textures
-                    if (e.target.files?.length === 0) return
-                    if (e.target.files?.length === 1) {
-                        const file = e.target.files[0]
-                        const loader = new TextureLoader()
-                        const url = URL.createObjectURL(file)
-                        loader.load(url, (texture) => {
-                            texture.flipY = false
-                            texture.colorSpace = SRGBColorSpace
-                            setTexture(texture)
-                        })
-                    } else {
-                        const out = document.createElement('canvas')
-                        out.width = 2048
-                        out.height = 1024
-                        const ctx = out.getContext('2d')
-                        if (!ctx) return
-
-                        for (const file of e.target.files || []) {
-                            const url = URL.createObjectURL(file)
-                            const name = file.name.split('.')[0]
-                            const img = new Image()
-                            const dsize = 274
-
-                            img.onload = () => {
-                                if (name in texturePositions) {
-                                    const pos = texturePositions[name]
-                                    ctx.drawImage(img, 0, 0, img.width, img.height, pos[0], pos[1], dsize, dsize)
-                                } else if (symetricTextures.includes(name)) {
-                                    console.log(`Processing symetric texture: ${name}`)
-                                    const left = 'Left-' + name
-                                    const leftPos = texturePositions[left]
-                                    ctx.drawImage(
-                                        img,
-                                        0,
-                                        0,
-                                        img.width,
-                                        img.height,
-                                        leftPos[0],
-                                        leftPos[1],
-                                        dsize,
-                                        dsize
-                                    )
-
-                                    ctx.save()
-                                    const right = 'Right-' + name
-                                    const rightPos = texturePositions[right]
-                                    //draw the right side mirrored
-                                    ctx.scale(-1, 1)
-                                    ctx.drawImage(
-                                        img,
-                                        0,
-                                        0,
-                                        img.width,
-                                        img.height,
-                                        -rightPos[0] - dsize,
-                                        rightPos[1],
-                                        dsize,
-                                        dsize
-                                    )
-                                    ctx.restore()
+                        } else if (file.name.endsWith('.zip')) {
+                            const zip = new JSZip()
+                            try {
+                                const content = await zip.loadAsync(file)
+                                console.log('files in zip:', Object.keys(content.files))
+                                const manifestFile = content.file('manifest.json')
+                                if (manifestFile) {
+                                    const text = await manifestFile.async('text')
+                                    console.log('Reading manifest.json from zip:', text)
+                                    try {
+                                        const data = JSON.parse(text) as AvatarManifest
+                                        setAvatarParams((prev) => ({
+                                            ...prev,
+                                            ...data.params
+                                        }))
+                                        setManifest((prev) => ({
+                                            ...prev,
+                                            name: data.name,
+                                            description: data.description
+                                        }))
+                                    } catch (error) {
+                                        console.error('Error parsing manifest.json from zip:', error)
+                                    }
                                 }
+                                const imageFiles = Object.values(content.files).filter(
+                                    (f) =>
+                                        f.name.endsWith('.png') || f.name.endsWith('.jpg') || f.name.endsWith('.jpeg')
+                                )
+                                for (const imgFile of imageFiles) {
+                                    const blob = await imgFile.async('blob')
+                                    const name = imgFile.name.split('/').pop() ?? 'unknown.png'
+                                    images.push(new File([blob], name, { type: blob.type }))
+                                }
+                            } catch (error) {
+                                console.error('Error reading zip file:', error)
                             }
-                            img.src = url
+                        } else if (file.type.startsWith('image/')) {
+                            images.push(file)
                         }
-
-                        const texture = new Texture(out)
-                        texture.flipY = false
-                        texture.colorSpace = SRGBColorSpace
-                        setTexture(texture)
                     }
+
+                    console.log('found images:', images)
+
+                    const out = document.createElement('canvas')
+                    out.width = 2048
+                    out.height = 1024
+                    const ctx = out.getContext('2d')
+                    if (!ctx) return
+
+                    for (const file of images) {
+                        const name = file.name.split('.')[0]
+                        const dsize = 274
+
+                        const bitmap = await createImageBitmap(file)
+                        if (name in texturePositions) {
+                            const pos = texturePositions[name]
+                            ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height, pos[0], pos[1], dsize, dsize)
+                        } else if (symetricTextures.includes(name)) {
+                            console.log(`Processing symetric texture: ${name}`)
+                            const left = 'Left-' + name
+                            const leftPos = texturePositions[left]
+                            ctx.drawImage(
+                                bitmap,
+                                0,
+                                0,
+                                bitmap.width,
+                                bitmap.height,
+                                leftPos[0],
+                                leftPos[1],
+                                dsize,
+                                dsize
+                            )
+
+                            ctx.save()
+                            const right = 'Right-' + name
+                            const rightPos = texturePositions[right]
+                            //draw the right side mirrored
+                            ctx.scale(-1, 1)
+                            ctx.drawImage(
+                                bitmap,
+                                0,
+                                0,
+                                bitmap.width,
+                                bitmap.height,
+                                -rightPos[0] - dsize,
+                                rightPos[1],
+                                dsize,
+                                dsize
+                            )
+                            ctx.restore()
+                        } else {
+                            ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height)
+                        }
+                    }
+
+                    const texture = new Texture(out)
+                    texture.flipY = false
+                    texture.colorSpace = SRGBColorSpace
+                    setTexture(texture)
                 }}
             />
             <Box

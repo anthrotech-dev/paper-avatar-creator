@@ -14,6 +14,7 @@ export function TexturePreview(props: TexturePreviewProps) {
     const wrapper = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
+        console.log('update texture preview', props.texture)
         if (!props.texture) return
 
         const img = (props.texture.image ?? props.texture.source?.data) as unknown
@@ -48,16 +49,17 @@ export function TexturePreview(props: TexturePreviewProps) {
         >
             {props.texture && (
                 <>
-                    {src ? (
-                        <img src={src} alt="Texture Preview" style={{ width: '100%', height: '100%' }} />
-                    ) : (
-                        <canvas
-                            ref={canvasRef}
-                            width={wrapper.current?.clientWidth || 256}
-                            height={wrapper.current?.clientHeight || 256}
-                            style={{ width: '100%', height: '100%' }}
-                        />
-                    )}
+                    <img
+                        src={src}
+                        alt="Texture Preview"
+                        style={{ width: '100%', height: '100%', display: src ? 'block' : 'none' }}
+                    />
+                    <canvas
+                        ref={canvasRef}
+                        width={wrapper.current?.clientWidth || 256}
+                        height={wrapper.current?.clientHeight || 256}
+                        style={{ width: '100%', height: '100%', display: src ? 'none' : 'block' }}
+                    />
                 </>
             )}
         </Box>
