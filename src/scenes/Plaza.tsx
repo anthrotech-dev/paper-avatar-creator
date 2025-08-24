@@ -1,10 +1,20 @@
-import { createContext, memo, Suspense, useContext, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
+import {
+    createContext,
+    memo,
+    Suspense,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+    type Dispatch,
+    type SetStateAction
+} from 'react'
 import { Object3D, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader, Vector3 } from 'three'
 
 import { Avatar } from '../components/Avatar'
 import { Wanderer } from '../components/Wanderer'
 import { FollowCamera } from '../components/FollowCamera'
-import { Alert, Box, Button, Divider, Fab, Link, Typography } from '@mui/material'
+import { Alert, Box, Button, Divider, Fab, IconButton, Link, Typography } from '@mui/material'
 import { MdAdd } from 'react-icons/md'
 import { type AvatarManifest } from '../types'
 import { Drawer } from '../ui/Drawer'
@@ -16,6 +26,9 @@ import { useNavigate, Link as NavLink } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { CfmRenderer } from '../ui/CfmRenderer'
 import { useTranslation } from 'react-i18next'
+
+import { TfiShiftLeftAlt } from 'react-icons/tfi'
+import { TfiShiftRightAlt } from 'react-icons/tfi'
 
 type PlazaState = {
     selected: Object3D | null
@@ -198,6 +211,11 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; dev
     const navigate = useNavigate()
 
     const { t } = useTranslation('')
+    const [forceDrawerClose, setForceDrawerClose] = useState(false)
+
+    useEffect(() => {
+        setForceDrawerClose(false)
+    }, [selectedManifest])
 
     return (
         <>
@@ -209,21 +227,64 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; dev
                     <meta name="description" content={selectedManifest.description} />
                 </Helmet>
             )}
-            <Fab
-                color="primary"
-                sx={{
-                    position: 'absolute',
-                    bottom: '2rem',
-                    right: '2rem',
-                    zIndex: 1000
-                }}
-                onClick={() => {
-                    navigate('/edit')
-                }}
-            >
-                <MdAdd style={{ width: '2rem', height: '2rem', color: 'white' }} />
-            </Fab>
-            <Drawer open={!!selectedManifest}>
+            {selectedManifest ? (
+                <>
+                    <IconButton
+                        onClick={() => {
+                            setForceDrawerClose(false)
+                        }}
+                        sx={{
+                            position: 'absolute',
+                            bottom: '2rem',
+                            right: '2rem',
+                            zIndex: 1000
+                        }}
+                    >
+                        <TfiShiftLeftAlt
+                            style={{
+                                width: '2rem',
+                                height: '2rem',
+                                color: 'black'
+                            }}
+                        />
+                    </IconButton>
+                </>
+            ) : (
+                <Fab
+                    color="primary"
+                    sx={{
+                        position: 'absolute',
+                        bottom: '2rem',
+                        right: '2rem',
+                        zIndex: 1000
+                    }}
+                    onClick={() => {
+                        navigate('/edit')
+                    }}
+                >
+                    <MdAdd style={{ width: '2rem', height: '2rem', color: 'white' }} />
+                </Fab>
+            )}
+            <Drawer open={!!selectedManifest && !forceDrawerClose} onClose={() => setSelectedManifest(null)}>
+                <IconButton
+                    sx={{
+                        position: 'absolute',
+                        bottom: '1rem',
+                        left: '1rem',
+                        zIndex: 1000
+                    }}
+                >
+                    <TfiShiftRightAlt
+                        style={{
+                            width: '2rem',
+                            height: '2rem',
+                            color: 'black'
+                        }}
+                        onClick={() => {
+                            setForceDrawerClose(true)
+                        }}
+                    />
+                </IconButton>
                 {selectedManifest && (
                     <Box
                         sx={{
