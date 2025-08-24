@@ -185,7 +185,6 @@ export function Painter(props: PainterProps) {
             .match(/../g)!
             .map((c) => parseInt(c, 16))
         fill.push(Math.round(alpha * 255)) // アルファ値を追加
-        console.log('fill', color, alpha, fill)
 
         const sx = Math.floor(
             (e.clientX - e.currentTarget.getBoundingClientRect().left) / (surfaceRef.current?.scale ?? 1)

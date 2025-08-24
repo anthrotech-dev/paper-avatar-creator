@@ -7,6 +7,7 @@ import {
     useMemo,
     useState,
     type Dispatch,
+    type RefObject,
     type SetStateAction
 } from 'react'
 import { Object3D, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader, Vector3 } from 'three'
@@ -26,9 +27,11 @@ import { useNavigate, Link as NavLink } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { CfmRenderer } from '../ui/CfmRenderer'
 import { useTranslation } from 'react-i18next'
+import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 
 import { TfiShiftLeftAlt } from 'react-icons/tfi'
 import { TfiShiftRightAlt } from 'react-icons/tfi'
+import { IoIosCloseCircleOutline } from 'react-icons/io'
 
 type PlazaState = {
     selected: Object3D | null
@@ -124,7 +127,7 @@ const FadingFloorMaterial = shaderMaterial(
 
 extend({ FadingFloorMaterial })
 
-Plaza.Scene = (props: { avatars: string[]; setView: (position: Vector3, lookAt: Vector3, speed: number) => void }) => {
+Plaza.Scene = (props: { orbitRef: RefObject<OrbitControlsImpl | null>; avatars: string[] }) => {
     const { selected, setSelected, setSelectedManifest, setTexture } = usePlaza()
 
     const texture = useMemo(() => {
@@ -139,18 +142,7 @@ Plaza.Scene = (props: { avatars: string[]; setView: (position: Vector3, lookAt: 
     return (
         <>
             <group>
-                <mesh
-                    //rotation={[-Math.PI / 2, 0, 0]}
-                    onPointerDown={(e) => {
-                        e.stopPropagation()
-                        setSelected(null)
-                        setSelectedManifest(null)
-                        if (selected) {
-                            props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
-                        }
-                    }}
-                    position={[0, -0.005, 0]}
-                >
+                <mesh position={[0, -0.005, 0]}>
                     <cylinderGeometry args={[20.0, 20.0, 0.01, 32]} />
                     {/* @ts-ignore */}
                     <fadingFloorMaterial fadeRadius={20} map={texture} />
@@ -162,7 +154,7 @@ Plaza.Scene = (props: { avatars: string[]; setView: (position: Vector3, lookAt: 
                     setSelected={setSelected}
                 />
             </group>
-            <FollowCamera target={selected} />
+            <FollowCamera target={selected} orbitRef={props.orbitRef} />
         </>
     )
 }
@@ -205,8 +197,12 @@ const AvatarsRenderer = memo(
     }
 )
 
-Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; deviceID: string }) => {
-    const { setSelected, selectedManifest, setSelectedManifest, texture } = usePlaza()
+Plaza.Overlay = (props: {
+    setCollection: Dispatch<SetStateAction<string[]>>
+    deviceID: string
+    setView: (position: Vector3, lookAt: Vector3, speed: number) => void
+}) => {
+    const { selected, setSelected, selectedManifest, setSelectedManifest, texture } = usePlaza()
     const { setTexture, setParent, setAvatarParams } = useEditor()
     const navigate = useNavigate()
 
@@ -216,6 +212,28 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; dev
     useEffect(() => {
         setForceDrawerClose(false)
     }, [selectedManifest])
+
+    const exit = () => {
+        if (!selected) return
+        setSelectedManifest(null)
+        setSelected(null)
+        props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
+    }
+
+    // press escape to exit
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                exit()
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [exit])
 
     return (
         <>
@@ -266,6 +284,24 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; dev
                 </Fab>
             )}
             <Drawer open={!!selectedManifest && !forceDrawerClose} onClose={() => setSelectedManifest(null)}>
+                <IconButton
+                    sx={{
+                        position: 'absolute',
+                        top: '1rem',
+                        right: '1rem'
+                    }}
+                >
+                    <IoIosCloseCircleOutline
+                        style={{
+                            width: '2rem',
+                            height: '2rem',
+                            color: 'black'
+                        }}
+                        onClick={() => {
+                            exit()
+                        }}
+                    />
+                </IconButton>
                 <IconButton
                     sx={{
                         position: 'absolute',

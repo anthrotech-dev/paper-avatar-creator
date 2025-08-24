@@ -14,7 +14,6 @@ export function TexturePreview(props: TexturePreviewProps) {
     const wrapper = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        console.log('update texture preview', props.texture)
         if (!props.texture) return
 
         const img = (props.texture.image ?? props.texture.source?.data) as unknown

@@ -162,14 +162,16 @@ function App() {
                                     setCamera(camera as PerspectiveCamera)
                                 }}
                             >
-                                <Plaza.Scene avatars={collection} setView={setView} />
+                                <Plaza.Scene avatars={collection} orbitRef={orbitRef} />
                                 {mode === 'edit' && <Editor.Scene />}
                                 <OrbitControls ref={orbitRef} maxDistance={20} />
                                 <Preview.Scene />
                                 <Skybox />
                             </Canvas>
 
-                            {mode === 'plaza' && <Plaza.Overlay setCollection={setCollection} deviceID={deviceID} />}
+                            {mode === 'plaza' && (
+                                <Plaza.Overlay setCollection={setCollection} deviceID={deviceID} setView={setView} />
+                            )}
                             <Preview.Overlay
                                 collection={collection}
                                 setCollection={setCollection}
