@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Divider, Link, Typography } from '@mui/material'
+import { Alert, Box, Button, Divider, Link, Skeleton, Typography } from '@mui/material'
 import {
     createContext,
     Suspense,
@@ -94,36 +94,43 @@ Preview.Overlay = (props: {
     setCollection: Dispatch<SetStateAction<string[]>>
     deviceID: string
 }) => {
-    const { manifest } = usePreview()
+    const { id, manifest } = usePreview()
     const navigate = useNavigate()
 
     const { t } = useTranslation('')
 
     return (
-        <Drawer open={!!manifest}>
+        <Drawer open={!!id}>
             {manifest && (
-                <>
-                    <Helmet>
-                        <title>おえかきアバター | {manifest.name}</title>
-                        <meta name="description" content={manifest.description} />
-                    </Helmet>
-                    <Box
-                        sx={{
-                            padding: '1rem',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '1rem'
-                        }}
-                    >
-                        <Typography variant="h2">{manifest.name}</Typography>
-                        <Typography>Creator: {manifest.creator}</Typography>
+                <Helmet>
+                    <title>おえかきアバター | {manifest.name}</title>
+                    <meta name="description" content={manifest.description} />
+                </Helmet>
+            )}
+            <Box
+                sx={{
+                    padding: '1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1rem'
+                }}
+            >
+                <Typography variant="h2">{manifest ? manifest.name : <Skeleton />}</Typography>
+                <Typography>{manifest ? `Creator: ${manifest.creator}` : <Skeleton />}</Typography>
+
+                {manifest && (
+                    <>
                         {manifest.creatorID === props.deviceID && <Alert severity="success">{t('yourcreation')}</Alert>}
                         {manifest.extends && (
                             <Link component={NavLink} to={'/' + manifest.extends}>
                                 {t('extends')}
                             </Link>
                         )}
-                        <Divider />
+                    </>
+                )}
+                <Divider />
+                {manifest ? (
+                    <>
                         {manifest.description && <CfmRenderer message={manifest.description} />}
                         {manifest.exportable ? (
                             <Alert severity="success">{t('exportable')}</Alert>
@@ -136,29 +143,33 @@ Preview.Overlay = (props: {
                         ) : (
                             <Alert severity="info">{t('notModifiable')}</Alert>
                         )}
-                    </Box>
-                    <Button
-                        color="primary"
-                        sx={{ margin: '1rem' }}
-                        onClick={() => {
-                            navigate('/')
-                        }}
-                    >
-                        {t('close')}
-                    </Button>
-                    <Button
-                        startIcon={<FaStar />}
-                        variant="contained"
-                        sx={{ margin: '1rem' }}
-                        disabled={props.collection.includes(manifest.id)}
-                        onClick={() => {
-                            props.setCollection([...props.collection, manifest.id])
-                            navigate('/')
-                        }}
-                    >
-                        {props.collection.includes(manifest.id) ? t('alreadyInCollection') : t('addToCollection')}
-                    </Button>
-                </>
+                    </>
+                ) : (
+                    <Skeleton variant="rectangular" height={60} />
+                )}
+            </Box>
+            <Button
+                color="primary"
+                sx={{ margin: '1rem' }}
+                onClick={() => {
+                    navigate('/')
+                }}
+            >
+                {t('close')}
+            </Button>
+            {manifest && (
+                <Button
+                    startIcon={<FaStar />}
+                    variant="contained"
+                    sx={{ margin: '1rem' }}
+                    disabled={props.collection.includes(manifest.id)}
+                    onClick={() => {
+                        props.setCollection([...props.collection, manifest.id])
+                        navigate('/')
+                    }}
+                >
+                    {props.collection.includes(manifest.id) ? t('alreadyInCollection') : t('addToCollection')}
+                </Button>
             )}
         </Drawer>
     )
