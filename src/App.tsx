@@ -38,6 +38,8 @@ function App() {
     const theme = useTheme()
     const isMobileSize = useMediaQuery(theme.breakpoints.down('sm'))
 
+    const sizeCheckerRef = useRef<HTMLDivElement>(null)
+
     const previewId = useMemo(() => {
         if (!id) return ''
         if (id === 'edit') return ''
@@ -94,22 +96,53 @@ function App() {
         const fullW = window.innerWidth
         const fullH = window.innerHeight
 
+        const drawerW = sizeCheckerRef.current?.clientWidth || 0
+        const drawerH = sizeCheckerRef.current?.clientHeight || 0
+
         let xOffset = 0
         let yOffset = 0
         if (isMobileSize) {
-            yOffset = Math.round(fullH * 0.3)
+            yOffset = Math.round(drawerH / 2)
         } else {
-            xOffset = Math.round(fullW * 0.08)
+            xOffset = Math.round(drawerW / 2)
         }
 
         camera.setViewOffset(fullW, fullH, xOffset, yOffset, fullW, fullH)
-    }, [camera, isMobileSize])
+    }, [camera, isMobileSize, sizeCheckerRef])
 
     return (
         <>
             <Helmet>
                 <title>{t('title')}</title>
             </Helmet>
+            <Box
+                ref={sizeCheckerRef}
+                sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: {
+                        xs: '100%',
+                        sm: '50%'
+                    },
+                    minWidth: {
+                        sm: '420px'
+                    },
+                    maxWidth: {
+                        sm: '800px'
+                    },
+                    height: {
+                        xs: '60vh',
+                        sm: '100%'
+                    },
+                    borderRadius: {
+                        xs: '10px 10px 0 0',
+                        sm: '10px 0 0 10px'
+                    },
+                    pointerEvents: 'none',
+                    visibility: 'hidden'
+                }}
+            />
             <Box
                 sx={{
                     width: '100vw',
