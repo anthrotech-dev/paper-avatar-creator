@@ -90,8 +90,15 @@ function App() {
         }
     }, [id, setView])
 
+    const hash = location.hash.slice(1)
+
     useEffect(() => {
         if (!camera) return
+
+        if (hash === 'full') {
+            camera.clearViewOffset()
+            return
+        }
 
         const fullW = window.innerWidth
         const fullH = window.innerHeight
@@ -108,7 +115,7 @@ function App() {
         }
 
         camera.setViewOffset(fullW, fullH, xOffset, yOffset, fullW, fullH)
-    }, [camera, isMobileSize, sizeCheckerRef])
+    }, [camera, isMobileSize, sizeCheckerRef, hash])
 
     return (
         <>
@@ -153,9 +160,11 @@ function App() {
                 <Fab
                     sx={{
                         position: 'absolute',
-                        bottom: 'calc(3rem + 60px)',
-                        right: '2rem',
-                        zIndex: 1000
+                        bottom: { xs: '5.5rem', sm: '6.5rem' },
+                        right: { xs: '1rem', sm: '2rem' },
+                        zIndex: 1000,
+                        width: '3.5rem',
+                        height: '3.5rem'
                     }}
                     onClick={() => {
                         setOpenHelp(true)

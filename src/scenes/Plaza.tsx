@@ -15,7 +15,7 @@ import { RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 import { Avatar, type AvatarInfo } from '../components/Avatar'
 import { Wanderer } from '../components/Wanderer'
 import { FollowCamera } from '../components/FollowCamera'
-import { Alert, Box, Button, Divider, Fab, IconButton, Link, Typography } from '@mui/material'
+import { Alert, Box, Button, Divider, Fab, IconButton, Link, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { MdAdd } from 'react-icons/md'
 import { Drawer } from '../ui/Drawer'
 import { handleExport, handleResoniteExport } from '../util'
@@ -28,9 +28,11 @@ import { CfmRenderer } from '../ui/CfmRenderer'
 import { useTranslation } from 'react-i18next'
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 
-import { TfiShiftLeftAlt } from 'react-icons/tfi'
-import { TfiShiftRightAlt } from 'react-icons/tfi'
 import { IoIosCloseCircleOutline } from 'react-icons/io'
+import { MdOutlineKeyboardDoubleArrowDown } from 'react-icons/md'
+import { MdOutlineKeyboardDoubleArrowLeft } from 'react-icons/md'
+import { MdOutlineKeyboardDoubleArrowRight } from 'react-icons/md'
+import { MdOutlineKeyboardDoubleArrowUp } from 'react-icons/md'
 
 type PlazaState = {
     avatarDict: Record<string, AvatarInfo>
@@ -183,16 +185,17 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; dev
     const navigate = useNavigate()
 
     const { t } = useTranslation('')
-    const [forceDrawerClose, setForceDrawerClose] = useState(false)
+
+    const theme = useTheme()
+    const isMobileSize = useMediaQuery(theme.breakpoints.down('sm'))
 
     const pageID = location.pathname.slice(1) // Remove leading '/'
     const selected = useMemo<AvatarInfo | null>(() => {
         return avatarDict[pageID] || null
     }, [pageID, avatarDict])
 
-    useEffect(() => {
-        setForceDrawerClose(false)
-    }, [selected])
+    const hash = location.hash.slice(1)
+    const forceDrawerClose = hash === 'full'
 
     // press escape to exit
     useEffect(() => {
@@ -223,22 +226,45 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; dev
                 <>
                     <IconButton
                         onClick={() => {
-                            setForceDrawerClose(false)
+                            navigate(location.pathname, { replace: true })
                         }}
-                        sx={{
-                            position: 'absolute',
-                            bottom: '2rem',
-                            right: '2rem',
-                            zIndex: 1000
-                        }}
+                        sx={
+                            isMobileSize
+                                ? {
+                                      position: 'absolute',
+                                      zIndex: 1000,
+                                      bottom: '1rem',
+                                      right: '1rem',
+                                      width: '3.5rem',
+                                      height: '3.5rem'
+                                  }
+                                : {
+                                      position: 'absolute',
+                                      bottom: '2rem',
+                                      right: '2rem',
+                                      width: '3.5rem',
+                                      height: '3.5rem',
+                                      zIndex: 1000
+                                  }
+                        }
                     >
-                        <TfiShiftLeftAlt
-                            style={{
-                                width: '2rem',
-                                height: '2rem',
-                                color: 'black'
-                            }}
-                        />
+                        {isMobileSize ? (
+                            <MdOutlineKeyboardDoubleArrowUp
+                                style={{
+                                    width: '2rem',
+                                    height: '2rem',
+                                    color: 'black'
+                                }}
+                            />
+                        ) : (
+                            <MdOutlineKeyboardDoubleArrowLeft
+                                style={{
+                                    width: '2rem',
+                                    height: '2rem',
+                                    color: 'black'
+                                }}
+                            />
+                        )}
                     </IconButton>
                 </>
             ) : (
@@ -246,9 +272,11 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; dev
                     color="primary"
                     sx={{
                         position: 'absolute',
-                        bottom: '2rem',
-                        right: '2rem',
-                        zIndex: 1000
+                        bottom: { xs: '1rem', sm: '2rem' },
+                        right: { xs: '1rem', sm: '2rem' },
+                        zIndex: 1000,
+                        width: '3.5rem',
+                        height: '3.5rem'
                     }}
                     onClick={() => {
                         navigate('/edit')
@@ -277,23 +305,42 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; dev
                     />
                 </IconButton>
                 <IconButton
-                    sx={{
-                        position: 'absolute',
-                        bottom: '1rem',
-                        left: '1rem',
-                        zIndex: 1000
+                    sx={
+                        isMobileSize
+                            ? {
+                                  position: 'absolute',
+                                  top: '1rem',
+                                  right: '4rem',
+                                  zIndex: 1000
+                              }
+                            : {
+                                  position: 'absolute',
+                                  bottom: '1rem',
+                                  left: '1rem',
+                                  zIndex: 1000
+                              }
+                    }
+                    onClick={() => {
+                        navigate(location.pathname + '#full', { replace: true })
                     }}
                 >
-                    <TfiShiftRightAlt
-                        style={{
-                            width: '2rem',
-                            height: '2rem',
-                            color: 'black'
-                        }}
-                        onClick={() => {
-                            setForceDrawerClose(true)
-                        }}
-                    />
+                    {isMobileSize ? (
+                        <MdOutlineKeyboardDoubleArrowDown
+                            style={{
+                                width: '2rem',
+                                height: '2rem',
+                                color: 'black'
+                            }}
+                        />
+                    ) : (
+                        <MdOutlineKeyboardDoubleArrowRight
+                            style={{
+                                width: '2rem',
+                                height: '2rem',
+                                color: 'black'
+                            }}
+                        />
+                    )}
                 </IconButton>
                 {selected?.manifest && (
                     <Box
