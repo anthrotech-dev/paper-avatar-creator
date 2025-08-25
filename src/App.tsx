@@ -4,7 +4,7 @@ import { Box, Fab, Modal, Paper, useMediaQuery, useTheme } from '@mui/material'
 import { OrbitControls } from '@react-three/drei'
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { Canvas } from '@react-three/fiber'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PerspectiveCamera, Vector3 } from 'three'
 import { Drawer } from './ui/Drawer'
 import { useParams } from 'react-router-dom'
@@ -38,7 +38,12 @@ function App() {
     const theme = useTheme()
     const isMobileSize = useMediaQuery(theme.breakpoints.down('sm'))
 
-    const previewId = (id ?? '') === 'edit' ? '' : (id ?? '')
+    const previewId = useMemo(() => {
+        if (!id) return ''
+        if (id === 'edit') return ''
+        if (collection.includes(id)) return ''
+        return id
+    }, [id, collection])
 
     const mode = id === 'edit' ? 'edit' : 'plaza'
 
@@ -71,9 +76,14 @@ function App() {
     )
 
     useEffect(() => {
+        // コレクションビューはfollowCameraに任せる
+        if (id && collection.includes(id)) return
+
         if (id) {
+            // プレビュー
             setView(new Vector3(0, 10.5, 3), new Vector3(0, 10.5, 0), 1)
         } else {
+            // デフォルト
             setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
         }
     }, [id, setView])
@@ -169,9 +179,7 @@ function App() {
                                 <Skybox />
                             </Canvas>
 
-                            {mode === 'plaza' && (
-                                <Plaza.Overlay setCollection={setCollection} deviceID={deviceID} setView={setView} />
-                            )}
+                            {mode === 'plaza' && <Plaza.Overlay setCollection={setCollection} deviceID={deviceID} />}
                             <Preview.Overlay
                                 collection={collection}
                                 setCollection={setCollection}

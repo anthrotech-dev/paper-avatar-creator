@@ -10,14 +10,13 @@ import {
     type RefObject,
     type SetStateAction
 } from 'react'
-import { Object3D, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader, Vector3 } from 'three'
+import { RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 
-import { Avatar } from '../components/Avatar'
+import { Avatar, type AvatarInfo } from '../components/Avatar'
 import { Wanderer } from '../components/Wanderer'
 import { FollowCamera } from '../components/FollowCamera'
 import { Alert, Box, Button, Divider, Fab, IconButton, Link, Typography } from '@mui/material'
 import { MdAdd } from 'react-icons/md'
-import { type AvatarManifest } from '../types'
 import { Drawer } from '../ui/Drawer'
 import { handleExport, handleResoniteExport } from '../util'
 import { useEditor } from './Editor'
@@ -34,12 +33,8 @@ import { TfiShiftRightAlt } from 'react-icons/tfi'
 import { IoIosCloseCircleOutline } from 'react-icons/io'
 
 type PlazaState = {
-    selected: Object3D | null
-    setSelected: Dispatch<SetStateAction<Object3D | null>>
-    texture: Texture | null
-    setTexture: Dispatch<SetStateAction<Texture | null>>
-    selectedManifest: AvatarManifest | null
-    setSelectedManifest: (manifest: AvatarManifest | null) => void
+    avatarDict: Record<string, AvatarInfo>
+    setAvatarDict: Dispatch<SetStateAction<Record<string, AvatarInfo>>>
 }
 
 const PlazaContext = createContext<PlazaState | null>(null)
@@ -48,31 +43,21 @@ const usePlaza = () => {
     const ctx = useContext(PlazaContext)
     if (!ctx) {
         return {
-            selected: null,
-            setSelected: () => {},
-            texture: {},
-            setTexture: () => {},
-            selectedManifest: null,
-            setSelectedManifest: () => {}
+            avatarDict: {},
+            setAvatarDict: () => {}
         }
     }
     return ctx
 }
 
 export function Plaza({ children }: { children?: React.ReactNode }) {
-    const [selected, setSelected] = useState<Object3D | null>(null)
-    const [selectedManifest, setSelectedManifest] = useState<AvatarManifest | null>(null)
-    const [texture, setTexture] = useState<Texture | null>(null)
+    const [avatarDict, setAvatarDict] = useState<Record<string, AvatarInfo>>({})
 
     return (
         <PlazaContext.Provider
             value={{
-                texture,
-                selectedManifest,
-                setTexture,
-                setSelectedManifest,
-                selected,
-                setSelected
+                avatarDict,
+                setAvatarDict
             }}
         >
             {children}
@@ -128,7 +113,7 @@ const FadingFloorMaterial = shaderMaterial(
 extend({ FadingFloorMaterial })
 
 Plaza.Scene = (props: { orbitRef: RefObject<OrbitControlsImpl | null>; avatars: string[] }) => {
-    const { selected, setSelected, setSelectedManifest, setTexture } = usePlaza()
+    const { avatarDict, setAvatarDict } = usePlaza()
 
     const texture = useMemo(() => {
         const textureLoader = new TextureLoader()
@@ -139,6 +124,11 @@ Plaza.Scene = (props: { orbitRef: RefObject<OrbitControlsImpl | null>; avatars: 
         return texture
     }, [])
 
+    const pageID = location.pathname.slice(1)
+    const selected = useMemo(() => {
+        return avatarDict[pageID] || null
+    }, [pageID, avatarDict])
+
     return (
         <>
             <group>
@@ -147,14 +137,9 @@ Plaza.Scene = (props: { orbitRef: RefObject<OrbitControlsImpl | null>; avatars: 
                     {/* @ts-ignore */}
                     <fadingFloorMaterial fadeRadius={20} map={texture} />
                 </mesh>
-                <AvatarsRenderer
-                    setTexture={setTexture}
-                    avatars={props.avatars}
-                    setSelectedManifest={setSelectedManifest}
-                    setSelected={setSelected}
-                />
+                <AvatarsRenderer avatars={props.avatars} setAvatarDict={setAvatarDict} />
             </group>
-            <FollowCamera target={selected} orbitRef={props.orbitRef} />
+            <FollowCamera target={selected?.target} orbitRef={props.orbitRef} />
         </>
     )
 }
@@ -162,14 +147,10 @@ Plaza.Scene = (props: { orbitRef: RefObject<OrbitControlsImpl | null>; avatars: 
 const AvatarsRenderer = memo(
     ({
         avatars,
-        setSelectedManifest,
-        setSelected,
-        setTexture
+        setAvatarDict
     }: {
         avatars: string[]
-        setSelectedManifest: (_: AvatarManifest | null) => void
-        setSelected: (_: Object3D | null) => void
-        setTexture: Dispatch<SetStateAction<Texture | null>>
+        setAvatarDict: Dispatch<SetStateAction<Record<string, AvatarInfo>>>
     }) => {
         return (
             <>
@@ -183,10 +164,9 @@ const AvatarsRenderer = memo(
                         <Suspense fallback={null}>
                             <Avatar
                                 id={id}
-                                onClick={(e) => {
-                                    setSelected(e.target)
-                                    setSelectedManifest(e.manifest)
-                                    setTexture(e.texture)
+                                navigateOnClick
+                                onLoad={(avatarInfo) => {
+                                    setAvatarDict((dict) => ({ ...dict, [id]: avatarInfo }))
                                 }}
                             />
                         </Suspense>
@@ -197,34 +177,28 @@ const AvatarsRenderer = memo(
     }
 )
 
-Plaza.Overlay = (props: {
-    setCollection: Dispatch<SetStateAction<string[]>>
-    deviceID: string
-    setView: (position: Vector3, lookAt: Vector3, speed: number) => void
-}) => {
-    const { selected, setSelected, selectedManifest, setSelectedManifest, texture } = usePlaza()
+Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; deviceID: string }) => {
+    const { avatarDict, setAvatarDict } = usePlaza()
     const { setTexture, setParent, setAvatarParams } = useEditor()
     const navigate = useNavigate()
 
     const { t } = useTranslation('')
     const [forceDrawerClose, setForceDrawerClose] = useState(false)
 
+    const pageID = location.pathname.slice(1) // Remove leading '/'
+    const selected = useMemo<AvatarInfo | null>(() => {
+        return avatarDict[pageID] || null
+    }, [pageID, avatarDict])
+
     useEffect(() => {
         setForceDrawerClose(false)
-    }, [selectedManifest])
-
-    const exit = () => {
-        if (!selected) return
-        setSelectedManifest(null)
-        setSelected(null)
-        props.setView(new Vector3(-2, 2, 10), new Vector3(0, 0, 0), 1)
-    }
+    }, [selected])
 
     // press escape to exit
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
-                exit()
+                navigate('/')
             }
         }
 
@@ -233,19 +207,19 @@ Plaza.Overlay = (props: {
         return () => {
             window.removeEventListener('keydown', handleKeyDown)
         }
-    }, [exit])
+    }, [navigate])
 
     return (
         <>
-            {selectedManifest && (
+            {selected?.manifest && (
                 <Helmet>
                     <title>
-                        {t('title')} | {selectedManifest.name}
+                        {t('title')} | {selected.manifest.name}
                     </title>
-                    <meta name="description" content={selectedManifest.description} />
+                    <meta name="description" content={selected.manifest.description} />
                 </Helmet>
             )}
-            {selectedManifest ? (
+            {selected?.manifest ? (
                 <>
                     <IconButton
                         onClick={() => {
@@ -283,7 +257,7 @@ Plaza.Overlay = (props: {
                     <MdAdd style={{ width: '2rem', height: '2rem', color: 'white' }} />
                 </Fab>
             )}
-            <Drawer open={!!selectedManifest && !forceDrawerClose} onClose={() => setSelectedManifest(null)}>
+            <Drawer open={!!selected?.manifest && !forceDrawerClose} onClose={() => navigate('/')}>
                 <IconButton
                     sx={{
                         position: 'absolute',
@@ -298,7 +272,7 @@ Plaza.Overlay = (props: {
                             color: 'black'
                         }}
                         onClick={() => {
-                            exit()
+                            navigate('/')
                         }}
                     />
                 </IconButton>
@@ -321,7 +295,7 @@ Plaza.Overlay = (props: {
                         }}
                     />
                 </IconButton>
-                {selectedManifest && (
+                {selected?.manifest && (
                     <Box
                         sx={{
                             padding: '1rem',
@@ -330,47 +304,40 @@ Plaza.Overlay = (props: {
                             gap: '1rem'
                         }}
                     >
-                        <Typography variant="h2">{selectedManifest.name}</Typography>
-                        <Typography>Creator: {selectedManifest.creator}</Typography>
-                        {selectedManifest.creatorID === props.deviceID && (
+                        <Typography variant="h2">{selected.manifest.name}</Typography>
+                        <Typography>Creator: {selected.manifest.creator}</Typography>
+                        {selected.manifest.creatorID === props.deviceID && (
                             <Alert severity="success">{t('yourcreation')}</Alert>
                         )}
-                        {selectedManifest.extends && (
-                            <Link
-                                component={NavLink}
-                                to={'/' + selectedManifest.extends}
-                                onClick={() => {
-                                    setSelected(null)
-                                    setSelectedManifest(null)
-                                }}
-                            >
+                        {selected.manifest.extends && (
+                            <Link component={NavLink} to={'/' + selected.manifest.extends}>
                                 {t('extends')}
                             </Link>
                         )}
                         <Divider />
-                        {selectedManifest.description && <CfmRenderer message={selectedManifest.description} />}
+                        {selected.manifest.description && <CfmRenderer message={selected.manifest.description} />}
                         <Box flex={1} />
                         <Button
                             variant="contained"
-                            disabled={!selectedManifest.exportable && selectedManifest.creatorID !== props.deviceID}
+                            disabled={!selected.manifest.exportable && selected.manifest.creatorID !== props.deviceID}
                             onClick={() => {
-                                if (!texture) {
+                                if (!selected.texture) {
                                     console.error('No texture available for export')
                                     return
                                 }
-                                handleResoniteExport(selectedManifest, texture)
+                                handleResoniteExport(selected.manifest, selected.texture)
                             }}
                         >
                             {t('exportResonite')}
                         </Button>
-                        {selectedManifest.creatorID === props.deviceID && (
+                        {selected.manifest.creatorID === props.deviceID && (
                             <Button
                                 variant="contained"
                                 onClick={() => {
-                                    if (!texture) {
+                                    if (!selected.texture) {
                                         return
                                     }
-                                    handleExport(selectedManifest, texture)
+                                    handleExport(selected.manifest, selected.texture)
                                 }}
                             >
                                 {t('exportZip')}
@@ -378,13 +345,11 @@ Plaza.Overlay = (props: {
                         )}
                         <Button
                             variant="contained"
-                            disabled={!selectedManifest.editable && selectedManifest.creatorID !== props.deviceID}
+                            disabled={!selected.manifest.editable && selected.manifest.creatorID !== props.deviceID}
                             onClick={() => {
-                                if (texture) setTexture(texture)
-                                setParent(selectedManifest)
-                                setAvatarParams(selectedManifest.params)
-                                setSelected(null)
-                                setSelectedManifest(null)
+                                if (selected.texture) setTexture(selected.texture)
+                                setParent(selected.manifest)
+                                setAvatarParams(selected.manifest.params)
                                 navigate('/edit')
                             }}
                         >
@@ -397,7 +362,7 @@ Plaza.Overlay = (props: {
                                 window.open(
                                     `https://x.com/intent/tweet?text=${encodeURIComponent(
                                         `#OekakiAvatar
-${location.origin}/${selectedManifest.id}`
+${location.origin}/${selected.manifest.id}`
                                     )}`
                                 )
                             }}
@@ -408,7 +373,7 @@ ${location.origin}/${selectedManifest.id}`
                             color="primary"
                             variant="contained"
                             onClick={() => {
-                                navigator.clipboard.writeText(location.origin + '/' + selectedManifest.id)
+                                navigator.clipboard.writeText(location.origin + '/' + selected.manifest.id)
                             }}
                         >
                             {t('copyURL')}
@@ -417,9 +382,13 @@ ${location.origin}/${selectedManifest.id}`
                             color="error"
                             variant="contained"
                             onClick={() => {
+                                setAvatarDict((dict) => {
+                                    const newDict = { ...dict }
+                                    delete newDict[selected.manifest.id]
+                                    return newDict
+                                })
+                                props.setCollection((c) => c.filter((id) => id !== selected.manifest.id))
                                 navigate('/')
-                                props.setCollection((c) => c.filter((id) => id !== selectedManifest.id))
-                                setSelectedManifest(null)
                             }}
                         >
                             {t('removeFromCollection')}

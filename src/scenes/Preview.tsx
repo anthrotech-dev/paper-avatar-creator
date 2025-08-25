@@ -44,12 +44,14 @@ export function Preview(props: PreviewProps) {
     const [manifest, setManifest] = useState<AvatarManifest | null>(null)
 
     useEffect(() => {
-        if (!props.id || props.id === '') {
+        if (!manifest?.id) return
+        if (!props.id) {
             setManifest(null)
-            return
         }
-        if (!manifest) return
-    }, [props.id, manifest])
+        if (props.id !== manifest.id) {
+            setManifest(null)
+        }
+    }, [props.id, manifest?.id])
 
     return (
         <PreviewContext.Provider
@@ -80,8 +82,8 @@ Preview.Scene = () => {
             <Suspense fallback={null}>
                 <Avatar
                     id={id}
-                    onLoad={(manifest) => {
-                        setManifest(manifest)
+                    onLoad={(e) => {
+                        setManifest(e.manifest)
                     }}
                 />
             </Suspense>

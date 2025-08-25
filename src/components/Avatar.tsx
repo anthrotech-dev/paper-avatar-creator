@@ -18,17 +18,19 @@ import { useFrame, useGraph } from '@react-three/fiber'
 import { FakeShadow } from './FakeShadow'
 import { a, useSpring } from '@react-spring/three'
 import { createBaseAnimation } from '../util'
+import { useNavigate } from 'react-router-dom'
 
-type AvatarEvent = {
+export type AvatarInfo = {
+    id: string
     manifest: AvatarManifest
-    target: Object3D
+    target: Object3D | null
     texture: Texture | null
 }
 
 type AvatarProps = {
     id: string
-    onLoad?: (manifest: AvatarManifest) => void
-    onClick?: (_: AvatarEvent) => void
+    onLoad?: (avatarInfo: AvatarInfo) => void
+    navigateOnClick?: boolean
 }
 
 export const Avatar = (props: AvatarProps) => {
@@ -49,8 +51,13 @@ export const Avatar = (props: AvatarProps) => {
         config: { tension: 220, friction: 20 }
     })
 
+    const navigate = useNavigate()
+
     useEffect(() => {
         const endpoint = `https://pub-01b22329d1ae4699af72f1db7103a0ab.r2.dev/uploads/${props.id}/manifest.json`
+        setLoaded(false)
+        setManifest(undefined)
+        setTexture(null)
         fetch(endpoint)
             .then((response) => {
                 if (!response.ok) {
@@ -67,13 +74,21 @@ export const Avatar = (props: AvatarProps) => {
                     texture.colorSpace = SRGBColorSpace
 
                     setTexture(texture)
-                    props.onLoad?.(data)
+                    const delay = Math.random() * 1000 + 500
+                    setTimeout(() => {
+                        setLoaded(true)
+                    }, delay)
                     setTimeout(
                         () => {
-                            setLoaded(true)
+                            props.onLoad?.({
+                                id: props.id,
+                                manifest: data,
+                                target: group.current,
+                                texture: texture
+                            })
                         },
-                        Math.random() * 1000 + 500
-                    ) // Random delay between 500ms and 1500ms
+                        delay + 500 // ensure animation is ended
+                    )
                 })
             })
             .catch((error) => {
@@ -185,11 +200,7 @@ export const Avatar = (props: AvatarProps) => {
                 position={position.to((x) => [0, Math.abs(x), 0])}
                 onPointerDown={(e) => {
                     e.stopPropagation()
-                    props.onClick?.({
-                        manifest: manifest!,
-                        target: group.current!,
-                        texture: texture || null
-                    })
+                    if (props.navigateOnClick) navigate(`/` + props.id)
                 }}
             >
                 <primitive scale={[0.01, 0.01, 0.01]} ref={group} object={clone} />
