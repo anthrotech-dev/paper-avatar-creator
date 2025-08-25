@@ -15,6 +15,7 @@ import { Helmet } from 'react-helmet-async'
 import { useTranslation } from 'react-i18next'
 import { cdid } from './util'
 import { IoHelpCircleOutline } from 'react-icons/io5'
+import { useNavigate } from 'react-router-dom'
 
 const defaultCollection = [
     'ntngw0xw6rcmppnh06ccmvqtqr', // テンプレートくん
@@ -24,6 +25,8 @@ const defaultCollection = [
     '58e9fqqexv1xpape06cchjr7h0', // えごえごペンギン
     '6t8e8t4p5b2mw7t706ccnddhsw' // あむ with color
 ]
+
+const systemPages = ['edit', 'help']
 
 function App() {
     const { t } = useTranslation('')
@@ -39,17 +42,16 @@ function App() {
     const isMobileSize = useMediaQuery(theme.breakpoints.down('sm'))
 
     const sizeCheckerRef = useRef<HTMLDivElement>(null)
+    const navigate = useNavigate()
 
     const previewId = useMemo(() => {
         if (!id) return ''
-        if (id === 'edit') return ''
+        if (systemPages.includes(id)) return ''
         if (collection.includes(id)) return ''
         return id
     }, [id, collection])
 
     const mode = id === 'edit' ? 'edit' : 'plaza'
-
-    const [openHelp, setOpenHelp] = useState(false)
 
     const setView = useCallback(
         (position: Vector3, lookAt: Vector3, duration: number) => {
@@ -80,6 +82,7 @@ function App() {
     useEffect(() => {
         // コレクションビューはfollowCameraに任せる
         if (id && collection.includes(id)) return
+        if (id === 'help') return
 
         if (id) {
             // プレビュー
@@ -167,13 +170,13 @@ function App() {
                         height: '3.5rem'
                     }}
                     onClick={() => {
-                        setOpenHelp(true)
+                        navigate('/help')
                     }}
                 >
                     <IoHelpCircleOutline style={{ width: '2rem', height: '2rem', color: theme.palette.primary.main }} />
                 </Fab>
 
-                <Modal open={openHelp} onClose={() => setOpenHelp(false)}>
+                <Modal open={id === 'help'} onClose={() => navigate('/')}>
                     <Paper
                         sx={{
                             position: 'absolute',
