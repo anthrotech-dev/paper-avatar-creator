@@ -98,7 +98,7 @@ function App() {
     useEffect(() => {
         if (!camera) return
 
-        if (hash === 'full') {
+        if (hash === 'full' || !id) {
             camera.clearViewOffset()
             return
         }
@@ -118,7 +118,7 @@ function App() {
         }
 
         camera.setViewOffset(fullW, fullH, xOffset, yOffset, fullW, fullH)
-    }, [camera, isMobileSize, sizeCheckerRef, hash])
+    }, [camera, isMobileSize, sizeCheckerRef, hash, id])
 
     return (
         <>
