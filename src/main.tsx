@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import OBSApp from './OBSApp.tsx'
 import { Route, BrowserRouter, Routes } from 'react-router-dom'
 import { GA4Provider } from './GA4.tsx'
 import { HelmetProvider } from 'react-helmet-async'
@@ -89,6 +90,14 @@ createRoot(document.getElementById('root')!).render(
                             element={
                                 <GA4Provider tag={tag}>
                                     <App />
+                                </GA4Provider>
+                            }
+                        />
+                        <Route
+                            path="/obs/:id"
+                            element={
+                                <GA4Provider tag={tag}>
+                                    <OBSApp />
                                 </GA4Provider>
                             }
                         />
