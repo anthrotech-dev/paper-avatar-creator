@@ -15,7 +15,21 @@ import { RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 import { Avatar, type AvatarInfo } from '../components/Avatar'
 import { Wanderer } from '../components/Wanderer'
 import { FollowCamera } from '../components/FollowCamera'
-import { Alert, Box, Button, Divider, Fab, IconButton, Link, Typography, useMediaQuery, useTheme } from '@mui/material'
+import {
+    Alert,
+    Box,
+    Button,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    Divider,
+    Fab,
+    IconButton,
+    Link,
+    Typography,
+    useMediaQuery,
+    useTheme
+} from '@mui/material'
 import { MdAdd } from 'react-icons/md'
 import { Drawer } from '../ui/Drawer'
 import { handleExport, handleResoniteExport } from '../util'
@@ -33,6 +47,7 @@ import { MdOutlineKeyboardDoubleArrowDown } from 'react-icons/md'
 import { MdOutlineKeyboardDoubleArrowLeft } from 'react-icons/md'
 import { MdOutlineKeyboardDoubleArrowRight } from 'react-icons/md'
 import { MdOutlineKeyboardDoubleArrowUp } from 'react-icons/md'
+import { CopyText } from '../ui/CopyText'
 
 type PlazaState = {
     avatarDict: Record<string, AvatarInfo>
@@ -196,6 +211,8 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; dev
 
     const hash = location.hash.slice(1)
     const forceDrawerClose = hash === 'full'
+
+    const [openOBSHelp, setOpenOBSHelp] = useState(false)
 
     // press escape to exit
     useEffect(() => {
@@ -377,6 +394,15 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; dev
                         >
                             {t('exportResonite')}
                         </Button>
+                        <Button
+                            variant="contained"
+                            disabled={!selected.manifest.exportable && selected.manifest.creatorID !== props.deviceID}
+                            onClick={() => {
+                                setOpenOBSHelp(true)
+                            }}
+                        >
+                            OBSで利用する
+                        </Button>
                         {selected.manifest.creatorID === props.deviceID && (
                             <Button
                                 variant="contained"
@@ -443,6 +469,30 @@ ${location.origin}/${selected.manifest.id}`
                     </Box>
                 )}
             </Drawer>
+            <Dialog open={openOBSHelp} onClose={() => setOpenOBSHelp(false)}>
+                <DialogTitle>OBSで配信に使用しよう</DialogTitle>
+                <DialogContent
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1rem',
+                        minWidth: '300px',
+                        maxWidth: '600px'
+                    }}
+                >
+                    <Typography>OBSを以下の起動フラグを付けて起動します。(Steam版を使うと設定しやすいです)</Typography>
+
+                    <CopyText text="--use-fake-ui-for-media-stream" />
+
+                    <Typography>OBSでシーンにブラウザソースを追加し、以下のURLを指定します。</Typography>
+
+                    <CopyText text={`${location.origin}/obs/${selected?.manifest.id}`} />
+
+                    <Typography>
+                        画角を調整したい場合は、OBSのブラウザソースを選択し、「対話」ボタンを押して表示されるウィンドウで調整してください。
+                    </Typography>
+                </DialogContent>
+            </Dialog>
         </>
     )
 }
