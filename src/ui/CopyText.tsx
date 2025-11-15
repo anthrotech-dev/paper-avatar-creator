@@ -7,7 +7,7 @@ type CopyTextProps = {
 
 export const CopyText = ({ text }: CopyTextProps) => {
     return (
-        <Paper sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', width: 400 }}>
+        <Paper sx={{ p: '2px 4px', display: 'flex', alignItems: 'center' }}>
             <InputBase sx={{ ml: 1, flex: 1 }} value={text} readOnly fullWidth />
             <Divider sx={{ height: 28, m: 0.5 }} orientation="vertical" />
             <IconButton

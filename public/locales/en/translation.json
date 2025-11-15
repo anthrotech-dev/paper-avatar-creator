@@ -59,5 +59,10 @@
     "notExportable": "This avatar cannot be exported. Only adding to favorites is allowed.",
     "modifiable": "This avatar is modifiable. To modify, please add it to your favorites.",
     "notModifiable": "This avatar is not permitted for editing.",
-    "yourCreation": "This avatar is created by you."
+    "yourCreation": "This avatar is created by you.",
+    "useobs": "Use with OBS",
+    "letsuseobs": "Let's use OBS for streaming",
+    "obs1": "To use the microphone, launch OBS with the following startup flags. (The Steam version is easier to configure.)",
+    "obs2": "In OBS, add a Browser Source to your scene and enter the following URL:",
+    "obs3": "If you'd like to adjust the field of view, select the Browser Source in OBS, click “Interact,” and make adjustments in the window that appears."
 }

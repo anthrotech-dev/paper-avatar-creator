@@ -49,6 +49,8 @@ import { MdOutlineKeyboardDoubleArrowRight } from 'react-icons/md'
 import { MdOutlineKeyboardDoubleArrowUp } from 'react-icons/md'
 import { CopyText } from '../ui/CopyText'
 
+import ObsDemoGif from '../assets/obs-demo.gif'
+
 type PlazaState = {
     avatarDict: Record<string, AvatarInfo>
     setAvatarDict: Dispatch<SetStateAction<Record<string, AvatarInfo>>>
@@ -401,7 +403,7 @@ Plaza.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; dev
                                 setOpenOBSHelp(true)
                             }}
                         >
-                            OBSで利用する
+                            {t('useobs')}
                         </Button>
                         {selected.manifest.creatorID === props.deviceID && (
                             <Button
@@ -469,28 +471,55 @@ ${location.origin}/${selected.manifest.id}`
                     </Box>
                 )}
             </Drawer>
-            <Dialog open={openOBSHelp} onClose={() => setOpenOBSHelp(false)}>
-                <DialogTitle>OBSで配信に使用しよう</DialogTitle>
+            <Dialog
+                open={openOBSHelp}
+                onClose={() => setOpenOBSHelp(false)}
+                sx={{
+                    '& .MuiDialog-paper': {
+                        width: '80vw',
+                        maxWidth: '1000px'
+                    }
+                }}
+            >
+                <DialogTitle>{t('letsuseobs')}</DialogTitle>
                 <DialogContent
                     sx={{
                         display: 'flex',
-                        flexDirection: 'column',
+                        flexDirection: { xs: 'column', md: 'row' },
                         gap: '1rem',
-                        minWidth: '300px',
-                        maxWidth: '600px'
+                        maxWidth: '1000px',
+                        overflowX: 'hidden'
                     }}
                 >
-                    <Typography>OBSを以下の起動フラグを付けて起動します。(Steam版を使うと設定しやすいです)</Typography>
-
-                    <CopyText text="--use-fake-ui-for-media-stream" />
-
-                    <Typography>OBSでシーンにブラウザソースを追加し、以下のURLを指定します。</Typography>
-
-                    <CopyText text={`${location.origin}/obs/${selected?.manifest.id}`} />
-
-                    <Typography>
-                        画角を調整したい場合は、OBSのブラウザソースを選択し、「対話」ボタンを押して表示されるウィンドウで調整してください。
-                    </Typography>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flex: 1
+                        }}
+                    >
+                        <Box
+                            component="img"
+                            src={ObsDemoGif}
+                            alt="OBS Demo"
+                            sx={{ width: '100%', borderRadius: '8px' }}
+                        />
+                    </Box>
+                    <Box
+                        sx={{
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '1rem'
+                        }}
+                    >
+                        <Typography>{t('obs1')}</Typography>
+                        <CopyText text="--use-fake-ui-for-media-stream" />
+                        <Typography>{t('obs2')}</Typography>
+                        <CopyText text={`${location.origin}/obs/${selected?.manifest.id}`} />
+                        <Typography>{t('obs3')}</Typography>
+                    </Box>
                 </DialogContent>
             </Dialog>
         </>
