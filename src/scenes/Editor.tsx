@@ -43,7 +43,7 @@ import { Turnstile } from '@marsidev/react-turnstile'
 
 import { symetricTextures, texturePositions, type AvatarManifest, type AvatarParams } from '../types'
 import { EditableAvatar } from '../components/EditableAvatar'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { ThumbnailAvatar } from '../components/ThumbnailAvatar'
 import { useTranslation } from 'react-i18next'
 import { FaCaretDown } from 'react-icons/fa'
@@ -108,6 +108,10 @@ export function Editor({ children }: { children?: React.ReactNode }) {
 
     const [defaultTexture, setDefaultTexture] = useState<Texture>(new Texture())
 
+    const location = useLocation()
+    const params = new URLSearchParams(location.search)
+    const initTexture = params.get('init')
+
     useEffect(() => {
         const loader = new TextureLoader()
         loader.loadAsync('/tex/sample.png').then((tex) => {
@@ -116,6 +120,18 @@ export function Editor({ children }: { children?: React.ReactNode }) {
             setDefaultTexture(tex)
         })
     }, [])
+
+    useEffect(() => {
+        console.log('initTexture param:', initTexture)
+        if (!initTexture) return
+        const loader = new TextureLoader()
+        const url = `https://oekaki-avatar-files.anthrotech.dev/drawings/${initTexture}.png`
+        loader.loadAsync(url).then((tex) => {
+            tex.flipY = false
+            tex.colorSpace = SRGBColorSpace
+            setDefaultTexture(tex)
+        })
+    }, [initTexture])
 
     const [avatarParams, setAvatarParams] = useState<AvatarParams>({
         headSize: 0,
