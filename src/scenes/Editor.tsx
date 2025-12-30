@@ -708,7 +708,11 @@ Editor.Overlay = (props: { setCollection: Dispatch<SetStateAction<string[]>>; de
                         </Box>
                     </>
                 )}
-                <Divider />
+                <Divider
+                    sx={{
+                        marginY: '10px'
+                    }}
+                />
                 <Box display="flex" gap="10px">
                     <Button
                         color="error"
@@ -887,75 +891,91 @@ ${location.origin}/${uploaded.id}`
                     </>
                 ) : (
                     <>
-                        <DialogTitle>
+                        <DialogTitle
+                            sx={{
+                                paddingBottom: '0px'
+                            }}
+                        >
                             {t('publish')}: {manifest.name}
                         </DialogTitle>
                         <DialogContent
                             sx={{
                                 display: 'flex',
-                                flexDirection: { xs: 'column', sm: 'row' },
-                                gap: '20px',
-                                alignItems: 'center'
+                                flexDirection: 'column',
+                                gap: '20px'
                             }}
                         >
-                            <Box>
-                                {thumbnail && (
-                                    <img
-                                        src={thumbnail}
-                                        alt="Thumbnail"
-                                        style={{ width: '300px', height: 'auto', marginBottom: '20px' }}
-                                    />
-                                )}
-                            </Box>
+                            <Typography>{t('publishHint')}</Typography>
                             <Box
                                 sx={{
                                     display: 'flex',
-                                    flex: 1,
-                                    flexDirection: 'column'
+                                    flexDirection: { xs: 'column', sm: 'row' },
+                                    gap: '20px',
+                                    alignItems: 'center'
                                 }}
                             >
-                                <TextField
-                                    label={t('creatorName')}
-                                    variant="outlined"
-                                    required
-                                    value={manifest.creator || ''}
-                                    onChange={(e) => setManifest((prev) => ({ ...prev, creator: e.target.value }))}
-                                    fullWidth
-                                    sx={{ marginBottom: '20px' }}
-                                />
-                                <FormGroup>
-                                    <FormControlLabel
-                                        control={
-                                            <Checkbox
-                                                checked={manifest.editable || false}
-                                                onChange={(e) =>
-                                                    setManifest((prev) => ({ ...prev, editable: e.target.checked }))
-                                                }
-                                            />
-                                        }
-                                        label={t('allowModify')}
-                                    />
-                                    <FormControlLabel
-                                        control={
-                                            <Checkbox
-                                                checked={manifest.exportable || false}
-                                                onChange={(e) =>
-                                                    setManifest((prev) => ({ ...prev, exportable: e.target.checked }))
-                                                }
-                                            />
-                                        }
-                                        label={t('allowExport')}
-                                    />
-                                </FormGroup>
-                                <Turnstile
-                                    siteKey={'0x4AAAAAABtwtFZj5wbp5rqD'}
-                                    onSuccess={(token) => {
-                                        setToken(token)
+                                <Box>
+                                    {thumbnail && (
+                                        <img
+                                            src={thumbnail}
+                                            alt="Thumbnail"
+                                            style={{ width: '300px', height: 'auto', marginBottom: '20px' }}
+                                        />
+                                    )}
+                                </Box>
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        flex: 1,
+                                        flexDirection: 'column'
                                     }}
-                                    onExpire={() => {
-                                        setToken(null)
-                                    }}
-                                />
+                                >
+                                    <TextField
+                                        label={t('creatorName')}
+                                        variant="outlined"
+                                        required
+                                        value={manifest.creator || ''}
+                                        onChange={(e) => setManifest((prev) => ({ ...prev, creator: e.target.value }))}
+                                        fullWidth
+                                        sx={{ marginBottom: '20px' }}
+                                    />
+                                    <FormGroup>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={manifest.editable || false}
+                                                    onChange={(e) =>
+                                                        setManifest((prev) => ({ ...prev, editable: e.target.checked }))
+                                                    }
+                                                />
+                                            }
+                                            label={t('allowModify')}
+                                        />
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={manifest.exportable || false}
+                                                    onChange={(e) =>
+                                                        setManifest((prev) => ({
+                                                            ...prev,
+                                                            exportable: e.target.checked
+                                                        }))
+                                                    }
+                                                />
+                                            }
+                                            label={t('allowExport')}
+                                        />
+                                    </FormGroup>
+                                    <Turnstile
+                                        siteKey={'0x4AAAAAABtwtFZj5wbp5rqD'}
+                                        onSuccess={(token) => {
+                                            setToken(token)
+                                        }}
+                                        onExpire={() => {
+                                            setToken(null)
+                                        }}
+                                    />
+                                </Box>
                             </Box>
                         </DialogContent>
                         <DialogActions>
