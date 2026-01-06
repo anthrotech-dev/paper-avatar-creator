@@ -173,11 +173,11 @@ export const Avatar = (props: AvatarProps) => {
             if (Math.random() < chanceToCloseEyes) {
                 facial = 'Eyes-Closed'
                 // @ts-ignore
-                nodes['Head_Front'].material.map.offset.set(0.166, 0)
+                nodes['Head_Front'].material.map.offset.set(0.166666666666666, 0)
             } else if (Math.random() < chanceToOpenMouth) {
                 facial = 'Mouth-Open'
                 // @ts-ignore
-                nodes['Head_Front'].material.map.offset.set(-0.167, 0)
+                nodes['Head_Front'].material.map.offset.set(-0.166666666666666, 0)
             }
         } else if (facial === 'Eyes-Closed') {
             if (Math.random() < chanceToReturnToNormal) {
