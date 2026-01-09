@@ -127,7 +127,7 @@ export function Editor({ children }: { children?: React.ReactNode }) {
                     setDefaultTexture(tex)
                 })
                 .catch((err) => {
-                    alert('Failed to load initial texture from URL: ' + err)
+                    alert('Failed to load initial texture from URL: ' + err.toString())
                 })
         } else {
             loader
@@ -138,7 +138,7 @@ export function Editor({ children }: { children?: React.ReactNode }) {
                     setDefaultTexture(tex)
                 })
                 .catch((err) => {
-                    alert('Failed to load default texture: ' + err)
+                    alert('Failed to load default texture: ' + err.toString())
                 })
         }
     }, [initTexture])
