@@ -118,7 +118,7 @@ export function Editor({ children }: { children?: React.ReactNode }) {
         const loader = new TextureLoader()
         loader.setCrossOrigin('anonymous')
         if (initTexture) {
-            const url = `https://oekaki-avatar-files.anthrotech.dev/drawings/${initTexture}.png`
+            const url = `http://jmof.gammalab.net/oekaki-avatar-drawings/${initTexture}.png`
             loader
                 .loadAsync(url)
                 .then((tex) => {
