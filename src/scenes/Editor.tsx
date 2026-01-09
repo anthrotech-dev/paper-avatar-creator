@@ -114,21 +114,32 @@ export function Editor({ children }: { children?: React.ReactNode }) {
 
     useEffect(() => {
         console.log('initTexture param:', initTexture)
+
+        const loader = new TextureLoader()
+        loader.setCrossOrigin('anonymous')
         if (initTexture) {
-            const loader = new TextureLoader()
             const url = `https://oekaki-avatar-files.anthrotech.dev/drawings/${initTexture}.png`
-            loader.loadAsync(url).then((tex) => {
-                tex.flipY = false
-                tex.colorSpace = SRGBColorSpace
-                setDefaultTexture(tex)
-            })
+            loader
+                .loadAsync(url)
+                .then((tex) => {
+                    tex.flipY = false
+                    tex.colorSpace = SRGBColorSpace
+                    setDefaultTexture(tex)
+                })
+                .catch((err) => {
+                    alert('Failed to load initial texture from URL: ' + err)
+                })
         } else {
-            const loader = new TextureLoader()
-            loader.loadAsync('/tex/sample.png').then((tex) => {
-                tex.flipY = false
-                tex.colorSpace = SRGBColorSpace
-                setDefaultTexture(tex)
-            })
+            loader
+                .loadAsync('/tex/sample.png')
+                .then((tex) => {
+                    tex.flipY = false
+                    tex.colorSpace = SRGBColorSpace
+                    setDefaultTexture(tex)
+                })
+                .catch((err) => {
+                    alert('Failed to load default texture: ' + err)
+                })
         }
     }, [initTexture])
 
