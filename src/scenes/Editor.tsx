@@ -113,24 +113,23 @@ export function Editor({ children }: { children?: React.ReactNode }) {
     const initTexture = params.get('init')
 
     useEffect(() => {
-        const loader = new TextureLoader()
-        loader.loadAsync('/tex/sample.png').then((tex) => {
-            tex.flipY = false
-            tex.colorSpace = SRGBColorSpace
-            setDefaultTexture(tex)
-        })
-    }, [])
-
-    useEffect(() => {
         console.log('initTexture param:', initTexture)
-        if (!initTexture) return
-        const loader = new TextureLoader()
-        const url = `https://oekaki-avatar-files.anthrotech.dev/drawings/${initTexture}.png`
-        loader.loadAsync(url).then((tex) => {
-            tex.flipY = false
-            tex.colorSpace = SRGBColorSpace
-            setDefaultTexture(tex)
-        })
+        if (initTexture) {
+            const loader = new TextureLoader()
+            const url = `https://oekaki-avatar-files.anthrotech.dev/drawings/${initTexture}.png`
+            loader.loadAsync(url).then((tex) => {
+                tex.flipY = false
+                tex.colorSpace = SRGBColorSpace
+                setDefaultTexture(tex)
+            })
+        } else {
+            const loader = new TextureLoader()
+            loader.loadAsync('/tex/sample.png').then((tex) => {
+                tex.flipY = false
+                tex.colorSpace = SRGBColorSpace
+                setDefaultTexture(tex)
+            })
+        }
     }, [initTexture])
 
     const [avatarParams, setAvatarParams] = useState<AvatarParams>({
