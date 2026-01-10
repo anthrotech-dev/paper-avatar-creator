@@ -124,7 +124,8 @@ export function Editor({ children }: { children?: React.ReactNode }) {
                 .then((tex) => {
                     tex.flipY = false
                     tex.colorSpace = SRGBColorSpace
-                    setDefaultTexture(tex)
+                    //setDefaultTexture(tex)
+                    setTexture(tex)
                 })
                 .catch((err) => {
                     alert(
